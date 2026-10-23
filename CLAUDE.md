@@ -14,7 +14,7 @@ Ce qui suit précise ces règles pour ce projet.
 
 ## Référence des comportements
 
-Les comportements à développer sont dans l'issue **#26 de `kenway974/prospection-bot`** (corps + commentaires) : **seules les cases cochées** sont à faire. Chaque comportement coché = un test qui échoue d'abord, puis le code.
+Les comportements à développer sont dans **[COMPORTEMENTS.md](COMPORTEMENTS.md)** (C01 à C101), validés par le propriétaire. Chaque comportement = un test qui échoue d'abord, puis le code ; le numéro (ex. `C07`) est cité dans le nom ou la docstring du test et dans le message de commit.
 
 L'ancien dépôt `kenway974/prospection-bot` sert de **réserve de briques** (recherche Google, filtres, franchises, métiers, site retrouvé, audit, vérification d'email, dirigeants, score d'opportunité). On n'y copie jamais un fichier entier : on reprend seulement les fonctions dont le test a besoin, on les relit (sécurité, simplicité), on reprend leurs anciens tests, et le commit indique la source (fichier + version).
 

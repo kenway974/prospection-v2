@@ -206,4 +206,4 @@ Découpage exact des modules dans chaque couche, schéma détaillé des tables, 
 
 - La file d'une session d'appel = prospects `à appeler` de la campagne choisie, triés par score décroissant ; les `à rappeler` dus aujourd'hui passent par l'écran Aujourd'hui. **[choix Claude]**
 - Les comportements C19 à C33 (critères) s'appliquent aussi au mode Terrain, avec un modèle de critères « Petit commerce » par défaut. **[choix Claude]**
-- Les données de l'ancienne app ne sont pas reprises. **[choix Claude, à confirmer]**
+- **Aucune reprise** des données de l'ancienne app (liste noire, prospects contactés, franchises perso), décidé par le propriétaire : on repart de zéro avec une nouvelle approche d'appel. La liste de franchises fournie (C30) est reprise comme brique de code, pas comme donnée perso.

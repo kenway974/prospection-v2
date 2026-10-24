@@ -3,9 +3,11 @@
 from dataclasses import dataclass
 from datetime import datetime
 
-from sqlalchemy import Connection, insert, select
+from sqlalchemy import Connection, insert, select, text
 
 from prospection.storage.db import login_attempts
+
+LOGIN_LOCK_KEY = 9740001
 
 
 @dataclass(frozen=True)
@@ -13,6 +15,11 @@ class LoginAttempt:
     at: datetime
     ip: str
     success: bool
+
+
+def lock_login_attempts(conn: Connection) -> None:
+    """Sérialise les tentatives jusqu'à la fin de la transaction en cours."""
+    conn.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": LOGIN_LOCK_KEY})
 
 
 def record_attempt(conn: Connection, at: datetime, ip: str, success: bool) -> None:

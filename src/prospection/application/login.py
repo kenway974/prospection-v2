@@ -8,7 +8,11 @@ from sqlalchemy import Connection
 
 from prospection.application.password import verify_password
 from prospection.domain.login_throttle import WINDOW, check_login_allowed
-from prospection.storage.login_journal import failures_since, record_attempt
+from prospection.storage.login_journal import (
+    failures_since,
+    lock_login_attempts,
+    record_attempt,
+)
 
 
 class LoginOutcome(enum.Enum):
@@ -26,7 +30,12 @@ class LoginResult:
 def attempt_login(
     conn: Connection, password_hash: str, plain: str, ip: str, now: datetime
 ) -> LoginResult:
-    """Vérifie le mot de passe sauf si l'accès est bloqué ; journalise la tentative."""
+    """Vérifie le mot de passe sauf si l'accès est bloqué ; journalise la tentative.
+
+    Le verrou rend « vérifier puis enregistrer » atomique : des tentatives
+    simultanées ne peuvent pas dépasser la limite. L'appelant valide la transaction.
+    """
+    lock_login_attempts(conn)
     throttle = check_login_allowed(failures_since(conn, now - WINDOW), now)
     if not throttle.allowed:
         return LoginResult(LoginOutcome.LOCKED, throttle.retry_after)

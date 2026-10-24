@@ -8,6 +8,7 @@ from fastapi.responses import RedirectResponse, Response
 from sqlalchemy.exc import OperationalError
 
 from prospection.ui.deps import templates
+from prospection.ui.security import SECURITY_HEADERS
 from prospection.ui.session import LoginRequired
 
 logger = logging.getLogger(__name__)
@@ -35,8 +36,11 @@ async def _database_down(request: Request, exc: Exception) -> Response:
 
 
 async def _unexpected(request: Request, exc: Exception) -> Response:
-    logger.exception("Erreur inattendue")
-    return _error_page(request, UNEXPECTED, 500)
+    # Starlette place ce gestionnaire hors des middlewares : en-têtes ajoutés ici.
+    # La trace est journalisée par uvicorn, pas affichée.
+    response = _error_page(request, UNEXPECTED, 500)
+    response.headers.update(SECURITY_HEADERS)
+    return response
 
 
 def install_error_handlers(app: FastAPI) -> None:

@@ -34,3 +34,5 @@ def test_unexpected_error_shows_french_message(settings: Settings) -> None:
     assert response.status_code == 500
     assert "Un problème est survenu." in response.text
     assert "détail interne" not in response.text
+    assert response.headers["content-security-policy"].startswith("default-src 'self'")
+    assert response.headers["x-content-type-options"] == "nosniff"

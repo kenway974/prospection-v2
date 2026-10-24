@@ -123,3 +123,7 @@ def test_logout_clears_session(client: TestClient) -> None:
     response = client.post("/deconnexion", headers=ORIGIN, follow_redirects=False)
     assert response.headers["location"] == "/connexion"
     assert client.get("/", follow_redirects=False).status_code == 303
+
+
+def test_cookie_uses_host_prefix() -> None:
+    assert COOKIE_NAME == "__Host-session"

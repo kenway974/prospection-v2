@@ -9,7 +9,7 @@ from itsdangerous import BadSignature, TimestampSigner
 from prospection.config import Settings
 from prospection.ui.deps import get_now, get_settings
 
-COOKIE_NAME = "session"
+COOKIE_NAME = "__Host-session"
 MAX_AGE = timedelta(days=30)
 REFRESH_AFTER = timedelta(days=1)
 

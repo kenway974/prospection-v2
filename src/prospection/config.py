@@ -1,6 +1,8 @@
 """Configuration lue dans les variables d'environnement de l'hébergeur."""
 
-from pydantic import Field, SecretStr, ValidationError
+from argon2 import extract_parameters
+from argon2.exceptions import InvalidHashError
+from pydantic import Field, SecretStr, ValidationError, field_validator
 from pydantic_settings import BaseSettings
 
 
@@ -14,6 +16,15 @@ class Settings(BaseSettings):
     app_password_hash: SecretStr
     behind_proxy: bool = True
     timezone: str = "Indian/Reunion"
+
+    @field_validator("app_password_hash")
+    @classmethod
+    def _is_argon2_hash(cls, value: SecretStr) -> SecretStr:
+        try:
+            extract_parameters(value.get_secret_value())
+        except InvalidHashError:
+            raise ValueError("hash argon2 attendu") from None
+        return value
 
 
 def load_settings() -> Settings:

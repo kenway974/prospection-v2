@@ -3,12 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="htmx-config" content='{"includeIndicatorStyles": false}'>
 <title>{% block title %}Prospection{% endblock %}</title>
 <link rel="stylesheet" href="/static/app.css">
+<script src="/static/htmx-2.0.11.min.js" defer></script>
 </head>
 <body>
-<main class="page">
+<main class="page{% if tab is defined %} with-nav{% endif %}">
 {% block content %}{% endblock %}
 </main>
+{% if tab is defined %}{% include "_nav.html" %}{% endif %}
 </body>
 </html>

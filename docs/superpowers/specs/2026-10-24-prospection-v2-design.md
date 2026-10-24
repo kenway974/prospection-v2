@@ -69,6 +69,7 @@ Contexte local : le propriétaire est à **La Réunion (UTC+4, `Indian/Reunion`)
 | Navigation | Barre **flottante**, une seule ligne, 4 onglets : Aujourd'hui, Prospects, Terrain, Recherche. |
 | Style | Épuré, proche d'iOS (police système, listes groupées, beaucoup d'air), **petite touche 974** (logo volcan + rayons, bleu océan). Aucune « marque » d'interface générée par IA. |
 | Maquettes | Les 7 écrans sont validés en l'état. |
+| CRM | **Notion seulement** au départ (HubSpot reporté). Base dédiée créée dans DEV : page « 11. Prospection v2 (CRM) », base **Prospects v2** (https://app.notion.com/p/ebbf6ef71a4945bf8575a326c745d824). |
 
 ## 5. Parcours et écrans
 
@@ -194,6 +195,12 @@ Découpage exact des modules dans chaque couche, schéma détaillé des tables, 
 - C99 (vérification hebdomadaire des vraies API) tourne dans le **worker Railway**, qui lit les clés en base ; aucune copie des clés dans GitHub.
 
 **Sauvegardes (C91)** **[choix Claude]** : `pg_dump` quotidien lancé par le worker vers un stockage objet compatible S3 (ex. Cloudflare R2, offre gratuite), chiffré, 30 jours conservés ; restauration testée. Si l'offre Railway du propriétaire inclut des sauvegardes natives, on les utilise à la place.
+
+**Base Notion « Prospects v2 »** (créée le 24/10/2026)
+- Une ligne par entreprise (Notion n'a pas de modèle entreprise / contact : le dirigeant est en colonnes). Colonnes : Entreprise (titre), Statut CRM, Prochaine action, Date action, Dirigeant, Mobile, Téléphone, Email, Site, Fiche Google, Métier, Ville, SIREN, Score, Raison, Notes app, Notes perso, Campagne, Exporté le, ID app.
+- Doublons (C69) : recherche par « ID app », puis par SIREN. Ne pas écraser (C70) : l'app n'écrit que ses colonnes, et seulement si la cellule est vide ou porte encore la valeur qu'elle y avait mise ; « Notes perso » jamais ; « Statut CRM » seulement à la création (« Nouveau »).
+- Exclusion « déjà dans le CRM » (C32) : lecture de la base par SIREN, identifiant Google et nom normalisé.
+- Mise en service : créer une intégration Notion, partager la base avec elle, saisir la clé dans l'app (C02, C03).
 
 **Autres**
 

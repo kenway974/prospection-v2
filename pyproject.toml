@@ -54,7 +54,8 @@ mypy_path = "src"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--strict-markers"
+addopts = "--strict-markers -m 'not e2e'"
+markers = ["e2e: parcours dans un vrai navigateur, sur l'image construite"]
 pythonpath = ["src", "."]
 
 [tool.coverage.run]

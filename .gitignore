@@ -13,3 +13,4 @@ output/
 *.log
 test-results/
 .superpowers/
+requirements-prod.txt

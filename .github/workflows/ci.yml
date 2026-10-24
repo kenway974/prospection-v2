@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  qualite:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.11.32"
+      - name: 1. Installation reproductible
+        run: uv sync --frozen
+      - name: 2. Audit des dépendances
+        run: |
+          uv export --frozen --no-dev --no-emit-project -q > requirements-prod.txt
+          uv run pip-audit -r requirements-prod.txt --disable-pip --no-deps --strict
+      - name: 3. Lint, couches et taille des fichiers
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+          uv run lint-imports
+          uv run python scripts/check_file_size.py src
+      - name: 4. Types
+        run: uv run mypy
+      - name: 5. Tests (fuseau éloigné d'UTC) et couverture
+        env:
+          TZ: America/Los_Angeles
+        run: |
+          uv run pytest --cov --cov-report=term --cov-fail-under=80
+          uv run coverage report --include='src/prospection/domain/*' --fail-under=90
+      - name: 6. Image de production
+        run: docker build -t prospection:ci .
+      - name: 7. Bout en bout sur l'image
+        run: |
+          docker run --network host -e PGPASSWORD=postgres postgres:16 \
+            psql -h localhost -U postgres -c 'CREATE DATABASE prospection_e2e'
+          HASH=$(uv run python -c "from prospection.application.password import hash_password; print(hash_password('mot de passe e2e'))")
+          docker run -d --name app --network host -e PORT=8077 \
+            -e DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/prospection_e2e \
+            -e SESSION_SECRET=$(openssl rand -hex 32) -e APP_PASSWORD_HASH="$HASH" \
+            -e BEHIND_PROXY=false prospection:ci
+          for i in $(seq 1 30); do curl -sf localhost:8077/sante && break; sleep 1; done
+          uv run playwright install --with-deps chromium
+          E2E_BASE_URL=http://localhost:8077 E2E_PASSWORD='mot de passe e2e' uv run pytest -m e2e
+      - name: Journaux de l'app en cas d'échec
+        if: failure()
+        run: docker logs app || true

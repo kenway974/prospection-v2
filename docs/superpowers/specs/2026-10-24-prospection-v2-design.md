@@ -122,7 +122,7 @@ En terrain, les boutons Intéressé / Repasser / Non posent `intéressé` / `à 
 
 | Besoin | Choix |
 |---|---|
-| Langage | Python 3.12, typé, `mypy --strict`, `ruff` |
+| Langage | Python 3.13, typé, `mypy --strict`, `ruff` |
 | Serveur web | **FastAPI** + gabarits **Jinja2** rendus côté serveur |
 | Interactions sans rechargement | **HTMX** (fichier statique servi par l'app, version épinglée) |
 | CSS | Une feuille de style unique avec variables (thème centralisé) ; pas de framework CSS **[choix Claude]** |

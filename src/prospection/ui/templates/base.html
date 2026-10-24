@@ -5,8 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="htmx-config" content='{"includeIndicatorStyles": false}'>
 <title>{% block title %}Prospection{% endblock %}</title>
+<meta name="theme-color" content="#1A3E8F">
+<link rel="manifest" href="/static/manifest.webmanifest">
+<link rel="icon" href="/static/logo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/static/icons/icon-192.png">
 <link rel="stylesheet" href="/static/app.css">
 <script src="/static/htmx-2.0.11.min.js" defer></script>
+<script src="/static/app.js" defer></script>
 </head>
 <body>
 <main class="page{% if tab is defined %} with-nav{% endif %}">

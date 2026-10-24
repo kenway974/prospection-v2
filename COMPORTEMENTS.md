@@ -1,6 +1,6 @@
 # Comportements à développer
 
-Liste validée par le propriétaire (issue #26 de `prospection-bot`, cases cochées). C'est **la référence** : chaque ligne = un test qui échoue d'abord, puis le code. Le numéro sert à relier le test, le commit et la ligne.
+Liste validée par le propriétaire (issue #26 de `prospection-bot`, cases cochées ; C102 à C120 et ajustements validés le 24/10/2026 avec la spec `docs/superpowers/specs/2026-10-24-prospection-v2-design.md`). C'est **la référence** : chaque ligne = un test qui échoue d'abord, puis le code. Le numéro sert à relier le test, le commit et la ligne.
 Ajouter ou retirer un comportement = modifier ce fichier (avec l'accord du propriétaire).
 
 **Priorité transversale : interface développée d'abord pour le mobile.**
@@ -9,14 +9,14 @@ Ajouter ou retirer un comportement = modifier ce fichier (avec l'accord du propr
 
 ## 1. Configuration de l'app
 - C01 Accès protégé par mot de passe (un seul utilisateur)
-- C02 Je saisis mes clés une fois : Google, CRM (Notion ou HubSpot), Sirène (INSEE)
+- C02 Je saisis mes clés une fois : Google, Notion, Sirène (INSEE)
 - C03 Chaque clé est testée avec un bouton « Tester », avec un message clair si elle est refusée
 - C04 Les clés ne s'affichent plus jamais en clair après la saisie
-- C05 Je choisis mon CRM : Notion, HubSpot ou aucun
-- C06 Je choisis la base Notion / le pipeline HubSpot de destination
+- C05 Je choisis mon CRM : Notion ou aucun (HubSpot reporté)
+- C06 Je choisis la base Notion de destination (par défaut « Prospects v2 », page DEV)
 - C07 Je fixe un budget Google maximum par mois ; l'app refuse de le dépasser
 - C08 Sans clé Google, l'app le dit et bloque seulement les recherches Google Maps
-- C09 Sans CRM configuré, l'app fonctionne quand même (export fichier seulement)
+- C09 Sans CRM configuré, l'app fonctionne quand même (export fichier, y compris des intéressés)
 
 ## 2. Configuration d'une campagne
 - C10 Je donne un nom à la campagne
@@ -51,7 +51,7 @@ Ajouter ou retirer un comportement = modifier ce fichier (avec l'accord du propr
 - C30 Exclure les franchises et les chaînes (liste fournie + ma liste)
 - C31 Ne pas exclure un indépendant dont le nom ressemble à une enseigne
 - C32 Exclure les prospects déjà présents dans le CRM
-- C33 Exclure ma liste noire (entreprises qui ont dit non)
+- C33 Exclure ma liste noire (entreprises qui ont dit non) ; marquer « pas intéressé » propose l'ajout, sans l'imposer
 
 ## 4. Lancement
 - C34 Je vois la progression en direct (étape, trouvés, exclus, qualifiés)
@@ -62,11 +62,12 @@ Ajouter ou retirer un comportement = modifier ce fichier (avec l'accord du propr
 - C39 Les critères gratuits sont appliqués avant les appels payants
 - C40 Une campagne coupée (réseau, redémarrage) peut reprendre là où elle s'était arrêtée
 - C41 Une erreur sur un prospect n'arrête pas la campagne
+- C119 Pendant que la recherche continue, je peux déjà appeler les prospects qualifiés
 
 ## 5. Enrichissement
 **Google Maps**
 - C42 Récupérer nom, adresse, téléphone, site, note, nombre d'avis, catégories, horaires, lien de la fiche
-- C43 Photos de la fiche : nombre, ajoutées par le propriétaire ou seulement par des clients
+- C43 Photos de la fiche : nombre, et estimation « probable » de qui les a ajoutées (propriétaire ou clients)
 
 **Registre officiel**
 - C44 Récupérer SIREN / SIRET, date de création, code et libellé d'activité, forme juridique, effectif, dirigeants
@@ -100,17 +101,19 @@ Ajouter ou retirer un comportement = modifier ce fichier (avec l'accord du propr
 - C64 Une ligne par prospect, toutes les infos en colonnes, triées par score d'opportunité
 - C65 Un onglet / fichier séparé avec les exclus et la raison
 - C66 Je retrouve les exports des campagnes passées
+- C118 L'export fichier d'une campagne ne change aucun statut de prospect
+- C120 La liste des prospects se cherche (nom, ville, métier) et se filtre par statut, avec le nombre de prospects par statut
 
 ## 7. Envoi au CRM
-- C67 Relecture avant l'envoi : je retire un prospect d'un clic (sinon envoi automatique)
-- C68 Chaque prospect qualifié est créé dans Notion ou HubSpot (entreprise + contact dirigeant)
+- C67 Relecture avant l'envoi : je retire un prospect d'un clic (les « à vérifier » sont décochés par défaut) ; l'envoi se fait seulement quand j'appuie sur Exporter
+- C68 Chaque prospect intéressé exporté est créé dans la base Notion (entreprise + dirigeant), avec ses notes et sa prochaine action ; il passe alors au statut « exporté »
 - C69 Pas de doublon : un prospect déjà dans le CRM est mis à jour, pas recréé
 - C70 Une info déjà saisie à la main dans le CRM n'est jamais écrasée
 - C71 Le nom de la campagne et la date sont enregistrés sur la fiche
 - C72 Lien direct vers la fiche créée dans le CRM
-- C73 Si le CRM est en panne : rien n'est perdu, l'envoi est réessayé plus tard, l'export fichier marche quand même
+- C73 Si Notion est en panne : rien n'est perdu, l'envoi est réessayé plus tard, l'export fichier marche quand même
 - C74 Bilan : créés, mis à jour, en échec (avec la raison)
-- C75 Respect des limites d'appels de Notion / HubSpot
+- C75 Respect des limites d'appels de Notion
 
 ## 8. Suivi dans le temps
 - C76 Mettre à jour une campagne passée (fermés, changements de site…)
@@ -137,13 +140,37 @@ Ajouter ou retirer un comportement = modifier ce fichier (avec l'accord du propr
 ## 11. Conformité
 - C92 Respect des conditions Google (API officielle seulement, pas de scraping de Google ni de LinkedIn)
 - C93 Respect des entrepreneurs qui ont refusé la diffusion de leurs données dans Sirène
-- C94 Suppression automatique des prospects non retenus au-delà de N mois (RGPD)
+- C94 Suppression automatique des prospects non retenus après 6 mois sans activité, réglable (RGPD) ; jamais les intéressés, exportés ou à rappeler
 - C95 Supprimer toutes les données d'une entreprise sur demande
 
 ## 12. Maintenance
 - C96 Tests automatiques à chaque modification (sans réseau)
 - C97 Déploiement automatique quand les tests passent
-- C98 Alerte (email) si une campagne programmée échoue
-- C99 Vérification hebdomadaire des vraies API (Google, Sirène, Notion, HubSpot) : alerte si l'une change de format
+- C98 Alerte (notification sur le téléphone) si une campagne programmée échoue
+- C99 Vérification hebdomadaire des vraies API (Google, Sirène, Notion) : alerte (notification) si l'une change de format
 - C100 Erreurs remontées automatiquement (service gratuit type Sentry)
 - C101 README + guide de déploiement à jour
+
+## 13. Suivi des appels
+- C102 Après un appel, je classe le prospect en un geste : intéressé, à rappeler, pas intéressé, messagerie, pas joint, faux numéro
+- C103 Je planifie une prochaine action (rappeler, envoyer un devis, rendez-vous, passer) avec une date et une heure facultative
+- C104 J'écris des notes datées sur chaque prospect
+- C105 Je complète ou corrige le contact (dirigeant, mobile, email) directement sur la fiche
+- C106 Chaque saisie est enregistrée immédiatement ; en cas d'échec, l'app le dit et garde ma saisie
+- C107 L'écran Aujourd'hui liste les actions en retard, du jour et de demain, recalculées chaque jour dans mon fuseau horaire (Réunion par défaut) ; je coche une action pour la terminer
+- C108 Je reçois une notification avant chaque relance (15 min avant une action avec heure, 8 h pour celles du jour sans heure ; réglable)
+- C109 Je reprends une session d'appel là où je l'avais laissée (précédent / suivant, position dans la file triée par score)
+
+## 14. Préparation de l'appel
+- C110 Chaque prospect a une fiche « Pour l'appel » (accroche + douleurs probables) produite par des règles fixes, sans IA, rangées dans un fichier que je peux compléter
+- C111 La fiche « Pour l'appel » présente les douleurs comme des indices à confirmer, jamais comme des certitudes
+- C112 Je vois les indices de santé de l'entreprise (CA et résultat si publiés, effectif, horaires, activité des avis) ; « non publié » quand l'info manque, « probable » quand c'est une estimation
+
+## 15. Prospection terrain
+- C113 Mode Terrain : je cherche les petits commerces autour de ma position ou d'une adresse, avec des filtres (moins de N avis, sans site, ouvert maintenant)
+- C114 Mode Terrain : les arrêts sont ordonnés pour une tournée et j'ouvre l'itinéraire dans Google Maps
+- C115 Mode Terrain : je pose un statut en un geste devant la boutique (intéressé, repasser, non)
+
+## 16. App sur le téléphone
+- C116 L'app s'installe sur Android (icône, plein écran) et reste connectée 30 jours
+- C117 La barre de navigation flottante donne accès en un geste à Aujourd'hui, Prospects, Terrain, Recherche

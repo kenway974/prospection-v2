@@ -1,9 +1,9 @@
 # Prospection v2 · spec de conception
 
-Statut : **brouillon, à valider par le propriétaire**. Date : 24 octobre 2026.
+Statut : **validée par le propriétaire le 24 octobre 2026**. Date : 24 octobre 2026.
 Maquettes validées : https://claude.ai/artifact/MxncTwxekn6dHL9i18YZ9o (7 écrans mobiles, données d'exemple).
 
-Références : [CLAUDE.md](../../../CLAUDE.md) (règles), [COMPORTEMENTS.md](../../../COMPORTEMENTS.md) (C01 à C101).
+Références : [CLAUDE.md](../../../CLAUDE.md) (règles), [COMPORTEMENTS.md](../../../COMPORTEMENTS.md) (C01 à C120).
 Les choix marqués **[choix Claude]** n'ont pas été discutés avec le propriétaire : ils sont modifiables.
 
 ---
@@ -148,32 +148,11 @@ Briques reprises de `prospection-bot` (fonction par fonction, relues, avec leurs
 
 Découpage exact des modules dans chaque couche, schéma détaillé des tables, textes des messages (français, courts, qui disent quoi faire), icônes, contenu initial du fichier de règles (à partir des signaux disponibles), format exact des colonnes d'export, ordre des lots (proposé dans le plan).
 
-## 9. Changements proposés à COMPORTEMENTS.md
+## 9. Changements apportés à COMPORTEMENTS.md
 
-À appliquer **une fois cette spec validée**.
-
-**Modifiés**
-- **C67** devient : « Relecture avant l'envoi : je retire un prospect d'un clic ; l'envoi se fait **seulement quand j'appuie sur Exporter** ».
-- **C68** devient : « Chaque prospect **intéressé** exporté est créé dans Notion ou HubSpot (entreprise + contact dirigeant), avec ses notes et sa prochaine action ».
-- **C36** et **C34** : inchangés, mais l'écran Suivi permet d'appeler les qualifiés pendant que la recherche continue.
-
-**Ajoutés**
-- **C102** Après un appel, je classe le prospect en un geste : intéressé, à rappeler, pas intéressé, messagerie, pas joint, faux numéro
-- **C103** Je planifie une prochaine action (rappeler, devis, rendez-vous, passer) avec une date et une heure facultative
-- **C104** J'écris des notes datées sur chaque prospect
-- **C105** Je complète ou corrige le contact (dirigeant, mobile, email) directement sur la fiche
-- **C106** Chaque saisie est enregistrée immédiatement ; en cas d'échec, l'app le dit et garde ma saisie
-- **C107** L'écran Aujourd'hui liste les actions en retard, du jour et de demain, recalculées chaque jour dans mon fuseau horaire
-- **C108** Je reçois une notification avant chaque relance
-- **C109** Je reprends une session d'appel là où je l'avais laissée (précédent / suivant, position dans la file)
-- **C110** Chaque prospect a une fiche « Pour l'appel » (accroche + douleurs probables) produite par des règles fixes que je peux compléter
-- **C111** La fiche « Pour l'appel » présente les douleurs comme des indices à confirmer, jamais comme des certitudes
-- **C112** Je vois les indices de santé de l'entreprise (CA et résultat si publiés, effectif, horaires, rythme des avis) ; « non publié » quand l'info manque
-- **C113** Mode Terrain : je cherche les petits commerces autour de ma position ou d'une adresse
-- **C114** Mode Terrain : les arrêts sont ordonnés pour une tournée et j'ouvre l'itinéraire dans Google Maps
-- **C115** Mode Terrain : je pose un statut en un geste devant la boutique (intéressé, repasser, non)
-- **C116** L'app s'installe sur Android (icône, plein écran) et reste connectée 30 jours
-- **C117** La barre de navigation flottante donne accès en un geste à Aujourd'hui, Prospects, Terrain, Recherche
+Appliqués après validation (voir COMPORTEMENTS.md, qui fait foi) :
+- **Modifiés** pour suivre les décisions : C02, C05, C06, C09 (Notion seulement), C33 (liste noire proposée), C43 (photos « probable »), C67, C68 (export manuel des intéressés, statut « exporté »), C73, C75 (Notion), C94 (6 mois), C98, C99 (notification au lieu d'email).
+- **Ajoutés** : C102 à C109 (suivi des appels), C110 à C112 (préparation de l'appel), C113 à C115 (terrain), C116 et C117 (app sur le téléphone), C118 (export fichier sans changement de statut), C119 (appeler pendant la recherche), C120 (recherche et filtres de la liste).
 
 ## 10. Hypothèses et points ouverts
 

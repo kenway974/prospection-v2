@@ -12,5 +12,5 @@ RUN uv sync --frozen --no-dev && useradd --create-home app
 USER app
 EXPOSE 8000
 HEALTHCHECK CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:${PORT:-8000}/sante')"
-CMD alembic upgrade head && exec uvicorn prospection.ui.main:app --host 0.0.0.0 \
+CMD python -m prospection.cli migrate && exec uvicorn prospection.ui.main:app --host 0.0.0.0 \
     --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips='*'

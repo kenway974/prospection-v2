@@ -1,5 +1,7 @@
 """Les erreurs s'affichent en français, sans trace technique."""
 
+import html
+
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
 
@@ -36,3 +38,16 @@ def test_unexpected_error_shows_french_message(settings: Settings) -> None:
     assert "détail interne" not in response.text
     assert response.headers["content-security-policy"].startswith("default-src 'self'")
     assert response.headers["x-content-type-options"] == "nosniff"
+
+
+def test_unknown_page_shows_french_message(client: TestClient) -> None:
+    response = client.get("/adresse-mal-tapee")
+    assert response.status_code == 404
+    assert "Page introuvable. Revenez à l'accueil." in html.unescape(response.text)
+    assert response.headers["content-type"].startswith("text/html")
+
+
+def test_wrong_method_shows_french_message(client: TestClient) -> None:
+    response = client.post("/sante", headers={"Origin": "https://testserver"})
+    assert response.status_code == 405
+    assert "Action impossible sur cette page. Revenez à l'accueil." in html.unescape(response.text)

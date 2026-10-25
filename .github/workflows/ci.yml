@@ -63,11 +63,14 @@ jobs:
           curl -sf --retry 30 --retry-delay 1 --retry-all-errors localhost:8077/sante \
             || { echo "L'app n'a pas démarré"; exit 1; }
           # Tâche de fond, une fois les migrations faites, branchée sur le faux Google local
-          uv run python -m tests.e2e.fake_google 8099 &
+          # Python du projet, pas « uv run » : un uv resté en tâche de fond bloque le cache
+          .venv/bin/python -m tests.e2e.fake_google 8099 &
+          FAKE_GOOGLE=$!
           docker run -d --name worker --network host --env-file e2e.env \
             -e GOOGLE_PLACES_TEST_URL=http://127.0.0.1:8099 prospection:ci python -m prospection.worker
           uv run playwright install --with-deps chromium
           E2E_BASE_URL=http://localhost:8077 E2E_PASSWORD='mot de passe e2e' uv run pytest -m e2e
+          kill $FAKE_GOOGLE
       - name: Journaux de l'app en cas d'échec
         if: failure()
         run: '{ docker logs app; docker logs worker; } || true'

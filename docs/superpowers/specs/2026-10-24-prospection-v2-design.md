@@ -187,3 +187,14 @@ Appliqués après validation (voir COMPORTEMENTS.md, qui fait foi) :
 - La file d'une session d'appel = prospects `à appeler` de la campagne choisie, triés par score décroissant ; les `à rappeler` dus aujourd'hui passent par l'écran Aujourd'hui. **[choix Claude]**
 - Les comportements C19 à C33 (critères) s'appliquent aussi au mode Terrain, avec un modèle de critères « Petit commerce » par défaut. **[choix Claude]**
 - **Aucune reprise** des données de l'ancienne app (liste noire, prospects contactés, franchises perso), décidé par le propriétaire : on repart de zéro avec une nouvelle approche d'appel. La liste de franchises fournie (C30) est reprise comme brique de code, pas comme donnée perso.
+
+**Pays francophones (demande du 25/10/2026)** **[choix Claude, à valider]**
+- Demande : « prospecter aussi en Belgique, Suisse, Luxembourg… les pays francophones ».
+- Pays retenus (hypothèse) : **France, Belgique, Suisse, Luxembourg, Monaco**. Mêmes fuseau horaire, RGPD (Suisse : nLPD, proche) et façon de travailler. **Québec et Afrique francophone exclus pour l'instant** : autre fuseau, autres registres, autres règles d'appel ; ils pourront s'ajouter par le fichier de données des pays.
+- Langue : **français seulement**. En Flandre ou en Suisse alémanique, la recherche marche mais sans synonymes en néerlandais ou en allemand.
+- Google : même API, même quota gratuit, même plafond ; seul le code région change (`FR`, `BE`, `CH`, `LU`, `MC`). Aucun coût en plus.
+- Zones : chaque zone porte son pays. Villes et provinces / cantons viennent d'un **fichier de données par pays** (avec coordonnées, pour le rayon), à constituer depuis une source ouverte (statistiques officielles des pays ou GeoNames, CC-BY) ; la France garde le service officiel des communes.
+- Filtre « Hors zone » : par pays (adresse Google), puis par province / canton quand le code postal le permet.
+- Registres d'entreprises (lot 4) : Belgique (BCE, données ouvertes) et Suisse (Zefix, API gratuite) à vérifier ; Luxembourg et Monaco : pas d'accès ouvert gratuit connu, à vérifier avant de promettre.
+- Lot : **lot 2** pour le pays, les zones, le filtre et les numéros (C121 à C124), car c'est le lot qui fixe la forme des zones en base : les ajouter plus tard obligerait à reprendre les campagnes enregistrées. **Lot 4** pour les registres (C125).
+

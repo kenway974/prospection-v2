@@ -16,6 +16,7 @@ class StepSpec:
     keyword: str
     zone_label: str
     bias: Circle | None
+    restrict_to_bias: bool = False
 
 
 @dataclass(frozen=True)
@@ -25,6 +26,7 @@ class Step:
     keyword: str
     zone_label: str
     bias: Circle | None
+    restrict_to_bias: bool
     page_token: str | None
     page_number: int
     attempts: int
@@ -42,6 +44,7 @@ def next_step(conn: Connection, campaign_id: int) -> Step | None:
         return None
     return Step(
         row.id, row.query, row.keyword, row.zone_label, decode_circle(row.bias),
+        row.restrict_to_bias,
         row.page_token, row.page_number, row.attempts,
     )  # fmt: skip
 

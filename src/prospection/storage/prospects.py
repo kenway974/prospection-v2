@@ -30,15 +30,18 @@ def insert_prospect(
         "created_at": now,
     }  # fmt: skip
     statement = (
-        insert(prospects).values(**values).on_conflict_do_nothing(constraint="uq_prospect_place")
+        insert(prospects)
+        .values(**values)
+        .on_conflict_do_nothing(constraint="uq_prospect_place")
+        .returning(prospects.c.id)
     )
-    if conn.execute(statement).rowcount:
+    if conn.execute(statement).first() is not None:
         return True
     p = prospects.c
     conn.execute(
         update(prospects)
         .where(p.campaign_id == campaign_id, p.place_id == place.place_id,
-               ~p.keywords.any(keyword))
+               ~p.keywords.contains([keyword]))
         .values(keywords=func.array_append(p.keywords, keyword))
     )  # fmt: skip
     return False

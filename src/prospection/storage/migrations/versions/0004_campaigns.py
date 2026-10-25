@@ -36,6 +36,7 @@ def upgrade() -> None:
         sa.Column("keyword", sa.Text, nullable=False),
         sa.Column("zone_label", sa.Text, nullable=False),
         sa.Column("bias", JSONB),
+        sa.Column("restrict_to_bias", sa.Boolean, nullable=False, server_default=sa.false()),
         sa.Column("page_token", sa.Text),
         sa.Column("page_number", sa.Integer, nullable=False, server_default="0"),
         sa.Column("done", sa.Boolean, nullable=False, server_default=sa.false()),

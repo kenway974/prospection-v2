@@ -54,8 +54,8 @@ def test_steps_end_after_three_pages(conn: Connection) -> None:
 def test_C38_unique_place_per_campaign(conn: Connection) -> None:
     campaign_id = create_campaign(conn, REQUEST, STEPS, NOW)
     verdict = Verdict(False, ("Trop d'avis (40)",), ())
-    insert_prospect(conn, campaign_id, PLACE, "cuisiniste", verdict, NOW)
-    insert_prospect(conn, campaign_id, PLACE, "cuisine sur mesure", verdict, NOW)
+    assert insert_prospect(conn, campaign_id, PLACE, "cuisiniste", verdict, NOW) is True
+    assert insert_prospect(conn, campaign_id, PLACE, "cuisine sur mesure", verdict, NOW) is False
     assert seen_place_ids(conn, campaign_id) == {"p1"}
     assert exclusion_counts(conn, campaign_id) == [("Trop d'avis", 1)]
     campaign = load_campaign(conn, campaign_id)

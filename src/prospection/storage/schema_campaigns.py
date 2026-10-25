@@ -34,7 +34,8 @@ campaign_steps = Table(
     Column("campaign_id", BigInteger, ForeignKey("campaigns.id"), nullable=False),
     Column("position", Integer, nullable=False), Column("query", Text, nullable=False),
     Column("keyword", Text, nullable=False), Column("zone_label", Text, nullable=False),
-    Column("bias", JSONB), Column("page_token", Text),
+    Column("bias", JSONB), Column("restrict_to_bias", Boolean, nullable=False),
+    Column("page_token", Text),
     Column("page_number", Integer, nullable=False), Column("done", Boolean, nullable=False),
     Column("attempts", Integer, nullable=False),
 )  # fmt: skip

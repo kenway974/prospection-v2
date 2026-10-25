@@ -9,6 +9,7 @@ from sqlalchemy import Engine
 from prospection.application.budget_settings import current_budget
 from prospection.application.campaigns import create_campaign, plan_steps
 from prospection.domain.campaign_request import CampaignRequest, CityZone, RawRequest
+from prospection.domain.foreign_zones import find_foreign_cities
 from prospection.domain.google_cost import Estimate, Pricing, billing_month, estimate, pages_needed
 from prospection.domain.trades import expand_queries, load_trades
 from prospection.sources.geo_communes import GeoUnavailable, find_communes
@@ -62,7 +63,13 @@ class CitySearch:
     problem: str | None
 
 
-def find_city(client: httpx.Client, name: str) -> CitySearch:
+def find_city(client: httpx.Client, name: str, country: str = "FR") -> CitySearch:
+    """France : service officiel des communes ; ailleurs : fichier de données GeoNames."""
+    if country != "FR":
+        found = find_foreign_cities(name, country)
+        return CitySearch(
+            found, None if found else "Aucune ville de ce nom. Vérifiez l'orthographe."
+        )
     try:
         found = find_communes(client, name)
     except GeoUnavailable:

@@ -19,6 +19,7 @@ from prospection.application.search_screen import (
 )
 from prospection.domain.campaign_request import InvalidRequest, validate_request
 from prospection.domain.criteria import Criteria
+from prospection.domain.foreign_zones import countries
 from prospection.domain.google_cost import Pricing
 from prospection.storage.secret_box import SecretBox
 from prospection.ui.deps import (
@@ -43,7 +44,13 @@ from prospection.ui.session import require_session
 
 router = APIRouter(prefix="/recherche", dependencies=[Depends(require_session)])
 NO_GOOGLE_KEY = "Ajoutez votre clé Google dans Réglages pour chercher sur Google Maps."
-DEFAULTS = {**criteria_to_form(Criteria()), "nombre": "20", "synonymes": "on", "rayon": "0"}
+DEFAULTS = {
+    **criteria_to_form(Criteria()),
+    "nombre": "20",
+    "synonymes": "on",
+    "rayon": "0",
+    "pays": "FR",
+}
 
 
 async def _read_form(request: Request) -> dict[str, str]:
@@ -58,7 +65,7 @@ def _page(
     context = {
         "tab": "search", "values": values, "errors": errors or {},
         "readiness": search_readiness(engine, box), "templates": templates(engine),
-        "campaigns": latest_campaigns(engine),
+        "campaigns": latest_campaigns(engine), "countries": countries(),
     }  # fmt: skip
     return tpl.TemplateResponse(request, "recherche.html", context, status_code=status_code)
 
@@ -77,9 +84,10 @@ def search_page(
 def communes(
     request: Request,
     ville: str = "",
+    pays: str = "FR",
     client: httpx.Client = Depends(get_http_client),  # noqa: B008
 ) -> Response:
-    result = find_city(client, ville)
+    result = find_city(client, ville, pays)
     choices = [(commune_value(c), c.label) for c in result.choices]
     context = {"choices": choices, "problem": result.problem}
     return tpl.TemplateResponse(request, "_communes.html", context)

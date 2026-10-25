@@ -38,15 +38,19 @@
     <div id="synonymes" class="secondary" aria-live="polite"></div>
   </section>
   <section class="group form">
+    <label for="pays">Pays</label>
+    <select id="pays" name="pays">
+      {% for code, name in countries.items() %}<option value="{{ code }}"{% if values.get('pays', 'FR') == code %} selected{% endif %}>{{ name }}</option>{% endfor %}
+    </select>
     <label for="ville">Ville</label>
     <input id="ville" name="ville" value="{{ values.get('ville', '') }}" placeholder="Saint-Denis" autocomplete="off"
-           hx-get="/recherche/communes" hx-trigger="change" hx-target="#communes" hx-swap="innerHTML" hx-include="this">
+           hx-get="/recherche/communes" hx-trigger="change" hx-target="#communes" hx-swap="innerHTML" hx-include="this, #pays">
     <div id="communes" aria-live="polite">
       {% if values.get('commune') %}<label class="choice"><input type="radio" name="commune" value="{{ values.commune }}" checked> {{ values.get('ville', '') }}</label>{% endif %}
     </div>
     <label for="rayon">Rayon autour (km)</label>
     <input id="rayon" name="rayon" inputmode="numeric" value="{{ values.get('rayon', '0') }}">
-    <label for="departements">Départements</label>
+    <label for="departements">Départements, provinces ou cantons</label>
     <input id="departements" name="departements" value="{{ values.get('departements', '') }}" placeholder="974, Rhône" autocomplete="off">
     {{ error("zones") }}
   </section>

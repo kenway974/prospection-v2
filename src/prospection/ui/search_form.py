@@ -13,8 +13,10 @@ from prospection.domain.campaign_request import (
 )
 from prospection.domain.criteria import Criteria
 from prospection.domain.departments import find_department
+from prospection.domain.foreign_zones import countries, find_region
 
-_COMMUNE = re.compile(r"(\d[0-9AB]\d{3})\|(-?\d{1,3}(?:\.\d+)?)\|(-?\d{1,3}(?:\.\d+)?)\|(.{1,100})")
+_COORD = r"(-?\d{1,3}(?:\.\d+)?)"
+_COMMUNE = re.compile(rf"([A-Z]{{2}})\|([0-9A-Z]{{0,5}})\|{_COORD}\|{_COORD}\|(.{{1,100}})")
 
 
 MAX_DEPARTMENTS = 20
@@ -33,30 +35,46 @@ def _int(value: str, default: int | None) -> int | None:
 
 
 def commune_value(city: CityZone) -> str:
-    return f"{city.insee_code}|{city.lat}|{city.lon}|{city.name}"
+    return f"{city.country}|{city.code}|{city.lat}|{city.lon}|{city.name}"
+
+
+def _region(item: str, country: str) -> DepartmentZone | None:
+    return find_department(item) if country == "FR" else find_region(item, country)
+
+
+def _unknown_region(item: str, country: str) -> str:
+    if country == "FR":
+        return f"Département inconnu : {item.strip()}."
+    return f"Province ou canton inconnu en {countries()[country]} : {item.strip()}."
 
 
 def _zones(form: dict[str, str], errors: dict[str, str]) -> list[Zone]:
     zones: list[Zone] = []
+    country = form.get("pays", "FR")
+    if country not in countries():
+        errors["zones"] = "Choisissez un pays de la liste."
+        return zones
     commune = form.get("commune", "").strip()
     if commune:
         match = _COMMUNE.fullmatch(commune)
-        if not match:
+        if not match or match.group(1) != country:
             errors["zones"] = "Choisissez la commune dans la liste."
         else:
-            code, lat, lon, name = match.groups()
-            city = CityZone(name, code, float(lat), float(lon))
+            _, code, lat, lon, name = match.groups()
+            city = CityZone(name, code, float(lat), float(lon), country)
             radius = _int(form.get("rayon", ""), 0) or 0
             zones.append(RadiusZone(city, radius) if radius else city)
     items = [i for i in re.split(r"[,;\n]", form.get("departements", "")) if i.strip()]
     if len(items) > MAX_DEPARTMENTS:
-        errors["zones"] = f"{MAX_DEPARTMENTS} départements au plus par campagne."
+        errors["zones"] = (
+            f"{MAX_DEPARTMENTS} départements, provinces ou cantons au plus par campagne."
+        )
         return zones
     for item in items:
         if item.strip():
-            department = find_department(item)
+            department = _region(item, country)
             if department is None:
-                errors["zones"] = f"Département inconnu : {item.strip()}."
+                errors["zones"] = _unknown_region(item, country)
             else:
                 zones.append(department)
     return zones
@@ -103,6 +121,8 @@ def request_to_form(request: CampaignRequest) -> dict[str, str]:
         "synonymes": "on" if request.synonyms_on else "", **criteria_to_form(request.criteria),
         "departements": ", ".join(z.code for z in request.zones if isinstance(z, DepartmentZone)),
         "commune": "", "ville": "", "rayon": "0",
+        "pays": request.zones[0].city.country if isinstance(request.zones[0], RadiusZone)
+        else request.zones[0].country,
     }  # fmt: skip
     for zone in request.zones:
         if isinstance(zone, (CityZone, RadiusZone)):

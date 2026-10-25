@@ -33,7 +33,7 @@ def test_campaign_from_key_to_qualified_prospects(page: Page, base_url: str) -> 
     page.goto(f"{base_url}/recherche")
     page.get_by_label("Nom de la campagne").fill("Cuisinistes Rhône")
     page.get_by_label("Métiers").fill("cuisiniste")
-    page.get_by_label("Départements").fill("Rhône")
+    page.get_by_label("Départements, provinces ou cantons").fill("Rhône")
     page.get_by_label("Prospects qualifiés voulus").fill("2")
     page.get_by_role("button", name="Lancer").click()
 

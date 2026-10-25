@@ -22,7 +22,7 @@ def test_C17_non_ascii_digits_refused_without_crash(client: TestClient) -> None:
 
 def test_C17_too_many_departments_refused() -> None:
     parsed = parse_form({**FORM, "departements": ", ".join(["69"] * 21)})
-    assert parsed.errors["zones"] == "20 départements au plus par campagne."
+    assert parsed.errors["zones"] == "20 départements, provinces ou cantons au plus par campagne."
 
 
 def test_C16_huge_estimation_form_answered_quickly(client: TestClient) -> None:

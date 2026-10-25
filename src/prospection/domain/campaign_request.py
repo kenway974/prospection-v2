@@ -17,15 +17,20 @@ def _department(insee_code: str) -> str:
 @dataclass(frozen=True)
 class CityZone:
     name: str
-    insee_code: str  # vide hors de France
+    code: str  # code INSEE en France ; ailleurs, région ISO 3166-2 sans le pays (« GE »)
     lat: float
     lon: float
     country: str = "FR"
 
     @property
     def label(self) -> str:
-        where = _department(self.insee_code) if self.country == "FR" else self.country
-        return f"{self.name} ({where})"
+        if self.country == "FR":
+            return f"{self.name} ({_department(self.code)})"
+        return (
+            f"{self.name} ({self.country}-{self.code})"
+            if self.code
+            else f"{self.name} ({self.country})"
+        )
 
 
 @dataclass(frozen=True)

@@ -23,7 +23,7 @@ COMMUNES = [
     {"nom": "Saint-Denis", "code": "93066", "centre": {"coordinates": [2.35, 48.93]}},
     {"nom": "Saint-Denis", "code": "97411", "centre": {"coordinates": [55.45, -20.88]}},
 ]
-CHOSEN = "97411|-20.88|55.45|Saint-Denis"
+CHOSEN = "FR|97411|-20.88|55.45|Saint-Denis"
 FORM = {
     "nom": "Cuisinistes Saint-Denis",
     "metiers": "cuisiniste",
@@ -133,7 +133,7 @@ def test_search_form_is_labelled(client: TestClient) -> None:
         "Métiers",
         "Ville",
         "Rayon autour (km)",
-        "Départements",
+        "Départements, provinces ou cantons",
         "Prospects qualifiés voulus",
         "Avis au plus",
     ]:

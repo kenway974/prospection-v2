@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}CRM · Prospection{% endblock %}
+{% block content %}
+{% set current = screen.settings %}
+<a href="/reglages" class="back">Réglages</a>
+<h1 class="large-title">CRM</h1>
+<p class="empty">Les prospects intéressés sont envoyés au CRM quand vous appuyez sur « Exporter ». Sans CRM, l'export se fait en fichier.</p>
+<form method="post" action="/reglages/crm" class="group form">
+  <fieldset class="choices">
+    <legend>Destination</legend>
+    <label class="choice"><input type="radio" name="crm" value="notion"{% if current.crm.value == "notion" %} checked{% endif %}> Notion</label>
+    <label class="choice"><input type="radio" name="crm" value="none"{% if current.crm.value == "none" %} checked{% endif %}> Aucun (export fichier seulement)</label>
+  </fieldset>
+  {% if current.notion_database_title %}<p class="secondary">Base actuelle : {{ current.notion_database_title }}</p>{% endif %}
+  {% if screen.databases %}
+  <label for="base">Base Notion de destination</label>
+  <select id="base" name="base">
+    {% for db in screen.databases %}<option value="{{ db.id }}"{% if db.id == screen.selected_id %} selected{% endif %}>{{ db.title }}</option>
+    {% endfor %}
+  </select>
+  {% elif screen.problem %}
+  <p class="secondary" role="status">{{ screen.problem }}</p>
+  {% endif %}
+  {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+  <button type="submit" class="button-primary">Enregistrer</button>
+</form>
+{% endblock %}

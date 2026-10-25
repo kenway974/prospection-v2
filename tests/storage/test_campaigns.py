@@ -10,7 +10,13 @@ from prospection.domain.criteria import Criteria, Verdict
 from prospection.domain.place import Circle, Place
 from prospection.storage.campaign_codec import decode_request, encode_request
 from prospection.storage.campaign_steps import StepSpec, next_step, record_page
-from prospection.storage.campaigns import add_event, create_campaign, load_campaign, recent_events
+from prospection.storage.campaigns import (
+    add_event,
+    create_campaign,
+    load_campaign,
+    recent_events,
+    set_status,
+)
 from prospection.storage.google_usage import add_call, lock_google, month_usage
 from prospection.storage.prospects import exclusion_counts, insert_prospect
 from prospection.storage.templates import list_templates, save_template
@@ -92,3 +98,14 @@ def test_C18_template_saved_and_listed(conn: Connection) -> None:
 def test_template_needs_a_name(conn: Connection, blank: str) -> None:
     with pytest.raises(ValueError):
         save_template(conn, blank, REQUEST)
+
+
+def test_C35_stop_never_overwrites_a_campaign_finished_meanwhile(conn: Connection) -> None:
+    campaign_id = create_campaign(conn, REQUEST, STEPS, NOW)
+    set_status(conn, campaign_id, "done", NOW, "Objectif atteint : 1 prospect qualifié.")
+    assert set_status(conn, campaign_id, "stopping", NOW, only_from=("queued", "running")) is False
+    campaign = load_campaign(conn, campaign_id)
+    assert (campaign.status, campaign.stop_reason) == (
+        "done",
+        "Objectif atteint : 1 prospect qualifié.",
+    )

@@ -77,10 +77,9 @@ def create_campaign(engine: Engine, request: CampaignRequest, now: datetime) -> 
 
 
 def request_stop(engine: Engine, campaign_id: int, now: datetime) -> None:
-    """La campagne s'arrêtera à la prochaine étape ; ce qui est trouvé est gardé (C35)."""
+    """Arrêt à la prochaine étape, les trouvés sont gardés (C35) ; rien si elle est finie."""
     with engine.begin() as conn:
-        if load_campaign(conn, campaign_id).status in {"queued", "running"}:
-            set_status(conn, campaign_id, "stopping", now)
+        if set_status(conn, campaign_id, "stopping", now, only_from=("queued", "running")):
             add_event(conn, campaign_id, now, "info", "Arrêt demandé")
 
 

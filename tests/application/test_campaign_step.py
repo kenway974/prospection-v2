@@ -66,8 +66,9 @@ def test_C37_C07_stops_at_free_quota_with_reason_and_keeps_prospects(campaign_db
     run_all(campaign_db, campaign_id, client)
     state = progress(campaign_db, campaign_id)
     assert state.stop_reason == (
-        "Quota gratuit de Google atteint pour ce mois (plafond 0 €). Relevez le plafond "
-        "dans Réglages → Budget Google, ou attendez le 1er du mois."
+        "Quota gratuit de Google atteint pour ce mois : 1 qualifié sur 5 voulus, gardés. "
+        "Pour continuer, relevez le plafond dans Réglages → Budget Google, "
+        "ou attendez le 1er du mois."
     )
     assert (state.qualified, len(recorder.requests), usage(campaign_db)) == (1, 1, (1000, 0))
 

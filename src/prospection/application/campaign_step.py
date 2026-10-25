@@ -17,6 +17,7 @@ from prospection.application.budget_settings import current_budget
 from prospection.application.page_results import save_page
 from prospection.domain.google_cost import Pricing, billing_month, call_cost_cents, can_call
 from prospection.domain.services import Service
+from prospection.domain.stop_reasons import budget_reached, exhausted, goal_reached
 from prospection.sources.google_search import GoogleBusy, GoogleRefused, search_page
 from prospection.storage.campaign_steps import Step, count_attempt, next_step, skip_step
 from prospection.storage.campaigns import add_counts, add_event, load_campaign, set_status
@@ -26,10 +27,6 @@ from prospection.storage.secret_box import SecretBox
 RETRY_DELAYS = (timedelta(seconds=5), timedelta(seconds=30), timedelta(seconds=120))
 BUSY = "Google trop sollicité"
 UNSAVED = "Page de résultats impossible à enregistrer"
-QUOTA_REACHED = (
-    "Quota gratuit de Google atteint pour ce mois (plafond {budget}). Relevez le plafond "
-    "dans Réglages → Budget Google, ou attendez le 1er du mois."
-)
 NO_KEY = "Clé Google absente ou illisible : ajoutez-la dans Réglages → Clés API."
 logger = logging.getLogger(__name__)
 
@@ -84,14 +81,8 @@ def _stop_reason(engine: Engine, campaign_id: int) -> str | None:
     if c.status == "stopping":
         return "Arrêtée à votre demande : les prospects trouvés sont gardés."
     if c.qualified >= c.request.target:
-        return f"Objectif atteint : {c.qualified} prospects qualifiés."
-    if step is None:
-        plural = "qualifié" if c.qualified <= 1 else "qualifiés"
-        return (
-            "Plus de résultats sur Google Maps pour ces métiers et cette zone "
-            f"({c.qualified} {plural} sur {c.request.target} voulus)."
-        )
-    return None
+        return goal_reached(c.qualified)
+    return exhausted(c.qualified, c.request.target) if step is None else None
 
 
 def run_step(
@@ -113,9 +104,10 @@ def run_step(
         return run_step(engine, box, client, pricing, campaign_id, now)
     month = billing_month(now)
     if not _reserve_call(engine, pricing, campaign_id, month, now):
-        budget = current_budget(engine)
-        euros = f"{budget // 100} €" if budget % 100 == 0 else f"{budget / 100:.2f} €"
-        return _finish(engine, campaign_id, QUOTA_REACHED.format(budget=euros), now)
+        with engine.connect() as conn:
+            c = load_campaign(conn, campaign_id)
+        reason = budget_reached(current_budget(engine), c.qualified, c.request.target)
+        return _finish(engine, campaign_id, reason, now)
     try:
         page = search_page(client, key, step.query, step.bias, step.page_token)
     except GoogleBusy:

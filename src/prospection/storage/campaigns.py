@@ -63,12 +63,17 @@ def load_campaign(conn: Connection, campaign_id: int) -> Campaign:
 
 
 def set_status(
-    conn: Connection, campaign_id: int, status: str, now: datetime, reason: str | None = None
-) -> None:
+    conn: Connection, campaign_id: int, status: str, now: datetime, reason: str | None = None,
+    only_from: tuple[str, ...] | None = None,
+) -> bool:  # fmt: skip
+    """Vrai si l'état a changé ; `only_from` : seulement depuis ces états (pas de course)."""
     values: dict[str, object] = {"status": status, "updated_at": now}
     if reason is not None:
         values["stop_reason"] = reason
-    conn.execute(update(campaigns).where(campaigns.c.id == campaign_id).values(**values))
+    query = update(campaigns).where(campaigns.c.id == campaign_id)
+    if only_from is not None:
+        query = query.where(campaigns.c.status.in_(only_from))
+    return conn.execute(query.values(**values).returning(campaigns.c.id)).first() is not None
 
 
 def add_counts(

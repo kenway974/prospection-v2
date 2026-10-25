@@ -3,6 +3,10 @@
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+from prospection.domain.money import euros
+
+__all__ = ["euros", "long_day", "short_date", "short_datetime"]
+
 DAYS = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"]
 MONTHS = [
     "janvier",
@@ -34,10 +38,3 @@ def short_datetime(moment: datetime, timezone: str) -> str:
 def short_date(moment: datetime, timezone: str) -> str:
     """Ex. « 25/10/2026 »."""
     return moment.astimezone(ZoneInfo(timezone)).strftime("%d/%m/%Y")
-
-
-def euros(cents: int) -> str:
-    """Ex. 1250 → « 12,50 € », 0 → « 0 € »."""
-    if cents % 100 == 0:
-        return f"{cents // 100} €"
-    return f"{cents // 100},{cents % 100:02d} €"

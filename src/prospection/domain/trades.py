@@ -9,6 +9,7 @@ import unicodedata
 from collections.abc import Iterable, Sequence
 from importlib import resources
 from pathlib import Path
+from typing import Literal
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
@@ -29,6 +30,8 @@ class Trade(BaseModel):
     name_words: tuple[str, ...]
     maps_types: frozenset[str]
     naf_prefixes: tuple[str, ...]
+    family: Literal["batiment", "commerce"]
+    off_target_name_words: tuple[str, ...] = ()
 
 
 def normalize(text: str) -> str:

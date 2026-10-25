@@ -1,7 +1,13 @@
-"""Critères de qualification d'un établissement (C19 à C23, C30)."""
+"""Critères de qualification d'un établissement (C19 à C23, C30, C31, C33)."""
 
 from dataclasses import dataclass
 from typing import Literal
+
+from prospection.domain.category import category_verdict
+from prospection.domain.franchises import brand_match
+from prospection.domain.phones import is_mobile
+from prospection.domain.place import Place
+from prospection.domain.trades import Trade, normalize
 
 
 @dataclass(frozen=True)
@@ -11,3 +17,70 @@ class Criteria:
     website: Literal["any", "with", "without"] = "any"
     phone: Literal["any", "with", "mobile"] = "with"
     exclude_franchises: bool = True
+
+
+@dataclass(frozen=True)
+class Exclusions:
+    personal_franchises: frozenset[str]
+    blacklist_ids: frozenset[str]
+    blacklist_names: frozenset[str]
+
+
+@dataclass(frozen=True)
+class Verdict:
+    qualified: bool
+    reasons: tuple[str, ...]
+    to_check: tuple[str, ...]
+
+
+def _list_reasons(place: Place, criteria: Criteria, exclusions: Exclusions) -> list[str]:
+    reasons = []
+    if place.business_status == "CLOSED_PERMANENTLY":
+        reasons.append("Fermé définitivement")
+    if place.place_id in exclusions.blacklist_ids or (
+        normalize(place.name) in exclusions.blacklist_names
+    ):
+        reasons.append("Liste noire")
+    return reasons
+
+
+def _criteria_reasons(place: Place, criteria: Criteria) -> list[str]:
+    reasons = []
+    count = place.review_count
+    if criteria.max_reviews is not None and count > criteria.max_reviews:
+        reasons.append(f"Trop d'avis ({count})")
+    if criteria.min_reviews is not None and count < criteria.min_reviews:
+        reasons.append(f"Pas assez d'avis ({count})")
+    if criteria.website == "with" and not place.website:
+        reasons.append("Sans site")
+    if criteria.website == "without" and place.website:
+        reasons.append("Avec site")
+    if criteria.phone != "any" and not place.phone:
+        reasons.append("Sans téléphone")
+    elif criteria.phone == "mobile" and place.phone and not is_mobile(place.phone):
+        reasons.append("Pas de mobile")
+    return reasons
+
+
+def evaluate(
+    place: Place, trade: Trade | None, criteria: Criteria, exclusions: Exclusions
+) -> Verdict:
+    """Raisons d'exclusion (toutes) et points à vérifier ; un établissement sans note
+    n'est pas exclu pour ça (C20)."""
+    reasons = _list_reasons(place, criteria, exclusions)
+    to_check = []
+    brand = brand_match(place.name, exclusions.personal_franchises)
+    if brand and criteria.exclude_franchises:
+        kind, name = brand
+        if kind == "exclude":
+            reasons.append(f"Franchise ou chaîne ({name})")
+        else:
+            to_check.append(f"Nom proche de l'enseigne « {name} »")
+    if trade is not None:
+        verdict, detail = category_verdict(place, trade)
+        if verdict == "exclude":
+            reasons.append(f"Hors métier ({detail})")
+        elif verdict == "check":
+            to_check.append(detail)
+    reasons.extend(_criteria_reasons(place, criteria))
+    return Verdict(not reasons, tuple(reasons), tuple(to_check))

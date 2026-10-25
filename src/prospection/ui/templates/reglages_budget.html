@@ -6,6 +6,7 @@
 <p class="empty">Google Maps offre chaque mois un quota d'appels gratuit. Ce plafond dit combien l'app peut dépenser en plus : à 0 €, elle s'arrête avant de dépasser le gratuit et vous dit pourquoi.</p>
 <p class="secondary" role="status">Plafond actuel : {{ budget }} par mois —
 {%- if free_only %} l'app reste dans le quota gratuit de Google.{% else %} au-delà du quota gratuit de Google.{% endif %}</p>
+<p class="notice">L'app ne compte que ses propres appels. Si votre clé ou votre projet Google sert aussi à autre chose, le quota gratuit est partagé et Google peut facturer. Utilisez un projet Google réservé à cette app et, pour une garantie ferme, fixez une limite dans Google Cloud : Places API (New) → Quotas, par exemple 30 requêtes Text Search par jour.</p>
 <form method="post" action="/reglages/budget" class="group form">
   <label for="montant">Plafond mensuel (€, de 0 à 50)</label>
   <input id="montant" name="montant" inputmode="decimal" autocomplete="off" placeholder="0">

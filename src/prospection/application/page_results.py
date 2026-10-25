@@ -10,6 +10,7 @@ from prospection.domain.departments import postal_department
 from prospection.domain.foreign_zones import known_region, postal_region
 from prospection.domain.geo import distance_m
 from prospection.domain.place import Place
+from prospection.domain.territories import same_country
 from prospection.domain.trades import find_trade, load_trades
 from prospection.sources.google_search import SearchPage
 from prospection.storage.campaign_steps import Step, record_page
@@ -23,7 +24,7 @@ logger = logging.getLogger(__name__)
 def _outside_zone(place: Place, step: Step) -> str | None:
     """Pays d'après Google, puis département ou province (code postal), canton (région
     Google) ou rayon (distance au centre). Au moindre doute, l'établissement est gardé."""
-    if place.country and place.country != step.country:
+    if place.country and not same_country(place.country, step.country):
         return f"Hors zone ({place.country})"
     if step.region:
         found = _region_of(place, step.country)

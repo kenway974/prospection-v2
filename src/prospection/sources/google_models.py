@@ -1,5 +1,6 @@
 """Réponse de Google Places (New) : modèles de validation et conversion en Place."""
 
+import re
 from urllib.parse import urlsplit
 
 from pydantic import BaseModel
@@ -79,6 +80,12 @@ def _component(api: ApiPlace, kind: str) -> str | None:
     return clip(found.shortText or found.longText, 60) if found else None
 
 
+def _country(api: ApiPlace) -> str | None:
+    """Code ISO à deux lettres seulement : un nom long (« Belgique ») ne se compare pas."""
+    code = _component(api, "country")
+    return code if code and re.fullmatch(r"[A-Z]{2}", code) else None
+
+
 def to_place(api: ApiPlace) -> Place:
     hours = api.regularOpeningHours.weekdayDescriptions if api.regularOpeningHours else []
     return Place(
@@ -98,6 +105,6 @@ def to_place(api: ApiPlace) -> Place:
         maps_url=_web_link(api.googleMapsUri),
         photo_count=len(api.photos),
         owner_photo_estimate=_ownership(api),
-        country=_component(api, "country"),
+        country=_country(api),
         admin_area=_component(api, "administrative_area_level_1"),
     )

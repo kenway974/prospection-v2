@@ -83,3 +83,19 @@ def test_C123_swiss_canton_checked_when_google_names_it(campaign_db: Engine) -> 
         ("qualifiés", 2),
         ("Hors zone", 1),
     ]
+
+
+def test_C123_overseas_france_is_france(campaign_db: Engine) -> None:
+    reunion = CityZone("Saint-Denis", "97411", -20.88, 55.45)
+    place = {**api_place(1), **_in("RE"), "location": {"latitude": -20.88, "longitude": 55.45}}
+    lyon_like = {**api_place(2), **_in("FR"), "location": {"latitude": -20.88, "longitude": 55.45}}
+    assert _run(campaign_db, reunion, place, lyon_like) == [("qualifiés", 2)]
+
+
+def test_C123_country_long_name_alone_is_not_trusted(campaign_db: Engine) -> None:
+    liege = CityZone("Liège", "WAL", 50.6326, 5.5797, "BE")
+    long_only = {
+        **api_place(1), "location": {"latitude": 50.63, "longitude": 5.57},
+        "addressComponents": [{"shortText": "", "longText": "Belgique", "types": ["country"]}],
+    }  # fmt: skip
+    assert _run(campaign_db, liege, long_only) == [("qualifiés", 1)]

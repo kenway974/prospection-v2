@@ -2,7 +2,9 @@
 
 import phonenumbers
 
-REGIONS = ("FR", "RE", "GP", "MQ", "GF", "YT", "PM", "BL", "MF")
+from prospection.domain.territories import FRENCH_TERRITORIES
+
+REGIONS = FRENCH_TERRITORIES
 MOBILE_TYPES = {
     phonenumbers.PhoneNumberType.MOBILE,
     phonenumbers.PhoneNumberType.FIXED_LINE_OR_MOBILE,

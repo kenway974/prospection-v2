@@ -1,4 +1,4 @@
-"""Mobile ou fixe ? (C22) — France métropolitaine et outre-mer."""
+"""Mobile ou fixe ? (C22, C124) — France, outre-mer, Belgique, Suisse, Luxembourg, Monaco."""
 
 import phonenumbers
 
@@ -9,9 +9,11 @@ MOBILE_TYPES = {
 }
 
 
-def is_mobile(number: str) -> bool:
-    """Un numéro national est essayé dans chaque territoire français."""
-    for region in REGIONS:
+def is_mobile(number: str, country: str | None = None) -> bool:
+    """Un numéro international se suffit ; un numéro national est lu dans le pays de
+    l'établissement s'il est connu, sinon dans chaque territoire français."""
+    regions = (country,) if country and country != "FR" else REGIONS
+    for region in regions:
         try:
             parsed = phonenumbers.parse(number, region)
         except phonenumbers.NumberParseException:

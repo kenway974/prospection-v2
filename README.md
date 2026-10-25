@@ -7,7 +7,7 @@ Outil personnel pour trouver des prospects (Google Maps, entreprises récemment 
 - Spec : [docs/superpowers/specs/2026-10-24-prospection-v2-design.md](docs/superpowers/specs/2026-10-24-prospection-v2-design.md)
 - Feuille de route : [docs/superpowers/plans/2026-10-24-feuille-de-route.md](docs/superpowers/plans/2026-10-24-feuille-de-route.md)
 
-État : **lot 2 (campagne Google Maps)** — connexion, réglages et clés, recherche Google Maps en tâche de fond avec estimation du coût, critères, exclusions et suivi en direct. Les écrans Prospects et Terrain arrivent aux lots suivants.
+État : **lot 2 (campagne Google Maps)** — connexion, réglages et clés, recherche Google Maps en tâche de fond avec estimation du coût, critères, exclusions et suivi en direct. Recherche possible en France, Belgique, Suisse, Luxembourg et Monaco (villes, départements, provinces, cantons). Les écrans Prospects et Terrain arrivent aux lots suivants.
 
 ## Lancer en local
 
@@ -37,6 +37,8 @@ TZ=America/Los_Angeles uv run pytest --cov --cov-fail-under=80
 Les tests utilisent une base PostgreSQL temporaire sur `TEST_DATABASE_URL` (par défaut `postgresql+psycopg://postgres:postgres@localhost:5432/postgres`), créée puis supprimée à chaque lancement. Aucun appel réseau vers un service externe.
 
 Les tests de bout en bout (`pytest -m e2e`) tournent dans la CI sur l'image Docker construite : l'app et la tâche de fond, branchée sur un faux Google local (`python -m tests.e2e.fake_google 8099`) grâce au réglage `GOOGLE_PLACES_TEST_URL`. Ce réglage n'accepte qu'une adresse `http://127.0.0.1:…` ou `http://localhost:…`, et l'app refuse de démarrer s'il est défini avec `BEHIND_PROXY=true` : il ne peut pas servir en production. Ne jamais le définir sur Railway.
+
+Données hors de France : `src/prospection/data/villes_etrangeres.yaml` est généré depuis GeoNames (CC-BY 4.0) par `python scripts/build_foreign_cities.py cities1000.json` (fichier du paquet PyPI `geonamescache`) ; provinces et cantons sont écrits à la main dans `zones_etrangeres.yaml`.
 
 ## Déployer sur Railway
 

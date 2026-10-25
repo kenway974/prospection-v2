@@ -57,7 +57,7 @@ def _criteria_reasons(place: Place, criteria: Criteria) -> list[str]:
         reasons.append("Avec site")
     if criteria.phone != "any" and not place.phone:
         reasons.append("Sans téléphone")
-    elif criteria.phone == "mobile" and place.phone and not is_mobile(place.phone):
+    elif criteria.phone == "mobile" and place.phone and not is_mobile(place.phone, place.country):
         reasons.append("Pas de mobile")
     return reasons
 

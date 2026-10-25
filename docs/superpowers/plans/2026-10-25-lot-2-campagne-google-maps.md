@@ -294,10 +294,11 @@ Le fragment `_progress.html` est rafraîchi toutes les 3 s (`hx-trigger="every 3
 
 ### Task 11 : Pays francophones (C121 à C124), validée le 25/10/2026
 
-**Files :** `src/prospection/data/pays.yaml` (code, nom, code région Google, indicatif) et un fichier de villes et provinces / cantons par pays (`data/zones_be.yaml`, `zones_ch.yaml`, `zones_lu.yaml`, `zones_mc.yaml`, source ouverte citée en tête de fichier) ; zones avec un champ `country` (migration 0004 encore modifiable : rien n'est en production) ; `google_search._body` (code région du pays de l'étape) ; `page_results._outside_zone` (pays, puis province / canton) ; `domain/phones.py` (BE, CH, LU, MC) ; formulaire Recherche (choix du pays, France par défaut).
+**Files (fait) :** `data/zones_etrangeres.yaml` (pays, provinces, cantons) et `data/villes_etrangeres.yaml` (GeoNames, généré par `scripts/build_foreign_cities.py`) ; `domain/foreign_zones.py` ; zones avec un champ `country` (migration 0004 encore modifiable : rien n'est en production) ; `google_search._body` (code région du pays de l'étape) ; `page_results._outside_zone` (pays, puis province / canton) ; `domain/phones.py` (BE, CH, LU, MC) ; formulaire Recherche (choix du pays, France par défaut).
 
-- [ ] **Tests d'abord :** une zone « Liège (BE) » envoie `regionCode: BE` ; un établissement en France pour une zone belge est « Hors zone » ; « +32 470 12 34 56 » est un mobile ; le formulaire sans pays reste en France ; un modèle enregistré avant garde la France.
-- [ ] Code minimal, lint, types, tests ; **commit** par comportement.
+- [x] **Tests d'abord :** une zone « Liège (BE) » envoie `regionCode: BE` ; un établissement en France pour une zone belge est « Hors zone » ; « +32 470 12 34 56 » est un mobile ; le formulaire sans pays reste en France ; un modèle enregistré avant garde la France.
+- [x] Code minimal, lint, types, tests ; **commit** par comportement.
+- Décisions : `regionCode` oriente Google sans restreindre, le filtre « Hors zone » s'appuie sur `addressComponents` (palier Essentials, sans coût en plus) ; canton exclu seulement s'il est reconnu (au doute, gardé) ; un seul pays par campagne.
 
 ### Fin du lot
 

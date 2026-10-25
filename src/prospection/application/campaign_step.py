@@ -18,7 +18,12 @@ from prospection.application.page_results import save_page
 from prospection.domain.google_cost import Pricing, billing_month, call_cost_cents, can_call
 from prospection.domain.services import Service
 from prospection.domain.stop_reasons import budget_reached, exhausted, goal_reached
-from prospection.sources.google_search import GoogleBusy, GoogleRefused, search_page
+from prospection.sources.google_search import (
+    GoogleBusy,
+    GoogleRefused,
+    GoogleRejectedPage,
+    search_page,
+)
 from prospection.storage.campaign_steps import Step, count_attempt, next_step, skip_step
 from prospection.storage.campaigns import add_counts, add_event, load_campaign, set_status
 from prospection.storage.google_usage import add_call, lock_google, month_usage
@@ -60,16 +65,22 @@ def _reserve_call(
     return True
 
 
+def _skip(engine: Engine, campaign_id: int, step: Step, now: datetime, problem: str) -> StepOutcome:
+    with engine.begin() as conn:
+        skip_step(conn, step.id)
+        add_event(conn, campaign_id, now, "warning", f"{problem} : page ignorée")
+    return StepOutcome(done=False)
+
+
 def _retry_later(
     engine: Engine, campaign_id: int, step: Step, now: datetime, problem: str
 ) -> StepOutcome:
     """Nouvel essai après 5 s, 30 s puis 2 min ; ensuite la page est ignorée (C41)."""
     with engine.begin() as conn:
         attempts = count_attempt(conn, step.id)
-        if attempts > len(RETRY_DELAYS):
-            skip_step(conn, step.id)
-            add_event(conn, campaign_id, now, "warning", f"{problem} : page ignorée")
-            return StepOutcome(done=False)
+    if attempts > len(RETRY_DELAYS):
+        return _skip(engine, campaign_id, step, now, problem)
+    with engine.begin() as conn:
         add_event(conn, campaign_id, now, "warning", f"{problem} : nouvel essai bientôt")
     return StepOutcome(done=False, retry_at=now + RETRY_DELAYS[attempts - 1])
 
@@ -112,6 +123,8 @@ def run_step(
         page = search_page(client, key, step.query, step.bias, step.page_token)
     except GoogleBusy:
         return _retry_later(engine, campaign_id, step, now, BUSY)
+    except GoogleRejectedPage:
+        return _skip(engine, campaign_id, step, now, "Requête refusée par Google")
     except GoogleRefused as refused:
         return _finish(engine, campaign_id, str(refused), now)
     try:

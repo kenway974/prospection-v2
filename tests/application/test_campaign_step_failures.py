@@ -95,3 +95,17 @@ def test_C41_unexpected_error_saving_a_page_retried_then_skipped(
     assert len(recorder.requests) == 4  # 4 essais puis la page est ignorée : plus aucun appel
     events = [e.message for e in progress(campaign_db, campaign_id).recent_events]
     assert "Page de résultats impossible à enregistrer : page ignorée" in events
+
+
+def test_C41_request_refused_by_google_skips_only_that_page(campaign_db: Engine) -> None:
+    answers = iter([
+        httpx.Response(400, json={"error": {"status": "INVALID_ARGUMENT"}}),
+        httpx.Response(200, json={"places": [api_place(1)]}),
+    ])  # fmt: skip
+    client, _ = fake_client(lambda r: next(answers))
+    two_trades = request(target=1, trades=("cuisiniste", "fleuriste"))
+    campaign_id = create_campaign(campaign_db, two_trades, NOW)
+    run_all(campaign_db, campaign_id, client)
+    state = progress(campaign_db, campaign_id)
+    assert state.stop_reason == "Objectif atteint : 1 prospect qualifié."
+    assert "Requête refusée par Google : page ignorée" in [e.message for e in state.recent_events]

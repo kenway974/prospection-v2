@@ -32,6 +32,10 @@ class GoogleBusy(Exception):
     """Google ne répond pas ou demande de ralentir : réessayer plus tard."""
 
 
+class GoogleRejectedPage(Exception):
+    """Google refuse cette requête-là (400), pas la clé : on passe à la suivante."""
+
+
 class GoogleRefused(Exception):
     """Google refuse la requête (clé, API non activée…) ; le message dit quoi faire."""
 
@@ -67,6 +71,8 @@ def search_page(
         raise GoogleBusy
     if response.status_code >= 500:
         raise GoogleBusy
+    if response.status_code == 400 and "API_KEY_INVALID" not in response.text:
+        raise GoogleRejectedPage
     if response.status_code != 200:
         raise GoogleRefused(check_google_key_response(response).message)
     body = json_object(response)

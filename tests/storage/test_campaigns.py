@@ -19,7 +19,7 @@ from prospection.storage.campaigns import (
 )
 from prospection.storage.google_usage import add_call, lock_google, month_usage
 from prospection.storage.prospects import exclusion_counts, insert_prospect
-from prospection.storage.templates import list_templates, save_template
+from prospection.storage.templates import list_templates, save_template, template_exists
 
 NOW = datetime(2026, 10, 25, 8, 0, tzinfo=UTC)
 LYON = CityZone("Lyon", "69123", 45.76, 4.83)
@@ -89,8 +89,9 @@ def test_events_kept_newest_first(conn: Connection) -> None:
 
 
 def test_C18_template_saved_and_listed(conn: Connection) -> None:
+    assert template_exists(conn, "cuisinistes lyon") is False
     save_template(conn, "Cuisinistes Lyon", REQUEST)
-    save_template(conn, "Cuisinistes Lyon", REQUEST)
+    assert template_exists(conn, " cuisinistes LYON ") is True
     assert [(t.name, t.request) for t in list_templates(conn)] == [("Cuisinistes Lyon", REQUEST)]
 
 

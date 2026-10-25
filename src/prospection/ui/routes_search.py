@@ -10,6 +10,7 @@ from sqlalchemy import Engine
 from prospection.application.budget_settings import search_readiness
 from prospection.application.campaigns import latest_campaigns
 from prospection.application.search_screen import (
+    TemplateNameTaken,
     estimate_raw,
     find_city,
     launch,
@@ -116,5 +117,8 @@ async def launch_campaign(
         errors["google"] = NO_GOOGLE_KEY
     if errors:
         return _page(request, engine, box, form, errors, 400)
-    campaign_id = launch(engine, campaign, form.get("modele", ""), now)
+    try:
+        campaign_id = launch(engine, campaign, form.get("modele", ""), now)
+    except TemplateNameTaken as taken:
+        return _page(request, engine, box, form, {"modele": str(taken)}, 400)
     return RedirectResponse(f"/campagnes/{campaign_id}", status_code=303)

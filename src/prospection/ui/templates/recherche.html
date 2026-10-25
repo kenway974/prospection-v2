@@ -63,7 +63,8 @@
   </section>
   <section class="group form">
     <label for="modele">Enregistrer comme modèle (facultatif)</label>
-    <input id="modele" name="modele" placeholder="Nom du modèle" autocomplete="off">
+    <input id="modele" name="modele" value="{{ values.get('modele', '') }}" placeholder="Nom du modèle" autocomplete="off">
+    {{ error("modele") }}
   </section>
   <p id="estimation" class="secondary" role="status"></p>
   <button type="submit" class="button-primary">Lancer</button>

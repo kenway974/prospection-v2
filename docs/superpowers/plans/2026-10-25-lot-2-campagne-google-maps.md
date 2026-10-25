@@ -292,7 +292,7 @@ Le fragment `_progress.html` est rafraîchi toutes les 3 s (`hx-trigger="every 3
 - [ ] **Bout en bout :** lancer une campagne sur un faux Google. Le Suivi passe de 0 à N qualifiés, la raison d'arrêt s'affiche, et « Arrêter » fonctionne.
 - [ ] CI verte ; **commit**.
 
-### Task 11 : Pays francophones (C121 à C124) — après validation du propriétaire
+### Task 11 : Pays francophones (C121 à C124), validée le 25/10/2026
 
 **Files :** `src/prospection/data/pays.yaml` (code, nom, code région Google, indicatif) et un fichier de villes et provinces / cantons par pays (`data/zones_be.yaml`, `zones_ch.yaml`, `zones_lu.yaml`, `zones_mc.yaml`, source ouverte citée en tête de fichier) ; zones avec un champ `country` (migration 0004 encore modifiable : rien n'est en production) ; `google_search._body` (code région du pays de l'étape) ; `page_results._outside_zone` (pays, puis province / canton) ; `domain/phones.py` (BE, CH, LU, MC) ; formulaire Recherche (choix du pays, France par défaut).
 

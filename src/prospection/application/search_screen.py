@@ -13,7 +13,12 @@ from prospection.domain.google_cost import Estimate, Pricing, billing_month, est
 from prospection.domain.trades import expand_queries, load_trades
 from prospection.sources.geo_communes import GeoUnavailable, find_communes
 from prospection.storage.google_usage import month_usage
-from prospection.storage.templates import Template, list_templates, save_template
+from prospection.storage.templates import (
+    Template,
+    list_templates,
+    save_template,
+    template_exists,
+)
 
 
 def estimate_raw(engine: Engine, pricing: Pricing, raw: RawRequest, now: datetime) -> Estimate:
@@ -26,12 +31,19 @@ def estimate_raw(engine: Engine, pricing: Pricing, raw: RawRequest, now: datetim
     return estimate(pricing, pages, calls, spent, current_budget(engine))
 
 
+class TemplateNameTaken(ValueError):
+    def __init__(self) -> None:
+        super().__init__("Un modèle porte déjà ce nom : choisissez-en un autre.")
+
+
 def launch(engine: Engine, request: CampaignRequest, template: str, now: datetime) -> int:
-    campaign_id = create_campaign(engine, request, now)
+    """Lève TemplateNameTaken, sans rien lancer, si le nom de modèle est déjà pris (C18)."""
     if template.strip():
         with engine.begin() as conn:
+            if template_exists(conn, template):
+                raise TemplateNameTaken
             save_template(conn, template, request)
-    return campaign_id
+    return create_campaign(engine, request, now)
 
 
 def templates(engine: Engine) -> list[Template]:

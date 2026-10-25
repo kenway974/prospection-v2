@@ -188,7 +188,7 @@ Appliqués après validation (voir COMPORTEMENTS.md, qui fait foi) :
 - Les comportements C19 à C33 (critères) s'appliquent aussi au mode Terrain, avec un modèle de critères « Petit commerce » par défaut. **[choix Claude]**
 - **Aucune reprise** des données de l'ancienne app (liste noire, prospects contactés, franchises perso), décidé par le propriétaire : on repart de zéro avec une nouvelle approche d'appel. La liste de franchises fournie (C30) est reprise comme brique de code, pas comme donnée perso.
 
-**Pays francophones (demande du 25/10/2026)** **[choix Claude, à valider]**
+**Pays francophones (demande du 25/10/2026)** **[choix Claude, validé le 25/10/2026]**
 - Demande : « prospecter aussi en Belgique, Suisse, Luxembourg… les pays francophones ».
 - Pays retenus (hypothèse) : **France, Belgique, Suisse, Luxembourg, Monaco**. Mêmes fuseau horaire, RGPD (Suisse : nLPD, proche) et façon de travailler. **Québec et Afrique francophone exclus pour l'instant** : autre fuseau, autres registres, autres règles d'appel ; ils pourront s'ajouter par le fichier de données des pays.
 - Langue : **français seulement**. En Flandre ou en Suisse alémanique, la recherche marche mais sans synonymes en néerlandais ou en allemand.

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Budget Google · Prospection{% endblock %}
+{% block content %}
+<a href="/reglages" class="back">Réglages</a>
+<h1 class="large-title">Budget Google</h1>
+<p class="empty">Plafond de dépense Google Maps par mois. L'app refuse tout appel payant au-delà.</p>
+{% if budget %}<p class="secondary">Budget actuel : {{ budget }} par mois</p>{% endif %}
+<form method="post" action="/reglages/budget" class="group form">
+  <label for="montant">Montant mensuel (€)</label>
+  <input id="montant" name="montant" inputmode="decimal" autocomplete="off" placeholder="25">
+  {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+  <button type="submit" class="button-primary">Enregistrer</button>
+</form>
+{% endblock %}

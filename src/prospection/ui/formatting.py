@@ -34,3 +34,8 @@ def short_datetime(moment: datetime, timezone: str) -> str:
 def short_date(moment: datetime, timezone: str) -> str:
     """Ex. « 25/10/2026 »."""
     return moment.astimezone(ZoneInfo(timezone)).strftime("%d/%m/%Y")
+
+
+def euros(cents: int) -> str:
+    """Ex. 1250 → « 12,50 € »."""
+    return f"{cents // 100},{cents % 100:02d} €"

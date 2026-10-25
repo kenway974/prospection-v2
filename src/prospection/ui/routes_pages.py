@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, Response
 from sqlalchemy import Engine
 
+from prospection.application.budget_settings import search_readiness
 from prospection.application.connection_journal import JOURNAL_SIZE, latest_attempts
 from prospection.config import Settings
 from prospection.ui.deps import get_engine, get_now, get_settings, templates
@@ -40,8 +41,8 @@ def field(request: Request) -> Response:
 
 
 @router.get("/recherche", response_class=HTMLResponse)
-def search(request: Request) -> Response:
-    return _page(request, "recherche.html", "search")
+def search(request: Request, engine: Engine = Depends(get_engine)) -> Response:  # noqa: B008
+    return _page(request, "recherche.html", "search", readiness=search_readiness(engine))
 
 
 @router.get("/reglages/connexions", response_class=HTMLResponse)

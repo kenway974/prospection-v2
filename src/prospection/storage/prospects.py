@@ -13,11 +13,6 @@ from prospection.storage.schema_campaigns import prospects
 TO_CALL = "à appeler"
 
 
-def seen_place_ids(conn: Connection, campaign_id: int) -> set[str]:
-    p = prospects.c
-    return set(conn.scalars(select(p.place_id).where(p.campaign_id == campaign_id)))
-
-
 def insert_prospect(
     conn: Connection, campaign_id: int, place: Place, keyword: str, verdict: Verdict,
     now: datetime,

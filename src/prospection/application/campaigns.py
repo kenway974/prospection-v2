@@ -1,5 +1,6 @@
 """Créer, arrêter et suivre une campagne (C10 à C15, C34, C35, C119)."""
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -8,7 +9,7 @@ from sqlalchemy.exc import NoResultFound
 
 from prospection.domain.campaign_request import CampaignRequest, CityZone, RadiusZone, Zone
 from prospection.domain.place import Circle
-from prospection.domain.trades import expand_queries, load_trades
+from prospection.domain.trades import expand_queries, load_trades, normalize
 from prospection.storage.campaign_steps import StepSpec
 from prospection.storage.campaigns import (
     Campaign,
@@ -49,14 +50,23 @@ def _zone_step(query: str, keyword: str, zone: Zone) -> StepSpec:
     return StepSpec(f"{query} {zone.name}", keyword, zone.label, None)
 
 
-def build_steps(request: CampaignRequest) -> list[StepSpec]:
-    """Une étape par requête (mot-clé ou synonyme) et par zone."""
+def plan_steps(keywords: Sequence[str], zones: Sequence[Zone], synonyms_on: bool) -> list[StepSpec]:
+    """Une étape par requête (mot-clé ou synonyme) et par zone, sans doublon : un doublon
+    serait payé deux fois sans rien trouver de neuf."""
     trades = load_trades()
     steps: list[StepSpec] = []
-    for keyword in request.trades:
-        for query in expand_queries([keyword], trades, request.synonyms_on):
-            steps.extend(_zone_step(query, keyword, zone) for zone in request.zones)
+    seen: set[tuple[str, Zone]] = set()
+    for keyword in keywords:
+        for query in expand_queries([keyword], trades, synonyms_on):
+            for zone in zones:
+                if (normalize(query), zone) not in seen:
+                    seen.add((normalize(query), zone))
+                    steps.append(_zone_step(query, keyword, zone))
     return steps
+
+
+def build_steps(request: CampaignRequest) -> list[StepSpec]:
+    return plan_steps(request.trades, request.zones, request.synonyms_on)
 
 
 def create_campaign(engine: Engine, request: CampaignRequest, now: datetime) -> int:

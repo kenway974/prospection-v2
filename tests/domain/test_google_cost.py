@@ -46,7 +46,7 @@ def test_C16_estimate_beyond_quota() -> None:
 
 
 def test_pages_needed_is_the_maximum() -> None:
-    assert pages_needed(queries=3, zones=2) == 18
+    assert pages_needed(steps=6) == 18
 
 
 def test_pricing_file_is_valid(tmp_path: Path) -> None:

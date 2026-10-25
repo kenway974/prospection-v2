@@ -75,5 +75,6 @@ def estimate(
     return Estimate(pages, free_pages, paid_cents, spent_cents + paid_cents <= budget_cents)
 
 
-def pages_needed(queries: int, zones: int, max_pages: int = MAX_PAGES_PER_QUERY) -> int:
-    return queries * zones * max_pages
+def pages_needed(steps: int, max_pages: int = MAX_PAGES_PER_QUERY) -> int:
+    """Au pire : chaque étape (requête et zone) lit toutes ses pages."""
+    return steps * max_pages

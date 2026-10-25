@@ -75,3 +75,19 @@ def test_zone_labels() -> None:
     assert LYON.label == "Lyon (69)"
     assert RadiusZone(LYON, 15).label == "15 km autour de Lyon (69)"
     assert DepartmentZone("974", "La Réunion").label == "La Réunion (974)"
+
+
+def test_C10_C13_repeated_trades_and_zones_kept_once() -> None:
+    rhone = DepartmentZone("69", "Rhône")
+    request = validate_request(
+        raw(trades=["cuisiniste", " Cuisiniste ", "fleuriste"], zones=[LYON, rhone, LYON, rhone])
+    )
+    assert request.trades == ("cuisiniste", "fleuriste")
+    assert request.zones == (LYON, rhone)
+
+
+@pytest.mark.parametrize(("lat", "lon"), [(999.0, 4.8), (45.7, -181.0)])
+def test_C13_impossible_coordinates_refused(lat: float, lon: float) -> None:
+    with pytest.raises(InvalidRequest) as error:
+        validate_request(raw(zones=[CityZone("Lyon", "69123", lat, lon)]))
+    assert error.value.errors["zones"] == "Choisissez la commune dans la liste."

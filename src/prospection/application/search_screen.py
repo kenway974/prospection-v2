@@ -6,9 +6,9 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import Engine
 
 from prospection.application.budget_settings import current_budget
-from prospection.application.campaigns import create_campaign
+from prospection.application.campaigns import create_campaign, plan_steps
 from prospection.domain.campaign_request import CampaignRequest, RawRequest
-from prospection.domain.google_cost import Estimate, Pricing, estimate
+from prospection.domain.google_cost import Estimate, Pricing, estimate, pages_needed
 from prospection.domain.trades import expand_queries, load_trades
 from prospection.storage.google_usage import month_usage
 from prospection.storage.templates import Template, list_templates, save_template
@@ -18,8 +18,8 @@ def estimate_raw(
     engine: Engine, pricing: Pricing, raw: RawRequest, now: datetime, timezone: str
 ) -> Estimate:
     """Coût au pire de la demande telle que saisie (même incomplète)."""
-    queries = expand_queries([t for t in raw.trades if t.strip()], load_trades(), raw.synonyms_on)
-    pages = len(queries) * len(raw.zones) * 3
+    keywords = [t.strip() for t in raw.trades if t.strip()]
+    pages = pages_needed(len(plan_steps(keywords, raw.zones, raw.synonyms_on)))
     month = now.astimezone(ZoneInfo(timezone)).strftime("%Y-%m")
     with engine.connect() as conn:
         calls, spent = month_usage(conn, month)

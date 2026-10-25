@@ -12,7 +12,7 @@ from prospection.storage.campaign_codec import decode_request, encode_request
 from prospection.storage.campaign_steps import StepSpec, next_step, record_page
 from prospection.storage.campaigns import add_event, create_campaign, load_campaign, recent_events
 from prospection.storage.google_usage import add_call, lock_google, month_usage
-from prospection.storage.prospects import exclusion_counts, insert_prospect, seen_place_ids
+from prospection.storage.prospects import exclusion_counts, insert_prospect
 from prospection.storage.templates import list_templates, save_template
 
 NOW = datetime(2026, 10, 25, 8, 0, tzinfo=UTC)
@@ -56,7 +56,8 @@ def test_C38_unique_place_per_campaign(conn: Connection) -> None:
     verdict = Verdict(False, ("Trop d'avis (40)",), ())
     assert insert_prospect(conn, campaign_id, PLACE, "cuisiniste", verdict, NOW) is True
     assert insert_prospect(conn, campaign_id, PLACE, "cuisine sur mesure", verdict, NOW) is False
-    assert seen_place_ids(conn, campaign_id) == {"p1"}
+    keywords = conn.exec_driver_sql("SELECT place_id, keywords FROM prospects").all()
+    assert keywords == [("p1", ["cuisiniste", "cuisine sur mesure"])]
     assert exclusion_counts(conn, campaign_id) == [("Trop d'avis", 1)]
     campaign = load_campaign(conn, campaign_id)
     assert campaign.request == REQUEST and campaign.status == "queued"

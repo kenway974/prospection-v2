@@ -136,7 +136,7 @@ Celles des lots 0 et 1, plus :
 
 ### Task 4 : Critères de qualification (C19 à C23, C30, C31, C33, C38)
 
-**Files :** create `src/prospection/domain/criteria.py`, `src/prospection/domain/phones.py`, `src/prospection/domain/franchises.py`, `data/franchises.yaml`, `src/prospection/domain/dedup.py` ; tests correspondants dans `tests/domain/`.
+**Files :** create `src/prospection/domain/criteria.py`, `src/prospection/domain/phones.py`, `src/prospection/domain/franchises.py`, `data/franchises.yaml` ; tests correspondants dans `tests/domain/`.
 
 **Interfaces :**
 - `Criteria(min_reviews: int | None, max_reviews: int | None, website: Literal["any","with","without"], phone: Literal["any","with","mobile"], exclude_franchises: bool)`.

@@ -1,8 +1,10 @@
 """Demande de campagne et sa validation (C10 à C14, C17)."""
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 
 from prospection.domain.criteria import Criteria
+from prospection.domain.trades import normalize
 
 MAX_TARGET = 200
 MAX_RADIUS_KM = 50
@@ -73,10 +75,25 @@ class InvalidRequest(ValueError):
         self.errors = errors
 
 
+def _unique(trades: Iterable[str]) -> tuple[str, ...]:
+    kept: dict[str, str] = {}
+    for trade in trades:
+        kept.setdefault(normalize(trade), trade)
+    return tuple(kept.values())
+
+
+def _plausible(zone: Zone) -> bool:
+    city = zone.city if isinstance(zone, RadiusZone) else zone
+    if isinstance(city, DepartmentZone):
+        return True
+    return -90 <= city.lat <= 90 and -180 <= city.lon <= 180
+
+
 def validate_request(raw: RawRequest) -> CampaignRequest:
     """Refuse une demande incomplète en disant quoi corriger, champ par champ."""
     name = raw.name.strip()
-    trades = tuple(t.strip() for t in raw.trades if t.strip())
+    trades = _unique(t.strip() for t in raw.trades if normalize(t))
+    zones = tuple(dict.fromkeys(raw.zones))  # une zone en double serait payée deux fois
     errors: dict[str, str] = {}
     if not name:
         errors["name"] = "Donnez un nom à la campagne."
@@ -88,10 +105,10 @@ def validate_request(raw: RawRequest) -> CampaignRequest:
         isinstance(z, RadiusZone) and not 1 <= z.radius_km <= MAX_RADIUS_KM for z in raw.zones
     ):
         errors["zones"] = "Choisissez un rayon entre 1 et 50 km."
+    elif not all(_plausible(z) for z in zones):
+        errors["zones"] = "Choisissez la commune dans la liste."
     if not 1 <= raw.target <= MAX_TARGET:
         errors["target"] = "Choisissez entre 1 et 200 prospects."
     if errors:
         raise InvalidRequest(errors)
-    return CampaignRequest(
-        name, trades, tuple(raw.zones), raw.target, raw.criteria, raw.synonyms_on
-    )
+    return CampaignRequest(name, trades, zones, raw.target, raw.criteria, raw.synonyms_on)

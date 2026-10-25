@@ -17,13 +17,15 @@ def _department(insee_code: str) -> str:
 @dataclass(frozen=True)
 class CityZone:
     name: str
-    insee_code: str
+    insee_code: str  # vide hors de France
     lat: float
     lon: float
+    country: str = "FR"
 
     @property
     def label(self) -> str:
-        return f"{self.name} ({_department(self.insee_code)})"
+        where = _department(self.insee_code) if self.country == "FR" else self.country
+        return f"{self.name} ({where})"
 
 
 @dataclass(frozen=True)
@@ -38,12 +40,15 @@ class RadiusZone:
 
 @dataclass(frozen=True)
 class DepartmentZone:
+    """Département (France), province (Belgique) ou canton (Suisse, Luxembourg)."""
+
     code: str
     name: str
+    country: str = "FR"
 
     @property
     def label(self) -> str:
-        return f"{self.name} ({self.code})"
+        return f"{self.name} ({self.code if self.country == 'FR' else self.country})"
 
 
 Zone = CityZone | RadiusZone | DepartmentZone

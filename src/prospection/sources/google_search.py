@@ -47,9 +47,11 @@ class SearchPage:
     skipped: int
 
 
-def _body(query: str, bias: Circle | None, page_token: str | None) -> dict[str, Any]:
+def _body(
+    query: str, bias: Circle | None, page_token: str | None, region_code: str
+) -> dict[str, Any]:
     body: dict[str, Any] = {
-        "textQuery": query, "pageSize": PAGE_SIZE, "languageCode": "fr", "regionCode": "FR",
+        "textQuery": query, "pageSize": PAGE_SIZE, "languageCode": "fr", "regionCode": region_code,
     }  # fmt: skip
     if page_token:
         body["pageToken"] = page_token
@@ -60,12 +62,15 @@ def _body(query: str, bias: Circle | None, page_token: str | None) -> dict[str, 
 
 
 def search_page(
-    client: httpx.Client, key: str, query: str, bias: Circle | None, page_token: str | None
-) -> SearchPage:
+    client: httpx.Client, key: str, query: str, bias: Circle | None, page_token: str | None,
+    region_code: str = "FR",
+) -> SearchPage:  # fmt: skip
+    """`region_code` : pays de la zone (FR, BE, CH, LU, MC) ; il oriente Google, sans restreindre.
+    Le filtre « Hors zone » écarte ensuite ce qui est hors du pays (C121, C123)."""
     headers = {"X-Goog-Api-Key": key, "X-Goog-FieldMask": FIELD_MASK}
     response = send(
         client, "POST", SEARCH_TEXT_URL, "Google Maps", headers=headers,
-        json=_body(query, bias, page_token),
+        json=_body(query, bias, page_token, region_code),
     )  # fmt: skip
     if isinstance(response, KeyCheck) or response.status_code == 429:
         raise GoogleBusy

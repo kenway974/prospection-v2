@@ -120,7 +120,7 @@ def run_step(
         reason = budget_reached(current_budget(engine), c.qualified, c.request.target)
         return _finish(engine, campaign_id, reason, now)
     try:
-        page = search_page(client, key, step.query, step.bias, step.page_token)
+        page = search_page(client, key, step.query, step.bias, step.page_token, step.country)
     except GoogleBusy:
         return _retry_later(engine, campaign_id, step, now, BUSY)
     except GoogleRejectedPage:

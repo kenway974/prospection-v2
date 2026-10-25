@@ -44,11 +44,17 @@ class Progress:
 def _zone_step(query: str, keyword: str, zone: Zone) -> StepSpec:
     if isinstance(zone, CityZone):
         bias = Circle(zone.lat, zone.lon, CITY_BIAS_M)
-        return StepSpec(f"{query} {zone.name}", keyword, zone.label, bias)
+        return StepSpec(f"{query} {zone.name}", keyword, zone.label, bias, country=zone.country)
     if isinstance(zone, RadiusZone):
         bias = Circle(zone.city.lat, zone.city.lon, zone.radius_km * 1000)
-        return StepSpec(f"{query} {zone.city.name}", keyword, zone.label, bias, True)
-    return StepSpec(f"{query} {zone.name}", keyword, zone.label, None, department=zone.code)
+        return StepSpec(
+            f"{query} {zone.city.name}", keyword, zone.label, bias, True, country=zone.city.country
+        )
+    department = zone.code if zone.country == "FR" else None
+    return StepSpec(
+        f"{query} {zone.name}", keyword, zone.label, None, department=department,
+        country=zone.country,
+    )  # fmt: skip
 
 
 def plan_steps(keywords: Sequence[str], zones: Sequence[Zone], synonyms_on: bool) -> list[StepSpec]:

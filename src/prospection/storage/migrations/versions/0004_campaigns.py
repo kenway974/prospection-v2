@@ -39,6 +39,7 @@ def upgrade() -> None:
         sa.Column("bias", JSONB),
         sa.Column("restrict_to_bias", sa.Boolean, nullable=False, server_default=sa.false()),
         sa.Column("department", sa.Text),
+        sa.Column("country", sa.Text, nullable=False, server_default="FR"),
         sa.Column("page_token", sa.Text),
         sa.Column("page_number", sa.Integer, nullable=False, server_default="0"),
         sa.Column("done", sa.Boolean, nullable=False, server_default=sa.false()),

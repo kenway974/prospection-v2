@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Réglages · Prospection{% endblock %}
+{% block content %}
+<a href="/" class="back">Aujourd'hui</a>
+<h1 class="large-title">Réglages</h1>
+<ul class="group">
+  <li><a href="/reglages/cles" class="row link-row"><span>Clés API</span><span class="secondary">Google, Notion, Sirène</span></a></li>
+  <li><a href="/reglages/crm" class="row link-row"><span>CRM</span><span class="secondary">Notion ou aucun</span></a></li>
+  <li><a href="/reglages/budget" class="row link-row"><span>Budget Google</span><span class="secondary">plafond par mois</span></a></li>
+  <li><a href="/reglages/connexions" class="row link-row"><span>Connexions</span><span class="secondary">journal</span></a></li>
+</ul>
+{% endblock %}

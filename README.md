@@ -45,6 +45,7 @@ Les tests de bout en bout (`pytest -m e2e`) tournent dans la CI sur l'image Dock
    - `DATABASE_URL` : l'URL de la base Railway, en remplaçant `postgresql://` par `postgresql+psycopg://` ;
    - `SESSION_SECRET` : 32 caractères aléatoires ou plus ;
    - `APP_PASSWORD_HASH` : la sortie de `python -m prospection.cli hash-password` ;
+   - `ENCRYPTION_KEY` : la sortie de `python -m prospection.cli generate-encryption-key`. Elle chiffre les clés API en base : **gardez-en une copie** (si elle change, les clés enregistrées devront être saisies à nouveau) ;
    - `BEHIND_PROXY=true`, `TIMEZONE=Europe/Paris`.
 4. Dans les réglages du service, activer **« Wait for CI »** : `main` n'est déployée que si la CI est verte (C97).
 5. Générer un domaine public (HTTPS fourni par Railway).
@@ -57,6 +58,16 @@ Le conteneur applique les migrations au démarrage, puis lance l'app. Railway v�
 - Une session dure 30 jours sans utilisation et 90 jours au plus après la connexion.
 - Le journal des connexions garde 90 jours d'historique.
 - Pour fermer tout de suite toutes les sessions ouvertes (téléphone perdu, par exemple), changer `SESSION_SECRET` ou le mot de passe.
+
+## Clés API (dans l'app : Réglages → Clés API)
+
+Chaque clé est chiffrée en base et ne s'affiche plus jamais. Le bouton « Tester » vérifie qu'elle marche (appel gratuit).
+
+- **Google Maps** : [Google Cloud Console](https://console.cloud.google.com/) → créer un projet → activer **« Places API (New) »** et la facturation → Identifiants → Créer une clé API. Conseillé : restreindre la clé à « Places API (New) ».
+- **Notion** : [notion.so/profile/integrations](https://www.notion.so/profile/integrations) → Nouvelle intégration interne → copier le **secret**. Puis, dans Notion, ouvrir la base **Prospects v2** (page DEV → 11. Prospection v2 (CRM)) → menu ••• → Connexions → ajouter l'intégration.
+- **Sirène (INSEE)** : [portail-api.insee.fr](https://portail-api.insee.fr/) → créer un compte et une application → s'abonner à l'**API Sirene** → copier la clé d'API.
+
+Ensuite : Réglages → **CRM** (Notion et la base « Prospects v2 », ou aucun) et **Budget Google** : 0 € par défaut, l'app reste alors dans le quota gratuit mensuel de Google ; un plafond de 0 à 50 € autorise une dépense au-delà.
 
 ## Installer l'app sur Android
 

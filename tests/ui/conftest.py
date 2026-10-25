@@ -3,6 +3,7 @@
 from collections.abc import Iterator
 
 import pytest
+from cryptography.fernet import Fernet
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
 from sqlalchemy import Engine
@@ -20,6 +21,7 @@ def settings(database_url: str) -> Settings:
         database_url=database_url,
         session_secret=SecretStr("s" * 32),
         app_password_hash=SecretStr(hash_password(PASSWORD)),
+        encryption_key=SecretStr(Fernet.generate_key().decode()),
     )
 
 

@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Budget Google · Prospection{% endblock %}
+{% block content %}
+<a href="/reglages" class="back">Réglages</a>
+<h1 class="large-title">Budget Google</h1>
+<p class="empty">Google Maps offre chaque mois un quota d'appels gratuit. Ce plafond dit combien l'app peut dépenser en plus : à 0 €, elle s'arrête avant de dépasser le gratuit et vous dit pourquoi.</p>
+<p class="secondary" role="status">Plafond actuel : {{ budget }} par mois —
+{%- if free_only %} l'app reste dans le quota gratuit de Google.{% else %} au-delà du quota gratuit de Google.{% endif %}</p>
+<form method="post" action="/reglages/budget" class="group form">
+  <label for="montant">Plafond mensuel (€, de 0 à 50)</label>
+  <input id="montant" name="montant" inputmode="decimal" autocomplete="off" placeholder="0">
+  {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+  <button type="submit" class="button-primary">Enregistrer</button>
+</form>
+{% endblock %}

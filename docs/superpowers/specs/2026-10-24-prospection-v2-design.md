@@ -69,6 +69,7 @@ Fuseau horaire : **`Europe/Paris` par défaut** (décision du propriétaire, 25/
 | Navigation | Barre **flottante**, une seule ligne, 4 onglets : Aujourd'hui, Prospects, Terrain, Recherche. |
 | Style | Épuré, proche d'iOS (police système, listes groupées, beaucoup d'air), **petite touche 974** (logo volcan + rayons, bleu océan). Aucune « marque » d'interface générée par IA. |
 | Maquettes | Les 7 écrans sont validés en l'état. |
+| Coût Google | **0 € par défaut** (décision du propriétaire, 25/10/2026) : l'app reste dans le quota gratuit mensuel de Google Places et s'arrête avant de le dépasser, en disant pourquoi. Un plafond de 0 à 50 € par mois peut autoriser une dépense au-delà. Le seul coût fixe reste Railway (~20 €/mois). |
 | CRM | **Notion seulement** au départ (HubSpot reporté). Base dédiée créée dans DEV : page « 11. Prospection v2 (CRM) », base **Prospects v2** (https://app.notion.com/p/ebbf6ef71a4945bf8575a326c745d824). |
 
 ## 5. Parcours et écrans

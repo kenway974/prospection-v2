@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}Clés API · Prospection{% endblock %}
+{% block content %}
+<a href="/reglages" class="back">Réglages</a>
+<h1 class="large-title">Clés API</h1>
+<p class="empty">Une clé enregistrée est chiffrée et ne s'affiche plus jamais. Pour la changer, collez la nouvelle.</p>
+{% for key in keys %}{% include "_cle.html" %}{% endfor %}
+{% endblock %}

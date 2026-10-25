@@ -1,9 +1,10 @@
 """Pages d'erreur en français, sans trace technique."""
 
 import logging
-from urllib.parse import quote
+from urllib.parse import quote, urlsplit
 
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import RedirectResponse, Response
 from sqlalchemy.exc import OperationalError
 from starlette.exceptions import HTTPException
@@ -38,8 +39,28 @@ async def _http_error(request: Request, exc: Exception) -> Response:
     return _error_page(request, HTTP_MESSAGES.get(status, BAD_REQUEST), status)
 
 
+async def _invalid_request(request: Request, exc: Exception) -> Response:
+    # Jamais la réponse JSON par défaut, qui recopie les valeurs reçues (une clé, par ex.).
+    return _error_page(request, BAD_REQUEST, 400)
+
+
+def _page_shown(request: Request, header: str) -> str:
+    """Chemin de la page affichée (même site seulement), sinon l'accueil."""
+    url = urlsplit(request.headers.get(header, ""))
+    same_site = url.netloc == request.headers.get("host")
+    return url.path if same_site and url.path.startswith("/") else "/"
+
+
 async def _login_required(request: Request, exc: Exception) -> Response:
-    path = exc.path if isinstance(exc, LoginRequired) else "/"
+    if request.headers.get("hx-request") == "true":
+        # Requête HTMX : toute la page part vers la connexion, puis revient sur la page affichée.
+        page = _page_shown(request, "hx-current-url")
+        return Response(status_code=200, headers={"HX-Redirect": f"/connexion?suite={quote(page)}"})
+    if request.method == "GET":
+        path = exc.path if isinstance(exc, LoginRequired) else "/"
+    else:
+        # Après connexion, on revient sur la page du formulaire, pas sur l'adresse de l'action.
+        path = _page_shown(request, "referer")
     return RedirectResponse(f"/connexion?suite={quote(path)}", status_code=303)
 
 
@@ -59,5 +80,6 @@ async def _unexpected(request: Request, exc: Exception) -> Response:
 def install_error_handlers(app: FastAPI) -> None:
     app.add_exception_handler(LoginRequired, _login_required)
     app.add_exception_handler(HTTPException, _http_error)
+    app.add_exception_handler(RequestValidationError, _invalid_request)
     app.add_exception_handler(OperationalError, _database_down)
     app.add_exception_handler(Exception, _unexpected)

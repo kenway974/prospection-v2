@@ -52,11 +52,14 @@ a { color: var(--ocean); }
 .form input { min-height: 48px; padding: 0 14px; border: 0; border-radius: 10px;
   background: var(--bg); font: 17px var(--font); color: var(--ink); }
 
-.button-primary, .button-danger { display: flex; justify-content: center; align-items: center;
+.button-primary, .button-danger, .button-secondary { display: flex; justify-content: center; align-items: center;
   width: 100%; min-height: 52px; border: 0; border-radius: var(--radius);
   font: 600 17px var(--font); text-decoration: none; cursor: pointer; }
 .button-primary { background: var(--ocean); color: #FFFFFF; }
 .button-danger { background: var(--card); color: var(--danger); }
+.button-secondary { background: var(--ocean-soft); color: var(--ocean); }
+.htmx-indicator { display: none; }
+.htmx-request .htmx-indicator, .htmx-request.htmx-indicator { display: inline; }
 .icon-button { display: flex; justify-content: center; align-items: center;
   width: 44px; height: 44px; color: var(--ocean); }
 
@@ -71,3 +74,17 @@ a { color: var(--ocean); }
 .tab[aria-current="page"] { background: var(--ocean-soft); color: var(--ocean); font-weight: 600; }
 :focus-visible { outline: 3px solid var(--ocean); outline-offset: 2px;
   box-shadow: 0 0 0 5px var(--sun); }
+
+.link-row { color: var(--ink); text-decoration: none; }
+.link-row::after { content: "›"; color: var(--hairline); font-size: 22px; }
+.row-title { margin: 0; font-size: 17px; font-weight: 600; }
+.key-card .form + .form { padding-top: 0; }
+.choices { margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 4px; }
+.choices legend { padding: 0; margin-bottom: 6px; font-size: 15px; color: var(--secondary); }
+.choice { display: flex; align-items: center; gap: 12px; min-height: 44px; font-size: 17px;
+  color: var(--ink); }
+.choice input { width: 22px; height: 22px; accent-color: var(--ocean); }
+.form select { min-height: 48px; padding: 0 12px; border: 0; border-radius: 10px;
+  background: var(--bg); font: 17px var(--font); color: var(--ink); }
+.notice { margin: 0; padding: 14px 16px; border-radius: var(--radius); background: #FFF6D6;
+  color: var(--ink); font-size: 15px; }

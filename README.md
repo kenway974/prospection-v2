@@ -45,7 +45,7 @@ Les tests de bout en bout (`pytest -m e2e`) tournent dans la CI sur l'image Dock
    - `DATABASE_URL` : l'URL de la base Railway, en remplaçant `postgresql://` par `postgresql+psycopg://` ;
    - `SESSION_SECRET` : 32 caractères aléatoires ou plus ;
    - `APP_PASSWORD_HASH` : la sortie de `python -m prospection.cli hash-password` ;
-   - `BEHIND_PROXY=true`, `TIMEZONE=Indian/Reunion`.
+   - `BEHIND_PROXY=true`, `TIMEZONE=Europe/Paris`.
 4. Dans les réglages du service, activer **« Wait for CI »** : `main` n'est déployée que si la CI est verte (C97).
 5. Générer un domaine public (HTTPS fourni par Railway).
 

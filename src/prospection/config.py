@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     session_secret: SecretStr = Field(min_length=32)
     app_password_hash: SecretStr
     behind_proxy: bool = True
-    timezone: str = "Indian/Reunion"
+    timezone: str = "Europe/Paris"
 
     @field_validator("app_password_hash")
     @classmethod

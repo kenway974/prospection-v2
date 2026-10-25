@@ -10,7 +10,7 @@ Les choix marqués **[choix Claude]** n'ont pas été discutés avec le proprié
 
 ## 1. Intention
 
-Un outil personnel, utilisé surtout **sur un téléphone Android**, pour un freelance de La Réunion qui prospecte des petites entreprises **par téléphone et en porte-à-porte**.
+Un outil personnel, utilisé surtout **sur un téléphone Android**, pour un freelance qui prospecte des petites entreprises **par téléphone et en porte-à-porte**.
 
 L'ancienne version (`prospection-bot`, Streamlit) trouvait des prospects mais laissait quatre manques, dits par le propriétaire :
 
@@ -53,7 +53,7 @@ La v2 devient donc le **poste de travail quotidien de prospection** : trouver, q
 
 Toutes celles de CLAUDE.md et `.claude/bonnes-pratiques.md`, en particulier : couches `domain/ sources/ crm/ storage/ application/ ui/`, domaine pur (temps passé en paramètre), TDD avec numéro de comportement, aucun réseau dans les tests (faux pour chaque service), budget, CGU (API officielles seulement), SSRF, textes externes neutralisés (interface et CSV / Excel), secrets chiffrés, RGPD, PostgreSQL, travail long en tâche de fond, déploiement Railway, fichiers ≤ ~150 lignes.
 
-Contexte local : le propriétaire est à **La Réunion (UTC+4, `Indian/Reunion`)**. Les dates « aujourd'hui / demain / en retard » et les heures de rappel se calculent dans ce fuseau **[choix Claude : fuseau configurable dans les réglages, `Indian/Reunion` par défaut]**. Les tests sont rejoués dans un fuseau éloigné (ex. `America/Los_Angeles`).
+Fuseau horaire : **`Europe/Paris` par défaut** (décision du propriétaire, 25/10/2026), configurable. Les dates « aujourd'hui / demain / en retard » et les heures de rappel se calculent dans ce fuseau. Les tests sont rejoués dans un fuseau éloigné (ex. `America/Los_Angeles`).
 
 ## 4. Décisions prises avec le propriétaire
 

@@ -14,7 +14,7 @@ from prospection.ui.app import create_app
 from prospection.ui.deps import get_now
 from prospection.ui.session import COOKIE_NAME, make_session_value
 
-NOW = datetime(2026, 10, 24, 21, 30, tzinfo=UTC)
+NOW = datetime(2026, 10, 24, 22, 30, tzinfo=UTC)
 TABS = [
     ("Aujourd'hui", "/"),
     ("Prospects", "/prospects"),
@@ -81,9 +81,9 @@ def test_C83_connection_journal_lists_date_ip_result(client: TestClient, engine:
         at = datetime(2026, 10, 24, 10, 0, tzinfo=UTC)
         record_attempt(conn, at, "9.9.9.9", False, blocked=True)
     page = client.get("/reglages/connexions").text
-    assert re.search(r"24/10/2026 13:00.*5\.6\.7\.8.*Refusée", page, re.S)
-    assert re.search(r"24/10/2026 12:00.*1\.2\.3\.4.*Réussie", page, re.S)
-    assert re.search(r"24/10/2026 14:00.*9\.9\.9\.9.*Bloquée", page, re.S)
+    assert re.search(r"24/10/2026 11:00.*5\.6\.7\.8.*Refusée", page, re.S)
+    assert re.search(r"24/10/2026 10:00.*1\.2\.3\.4.*Réussie", page, re.S)
+    assert re.search(r"24/10/2026 12:00.*9\.9\.9\.9.*Bloquée", page, re.S)
     assert "Se déconnecter" in page
 
 

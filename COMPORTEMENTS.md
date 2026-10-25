@@ -157,7 +157,7 @@ Ajouter ou retirer un comportement = modifier ce fichier (avec l'accord du propr
 - C104 J'écris des notes datées sur chaque prospect
 - C105 Je complète ou corrige le contact (dirigeant, mobile, email) directement sur la fiche
 - C106 Chaque saisie est enregistrée immédiatement ; en cas d'échec, l'app le dit et garde ma saisie
-- C107 L'écran Aujourd'hui liste les actions en retard, du jour et de demain, recalculées chaque jour dans mon fuseau horaire (Réunion par défaut) ; je coche une action pour la terminer
+- C107 L'écran Aujourd'hui liste les actions en retard, du jour et de demain, recalculées chaque jour dans mon fuseau horaire (Paris par défaut) ; je coche une action pour la terminer
 - C108 Je reçois une notification avant chaque relance (15 min avant une action avec heure, 8 h pour celles du jour sans heure ; réglable)
 - C109 Je reprends une session d'appel là où je l'avais laissée (précédent / suivant, position dans la file triée par score)
 

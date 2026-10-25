@@ -38,7 +38,8 @@ def test_C03_google_403_explains_api_activation() -> None:
     client, _ = fake_client(json_reply(403, {"error": {"status": "PERMISSION_DENIED"}}))
     assert check_google_key(client, KEY) == KeyCheck(
         False,
-        "Google refuse l'accès : activez « Places API (New) » et la facturation dans Google Cloud.",
+        "Google refuse l'accès : activez « Places API (New) » et la facturation "
+        "dans Google Cloud, ou retirez la restriction de la clé.",
     )
 
 

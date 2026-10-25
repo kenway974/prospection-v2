@@ -1,4 +1,4 @@
-"""Budget Google mensuel (C07) : saisie et reste disponible, en centimes."""
+"""Budget Google mensuel (C07) : saisie en centimes."""
 
 import re
 
@@ -12,7 +12,7 @@ class InvalidBudget(ValueError):
 
 def parse_budget(text: str) -> int:
     """« 25 », « 12,50 » ou « 12.50 € » → centimes."""
-    cleaned = text.replace("€", "").replace(" ", "").strip()
+    cleaned = "".join(text.replace("€", "").split())
     if not _AMOUNT.fullmatch(cleaned):
         raise InvalidBudget("Indiquez un montant en euros, par exemple 25 ou 12,50.")
     euros, _, cents = cleaned.replace(",", ".").partition(".")
@@ -24,8 +24,3 @@ def parse_budget(text: str) -> int:
     if total > MAX_BUDGET_CENTS:
         raise InvalidBudget("Le budget mensuel est limité à 1 000 €.")
     return total
-
-
-def remaining_cents(budget_cents: int, spent_cents: int) -> int:
-    """Ce qu'il reste à dépenser ce mois-ci ; jamais négatif."""
-    return max(0, budget_cents - spent_cents)

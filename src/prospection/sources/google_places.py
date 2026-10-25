@@ -29,6 +29,6 @@ def check_google_key(client: httpx.Client, key: str) -> KeyCheck:
         return KeyCheck(
             False,
             "Google refuse l'accès : activez « Places API (New) » et la facturation "
-            "dans Google Cloud.",
+            "dans Google Cloud, ou retirez la restriction de la clé.",
         )
     return unexpected(LABEL)

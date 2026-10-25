@@ -7,8 +7,6 @@ from sqlalchemy import Connection, select, update
 from prospection.domain.crm_choice import Crm
 from prospection.storage.db import app_settings
 
-__all__ = ["AppSettings", "Crm", "load_app_settings", "save_budget", "save_crm"]
-
 
 @dataclass(frozen=True)
 class AppSettings:

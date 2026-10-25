@@ -65,3 +65,14 @@ def test_C08_messages_disappear_when_key_and_budget_saved(
     page = text_of(client, "/recherche")
     assert "Ajoutez votre clé Google" not in page
     assert "Fixez un budget Google" not in page
+
+
+def test_C08_unreadable_google_key_still_reported_missing(
+    client: TestClient, engine: Engine
+) -> None:
+    from cryptography.fernet import Fernet
+
+    from prospection.storage.secret_box import SecretBox
+
+    store_key(engine, SecretBox(Fernet.generate_key().decode()), Service.GOOGLE, "AIza-x", NOW)
+    assert "Ajoutez votre clé Google" in text_of(client, "/recherche")

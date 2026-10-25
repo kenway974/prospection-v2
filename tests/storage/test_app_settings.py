@@ -2,9 +2,9 @@
 
 from sqlalchemy import Connection
 
+from prospection.domain.crm_choice import Crm
 from prospection.storage.app_settings import (
     AppSettings,
-    Crm,
     load_app_settings,
     save_budget,
     save_crm,

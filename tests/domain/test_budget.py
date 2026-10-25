@@ -2,12 +2,20 @@
 
 import pytest
 
-from prospection.domain.budget import InvalidBudget, parse_budget, remaining_cents
+from prospection.domain.budget import InvalidBudget, parse_budget
 
 
 @pytest.mark.parametrize(
     ("text", "cents"),
-    [("25", 2500), ("12,50", 1250), ("12.50", 1250), (" 7,5 € ", 750), ("1000", 100_000)],
+    [
+        ("25", 2500),
+        ("12,50", 1250),
+        ("12.50", 1250),
+        (" 7,5 € ", 750),
+        ("1000", 100_000),
+        ("1\u00a0000", 100_000),
+        ("1\u202f000", 100_000),
+    ],
 )
 def test_C07_budget_parsing(text: str, cents: int) -> None:
     assert parse_budget(text) == cents
@@ -27,8 +35,3 @@ def test_C07_budget_parsing(text: str, cents: int) -> None:
 def test_C07_invalid_budget(text: str, message: str) -> None:
     with pytest.raises(InvalidBudget, match=message):
         parse_budget(text)
-
-
-def test_C07_remaining_never_negative() -> None:
-    assert remaining_cents(2500, 1000) == 1500
-    assert remaining_cents(2500, 3000) == 0

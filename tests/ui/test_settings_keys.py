@@ -7,10 +7,14 @@ from datetime import UTC, datetime
 
 import httpx
 import pytest
+from cryptography.fernet import Fernet
 from fastapi.testclient import TestClient
 from sqlalchemy import Engine
 
+from prospection.application.api_keys import store_key
 from prospection.config import Settings
+from prospection.domain.services import Service
+from prospection.storage.secret_box import SecretBox
 from prospection.ui.app import create_app
 from prospection.ui.deps import get_now
 from prospection.ui.session import COOKIE_NAME, make_session_value
@@ -81,3 +85,32 @@ def test_remove_key(client: TestClient) -> None:
 
 def test_unknown_service_is_404(client: TestClient) -> None:
     assert save(client, "facebook", "x").status_code == 404
+
+
+def test_unreadable_key_asks_to_retype(client: TestClient, engine: Engine) -> None:
+    other = SecretBox(Fernet.generate_key().decode())
+    store_key(engine, other, Service.NOTION, "ntn_secret", NOW)
+    page = html.unescape(client.get("/reglages/cles").text)
+    assert "Clé illisible : saisissez-la à nouveau" in page
+
+
+def test_each_field_names_its_service(client: TestClient) -> None:
+    page = html.unescape(client.get("/reglages/cles").text)
+    for label in ["Nouvelle clé Google Maps", "Nouvelle clé Notion", "Nouvelle clé Sirène (INSEE)"]:
+        assert label in page
+
+
+def test_delete_asks_for_confirmation_and_test_button_disables_itself(client: TestClient) -> None:
+    save(client, "google", SECRET)
+    page = html.unescape(client.get("/reglages/cles").text)
+    assert 'hx-confirm="Supprimer la clé Google Maps ?"' in page
+    assert 'hx-disabled-elt="find button"' in page
+
+
+def test_confirmed_htmx_delete_reloads_the_page(client: TestClient) -> None:
+    save(client, "google", SECRET)
+    response = client.post(
+        "/reglages/cles/google/supprimer", headers={**ORIGIN, "HX-Request": "true"}
+    )
+    assert response.headers["hx-redirect"] == "/reglages/cles"
+    assert html.unescape(client.get("/reglages/cles").text).count("Pas encore saisie") == 3

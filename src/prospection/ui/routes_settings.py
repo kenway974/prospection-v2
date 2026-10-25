@@ -60,11 +60,15 @@ def key_views(engine: Engine, box: SecretBox, settings: Settings) -> list[KeyVie
 
 
 def keys_page(
-    request: Request, engine: Engine, box: SecretBox, settings: Settings, **extra: object
+    request: Request,
+    engine: Engine,
+    box: SecretBox,
+    settings: Settings,
+    error: dict[str, object] | None = None,
+    status_code: int = 200,
 ) -> Response:
-    status_code = int(str(extra.pop("status_code", 200)))
     keys = key_views(engine, box, settings)
-    context = {"tab": "", "keys": keys, **extra}
+    context = {"tab": "", "keys": keys, "error": error}
     return templates.TemplateResponse(
         request, "reglages_cles.html", context, status_code=status_code
     )
@@ -105,8 +109,15 @@ def save(
 
 
 @router.post("/cles/{name}/supprimer")
-def remove(name: str, engine: Engine = Depends(get_engine)) -> Response:  # noqa: B008
+def remove(
+    request: Request,
+    name: str,
+    engine: Engine = Depends(get_engine),  # noqa: B008
+) -> Response:
     remove_key(engine, service_from(name))
+    if request.headers.get("hx-request") == "true":
+        # Suppression confirmée via HTMX : la page se recharge entièrement.
+        return Response(status_code=200, headers={"HX-Redirect": "/reglages/cles"})
     return RedirectResponse("/reglages/cles", status_code=303)
 
 

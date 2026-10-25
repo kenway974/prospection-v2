@@ -16,7 +16,7 @@ def test_C02_C04_save_key_then_never_shown(page: Page, base_url: str) -> None:
     page.get_by_role("link", name="Réglages").click()
     page.get_by_role("link", name="Clés API").click()
     google = page.locator("#cle-google")
-    google.get_by_label("Nouvelle clé").fill(FAKE_KEY)
+    google.get_by_label("Nouvelle clé Google Maps").fill(FAKE_KEY)
     google.get_by_role("button", name="Enregistrer").click()
     expect(page.locator("#cle-google")).to_contain_text("Enregistrée le")
     assert FAKE_KEY not in page.content()

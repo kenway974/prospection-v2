@@ -4,10 +4,11 @@ from dataclasses import dataclass
 
 from sqlalchemy import Engine
 
+from prospection.application.api_keys import read_key
 from prospection.domain.budget import parse_budget
 from prospection.domain.services import Service
-from prospection.storage.api_keys import load_key
 from prospection.storage.app_settings import load_app_settings, save_budget
+from prospection.storage.secret_box import SecretBox
 
 
 @dataclass(frozen=True)
@@ -28,8 +29,7 @@ def set_budget(engine: Engine, text: str) -> None:
         save_budget(conn, cents)
 
 
-def search_readiness(engine: Engine) -> SearchReadiness:
-    with engine.connect() as conn:
-        has_key = load_key(conn, Service.GOOGLE) is not None
-        budget = load_app_settings(conn).google_budget_cents
-    return SearchReadiness(has_key, budget)
+def search_readiness(engine: Engine, box: SecretBox) -> SearchReadiness:
+    """Une clé illisible compte comme absente : elle ne permet aucune recherche."""
+    has_key = read_key(engine, box, Service.GOOGLE) is not None
+    return SearchReadiness(has_key, current_budget(engine))

@@ -8,6 +8,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlalchemy import Engine
 
 from prospection.application.budget_settings import search_readiness
+from prospection.application.campaigns import latest_campaigns
 from prospection.application.search_screen import estimate_raw, launch, synonyms, templates
 from prospection.config import Settings
 from prospection.domain.campaign_request import InvalidRequest, validate_request
@@ -42,6 +43,7 @@ def _page(
     context = {
         "tab": "search", "values": values, "errors": errors or {},
         "readiness": search_readiness(engine, box), "templates": templates(engine),
+        "campaigns": latest_campaigns(engine),
     }  # fmt: skip
     return tpl.TemplateResponse(request, "recherche.html", context, status_code=status_code)
 

@@ -7,6 +7,10 @@
 <p class="notice" role="status">Ajoutez votre clé Google dans Réglages pour chercher sur Google Maps. Les entreprises récemment créées restent disponibles. <a href="/reglages/cles">Ajouter la clé</a></p>
 {% endif %}
 {{ error("google") }}
+{% if campaigns %}
+<h2 class="section-header">Dernières campagnes</h2>
+<ul class="group">{% for c in campaigns %}<li><a class="row link-row" href="/campagnes/{{ c.id }}"><span>{{ c.request.name }}</span><span class="secondary">{{ c.qualified }} / {{ c.request.target }}</span></a></li>{% endfor %}</ul>
+{% endif %}
 {% if templates %}
 <section class="group form" aria-labelledby="titre-modeles">
   <h2 class="row-title" id="titre-modeles">Modèles</h2>

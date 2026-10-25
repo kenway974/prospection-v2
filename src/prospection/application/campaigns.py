@@ -4,12 +4,21 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from sqlalchemy import Engine
+from sqlalchemy.exc import NoResultFound
 
 from prospection.domain.campaign_request import CampaignRequest, CityZone, RadiusZone, Zone
 from prospection.domain.place import Circle
 from prospection.domain.trades import expand_queries, load_trades
 from prospection.storage.campaign_steps import StepSpec
-from prospection.storage.campaigns import Event, add_event, load_campaign, recent_events, set_status
+from prospection.storage.campaigns import (
+    Campaign,
+    Event,
+    add_event,
+    load_campaign,
+    recent_campaigns,
+    recent_events,
+    set_status,
+)
 from prospection.storage.campaigns import create_campaign as store_campaign
 from prospection.storage.prospects import exclusion_counts
 
@@ -65,9 +74,21 @@ def request_stop(engine: Engine, campaign_id: int, now: datetime) -> None:
             add_event(conn, campaign_id, now, "info", "Arrêt demandé")
 
 
+class UnknownCampaign(LookupError):
+    """Aucune campagne avec cet identifiant."""
+
+
+def latest_campaigns(engine: Engine, limit: int = 5) -> list[Campaign]:
+    with engine.connect() as conn:
+        return recent_campaigns(conn, limit)
+
+
 def progress(engine: Engine, campaign_id: int) -> Progress:
     with engine.connect() as conn:
-        c = load_campaign(conn, campaign_id)
+        try:
+            c = load_campaign(conn, campaign_id)
+        except NoResultFound:
+            raise UnknownCampaign(campaign_id) from None
         counts = exclusion_counts(conn, campaign_id)
         events = recent_events(conn, campaign_id, 5)
     return Progress(

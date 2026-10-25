@@ -97,3 +97,8 @@ def recent_events(conn: Connection, campaign_id: int, limit: int) -> list[Event]
         .order_by(e.at.desc(), e.id.desc()).limit(limit)
     )  # fmt: skip
     return [Event(r.at, r.level, r.message) for r in rows]
+
+
+def recent_campaigns(conn: Connection, limit: int) -> list[Campaign]:
+    query = select(campaigns.c.id).order_by(campaigns.c.created_at.desc()).limit(limit)
+    return [load_campaign(conn, campaign_id) for campaign_id in conn.scalars(query)]

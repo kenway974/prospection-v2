@@ -12,11 +12,11 @@ from prospection.storage.campaign_codec import decode_request
 from tests.application.campaign_helpers import BOX, NOW, PRICING, api_place, pages
 from tests.fake_http import fake_client
 
-LIEGE = CityZone("Liège", "", 50.6326, 5.5797, "BE")
+LIEGE = CityZone("Liège", "WAL", 50.6326, 5.5797, "BE")
 
 
 def test_C121_zone_labels_name_the_country() -> None:
-    assert LIEGE.label == "Liège (BE)"
+    assert LIEGE.label == "Liège (BE-WAL)"
     assert DepartmentZone("VD", "Canton de Vaud", "CH").label == "Canton de Vaud (CH)"
     assert CityZone("Lyon", "69123", 45.76, 4.83).label == "Lyon (69)"
 

@@ -3,8 +3,15 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from prospection.domain.campaign_request import CityZone, DepartmentZone
-from prospection.ui.search_form import commune_value, parse_form
+from prospection.domain.campaign_request import (
+    CampaignRequest,
+    CityZone,
+    DepartmentZone,
+    RadiusZone,
+    Zone,
+)
+from prospection.domain.criteria import Criteria
+from prospection.ui.search_form import commune_value, parse_form, request_to_form
 from tests.ui.test_search_form import FORM, client, post, text
 
 __all__ = ["client"]  # fixture partagée
@@ -64,3 +71,18 @@ def test_C122_city_of_another_country_says_so() -> None:
     assert parsed.errors["zones"] == (
         "Cette ville n'est pas dans le pays choisi : cherchez-la à nouveau."
     )
+
+
+@pytest.mark.parametrize(
+    "zones",
+    [
+        (GENEVA, DepartmentZone("FR", "Canton de Fribourg", "CH")),
+        (RadiusZone(CityZone("Liège", "WAL", 50.6337, 5.5675, "BE"), 20),
+         DepartmentZone("WLX", "Province de Luxembourg", "BE")),
+        (DepartmentZone("ME", "Canton de Mersch", "LU"),),
+        (CityZone("Monaco", "", 43.7372, 7.4215, "MC"),),
+    ],
+)  # fmt: skip
+def test_C18_C121_foreign_template_reloads_the_same_zones(zones: tuple[Zone, ...]) -> None:
+    request = CampaignRequest("Modèle", ("cuisiniste",), zones, 10, Criteria(), True)
+    assert tuple(parse_form(request_to_form(request)).raw.zones) == zones

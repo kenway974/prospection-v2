@@ -99,3 +99,10 @@ def test_C123_country_long_name_alone_is_not_trusted(campaign_db: Engine) -> Non
         "addressComponents": [{"shortText": "", "longText": "Belgique", "types": ["country"]}],
     }  # fmt: skip
     assert _run(campaign_db, liege, long_only) == [("qualifiés", 1)]
+
+
+def test_C123_luxembourg_canton_checked_when_google_names_it(campaign_db: Engine) -> None:
+    mersch = DepartmentZone("ME", "Canton de Mersch", "LU")
+    inside = {**api_place(1), **_in("LU", "Mersch")}
+    diekirch = {**api_place(2), **_in("LU", "Diekirch")}
+    assert _run(campaign_db, mersch, inside, diekirch) == [("qualifiés", 1), ("Hors zone", 1)]

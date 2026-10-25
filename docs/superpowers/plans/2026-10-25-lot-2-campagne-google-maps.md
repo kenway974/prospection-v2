@@ -24,7 +24,7 @@ Celles des lots 0 et 1, plus :
 
 **Google Places : API officielle seulement** (règle CGU)
 - On utilise **Text Search (New)** : `POST https://places.googleapis.com/v1/places:searchText`, `pageSize` 20, au plus 3 pages par requête via `nextPageToken`.
-- **Masque de champs exact :** `places.id,places.displayName,places.formattedAddress,places.location,places.types,places.primaryType,places.businessStatus,places.nationalPhoneNumber,places.internationalPhoneNumber,places.websiteUri,places.rating,places.userRatingCount,places.regularOpeningHours,places.googleMapsUri,places.photos,nextPageToken`.
+- **Masque de champs exact :** `places.id,places.displayName,places.formattedAddress,places.location,places.types,places.primaryType,places.businessStatus,places.nationalPhoneNumber,places.internationalPhoneNumber,places.websiteUri,places.rating,places.userRatingCount,places.regularOpeningHours,places.googleMapsUri,places.photos,places.addressComponents,nextPageToken` (`addressComponents` ajouté pour les pays, C123 : palier inférieur, sans coût en plus).
 - Ce masque correspond au palier **« Text Search Enterprise »** : 1 000 appels gratuits par mois, puis 35 $ les 1 000. Un appel = une page de 20 établissements.
 
 **Tarifs dans un fichier de données versionné** : `data/google_pricing.yaml`
@@ -35,7 +35,7 @@ Celles des lots 0 et 1, plus :
 **Plafond (C07)**
 - Avant **chaque** appel payant, l'app vérifie : `appels_du_mois + 1 ≤ quota_gratuit`, ou que le coût de cet appel tient dans `plafond − dépensé_ce_mois`.
 - Sinon, pas d'appel : la campagne s'arrête avec la raison « Quota gratuit de Google atteint pour ce mois (plafond 0 €). Relevez le plafond dans Réglages → Budget Google, ou attendez le 1er. »
-- Le mois se compte dans le fuseau de l'app. La consommation ne compte que les appels de l'app (dit à l'écran).
+- Le mois se compte en heure du Pacifique, comme Google remet son quota à zéro (`billing_month`). La consommation ne compte que les appels de l'app : c'est dit sur Budget Google, dans l'estimation et le README (projet Google réservé, limite de quota dans Google Cloud).
 
 **Ordre des critères (C39)**
 - Les critères gratuits (catégorie, nom, franchise, liste noire, doublon, distance, site, téléphone, avis) s'appliquent sur la page déjà payée.
@@ -174,7 +174,7 @@ Celles des lots 0 et 1, plus :
 - `campaign_steps` : `campaign_id`, `query`, `zone_label`, `bias` JSON, `page_token`, `page_number`, `done` boolean, `attempts`.
   - Une ligne par couple requête × zone. On avance d'une page à la fois, et la page suivante est enregistrée **avant** de traiter les résultats, dans la même transaction que les prospects (C40).
 - `prospects` : `id`, `campaign_id`, `place_id` (unique par campagne), `data_json` (Place validé), `keywords` text[], `qualified`, `reasons` text[], `to_check` text[], `status` (`à appeler` par défaut pour les qualifiés), `created_at`.
-- `google_usage` : `month` (AAAA-MM, fuseau de l'app), `calls`, `cost_cents`. Mis à jour en `UPDATE … RETURNING` sous le verrou consultatif « google » (C07, Review Focus 5).
+- `google_usage` : `month` (AAAA-MM, heure du Pacifique), `calls`, `cost_cents`. Mis à jour en `UPDATE … RETURNING` sous le verrou consultatif « google » (C07, Review Focus 5).
 - `campaign_events` : journal court (C81 partiel) : `campaign_id`, `at`, `level`, `message`.
 - `franchise_names` (liste perso) et `blacklist` (`name_norm`, `place_id`, `siren`, `added_at`).
 - `campaign_templates` : `name`, `request_json` (C18).
@@ -299,6 +299,12 @@ Le fragment `_progress.html` est rafraîchi toutes les 3 s (`hx-trigger="every 3
 - [x] **Tests d'abord :** une zone « Liège (BE) » envoie `regionCode: BE` ; un établissement en France pour une zone belge est « Hors zone » ; « +32 470 12 34 56 » est un mobile ; le formulaire sans pays reste en France ; un modèle enregistré avant garde la France.
 - [x] Code minimal, lint, types, tests ; **commit** par comportement.
 - Décisions : `regionCode` oriente Google sans restreindre, le filtre « Hors zone » s'appuie sur `addressComponents` (palier Essentials, sans coût en plus) ; canton exclu seulement s'il est reconnu (au doute, gardé) ; un seul pays par campagne.
+
+### Reports décidés en fin de lot
+
+- **C32** (exclure ce qui est déjà dans le CRM) : demande de lire la base Notion ; reporté au **lot 7** (Exports et Notion), qui ajoute la lecture de la base.
+- **C39** (critères gratuits avant les appels payants) : l'ordre est respecté (tous les critères du lot 2 sont gratuits), mais aucun appel payant d'enrichissement n'existe encore ; son test arrive avec le premier enrichissement payant (**lot 5**).
+- **C11** : seul Google Maps est proposé, « Entreprises récemment créées · bientôt » (**lot 4**).
 
 ### Fin du lot
 

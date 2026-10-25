@@ -1,8 +1,9 @@
 """File des campagnes pour la tâche de fond (C40).
 
-Une campagne est prise par un seul worker à la fois (`FOR UPDATE SKIP LOCKED`).
-Le worker la « signe » à chaque étape (heartbeat) ; si la signature date de plus
-de 2 minutes (redémarrage, déploiement), un autre worker la reprend.
+Une campagne est prise par un seul worker à la fois (`FOR UPDATE SKIP LOCKED`),
+qui y inscrit son nom. Il la « signe » avant chaque page (heartbeat) ; si la
+signature date de plus de 2 minutes (redémarrage, worker figé), un autre worker
+la reprend, et la signature de l'ancien est alors refusée : il la lâche.
 """
 
 from datetime import datetime, timedelta
@@ -14,7 +15,9 @@ from prospection.storage.schema_campaigns import campaigns
 STALE_AFTER = timedelta(minutes=2)
 
 
-def claim_next(engine: Engine, now: datetime, stale_after: timedelta = STALE_AFTER) -> int | None:
+def claim_next(
+    engine: Engine, now: datetime, worker_id: str, stale_after: timedelta = STALE_AFTER
+) -> int | None:
     c = campaigns.c
     waiting = or_(c.retry_at.is_(None), c.retry_at <= now)
     abandoned = or_(c.heartbeat_at.is_(None), c.heartbeat_at < now - stale_after)
@@ -34,16 +37,20 @@ def claim_next(engine: Engine, now: datetime, stale_after: timedelta = STALE_AFT
         status = "stopping" if row.status == "stopping" else "running"
         conn.execute(
             update(campaigns).where(c.id == row.id)
-            .values(status=status, heartbeat_at=now, retry_at=None)
+            .values(status=status, claimed_by=worker_id, heartbeat_at=now, retry_at=None)
         )  # fmt: skip
     return int(row.id)
 
 
-def heartbeat(engine: Engine, campaign_id: int, now: datetime) -> None:
+def heartbeat(engine: Engine, campaign_id: int, now: datetime, worker_id: str) -> bool:
+    """Faux si un autre worker a repris la campagne entre-temps."""
+    c = campaigns.c
     with engine.begin() as conn:
-        conn.execute(
-            update(campaigns).where(campaigns.c.id == campaign_id).values(heartbeat_at=now)
-        )
+        signed = conn.execute(
+            update(campaigns).where(c.id == campaign_id, c.claimed_by == worker_id)
+            .values(heartbeat_at=now).returning(c.id)
+        ).first()  # fmt: skip
+    return signed is not None
 
 
 def release_until(engine: Engine, campaign_id: int, retry_at: datetime) -> None:
@@ -51,5 +58,5 @@ def release_until(engine: Engine, campaign_id: int, retry_at: datetime) -> None:
     with engine.begin() as conn:
         conn.execute(
             update(campaigns).where(campaigns.c.id == campaign_id)
-            .values(retry_at=retry_at, heartbeat_at=None)
+            .values(retry_at=retry_at, heartbeat_at=None, claimed_by=None)
         )  # fmt: skip

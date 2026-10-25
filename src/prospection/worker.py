@@ -7,6 +7,7 @@ journaux ne contiennent ni clé ni adresse complète.
 import logging
 import signal
 import threading
+import uuid
 from collections.abc import Callable
 from datetime import UTC, datetime
 
@@ -28,15 +29,26 @@ class Worker:
     ) -> None:  # fmt: skip
         self.engine, self.box, self.client, self.pricing = engine, box, client, pricing
         self.timezone, self.now = timezone, now
+        self.worker_id = uuid.uuid4().hex
 
-    def work_once(self) -> bool:
-        """Prend une campagne et la fait avancer jusqu'à la fin ou une pause. Vrai si travail."""
-        campaign_id = claim_next(self.engine, self.now())
+    def work_once(self, stop: threading.Event | None = None) -> bool:
+        """Prend une campagne et la fait avancer jusqu'à la fin, une pause ou un arrêt.
+
+        Vrai si travail. Sur arrêt (SIGTERM d'un déploiement), la campagne est rendue
+        entre deux pages : un autre worker la reprend tout de suite.
+        """
+        campaign_id = claim_next(self.engine, self.now(), self.worker_id)
         if campaign_id is None:
             return False
         logger.info("Campagne %s prise", campaign_id)
         while True:
-            heartbeat(self.engine, campaign_id, self.now())
+            if stop is not None and stop.is_set():
+                release_until(self.engine, campaign_id, self.now())
+                logger.info("Campagne %s rendue (arrêt de la tâche de fond)", campaign_id)
+                return True
+            if not heartbeat(self.engine, campaign_id, self.now(), self.worker_id):
+                logger.warning("Campagne %s reprise par une autre tâche de fond", campaign_id)
+                return True
             outcome = run_step(
                 self.engine, self.box, self.client, self.pricing, campaign_id,
                 self.now(), self.timezone,
@@ -51,7 +63,7 @@ class Worker:
     def run_forever(self, stop: threading.Event, idle_seconds: float = 2.0) -> None:
         while not stop.is_set():
             try:
-                worked = self.work_once()
+                worked = self.work_once(stop)
             except Exception:  # une campagne en échec ne doit pas arrêter le worker
                 logger.exception("Erreur pendant une campagne")
                 worked = False

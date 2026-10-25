@@ -23,6 +23,7 @@ def upgrade() -> None:
         sa.Column("cost_cents", sa.Integer, nullable=False, server_default="0"),
         sa.Column("created_at", TS, nullable=False),
         sa.Column("updated_at", TS, nullable=False),
+        sa.Column("claimed_by", sa.Text),
         sa.Column("heartbeat_at", TS),
         sa.Column("retry_at", TS),
     )

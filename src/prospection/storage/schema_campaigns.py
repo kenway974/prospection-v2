@@ -25,7 +25,7 @@ campaigns = Table(
     Column("found", Integer, nullable=False), Column("excluded", Integer, nullable=False),
     Column("qualified", Integer, nullable=False), Column("cost_cents", Integer, nullable=False),
     Column("created_at", TS, nullable=False), Column("updated_at", TS, nullable=False),
-    Column("heartbeat_at", TS), Column("retry_at", TS),
+    Column("claimed_by", Text), Column("heartbeat_at", TS), Column("retry_at", TS),
 )  # fmt: skip
 
 campaign_steps = Table(

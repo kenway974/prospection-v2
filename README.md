@@ -53,7 +53,7 @@ Les tests de bout en bout (`pytest -m e2e`) tournent dans la CI sur l'image Dock
 
 Le conteneur applique les migrations au démarrage, puis lance l'app. Railway vérifie `/sante`.
 
-6. **Tâche de fond (recherches)** : dans le même projet, ajouter un **second service** depuis le même dépôt, avec les mêmes variables d'environnement, et comme commande de démarrage personnalisée : `python -m prospection.worker`. Pas de domaine public pour lui. C'est lui qui fait les recherches Google ; s'il redémarre, les campagnes reprennent là où elles s'étaient arrêtées.
+6. **Tâche de fond (recherches)** : dans le même projet, ajouter un **second service** depuis le même dépôt, avec les mêmes variables d'environnement, et comme commande de démarrage personnalisée : `python -m prospection.worker`. Pas de domaine public pour lui. C'est lui qui fait les recherches Google ; s'il redémarre, les campagnes reprennent là où elles s'étaient arrêtées. Ajoutez à ce service la variable `RAILWAY_DEPLOYMENT_DRAINING_SECONDS=20` : lors d'un déploiement, la tâche de fond finit la page Google en cours (10 s au plus) et rend la campagne avant d'être coupée.
 
 **En cas de souci**
 - 5 essais ratés depuis une même adresse bloquent cette adresse 15 minutes ; 50 essais ratés en tout (attaque depuis de nombreuses adresses) bloquent tout le monde 15 minutes. Il suffit d'attendre.

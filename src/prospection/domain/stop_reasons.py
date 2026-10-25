@@ -24,6 +24,14 @@ def exhausted(qualified: int, target: int) -> str:
     )
 
 
+def finished_with_skips(skipped: int, qualified: int, target: int) -> str:
+    pages = "page ignorée" if skipped == 1 else "pages ignorées"
+    return (
+        f"Recherche finie avec {skipped} {pages} (Google trop sollicité ou requête refusée) : "
+        f"{_count(qualified, target)}. Relancez la même recherche plus tard, depuis un modèle."
+    )
+
+
 def budget_reached(budget_cents: int, qualified: int, target: int) -> str:
     what = (
         "Quota gratuit de Google atteint" if budget_cents == 0

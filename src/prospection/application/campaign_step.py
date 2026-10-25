@@ -14,10 +14,11 @@ from sqlalchemy import Engine
 
 from prospection.application.api_keys import read_key
 from prospection.application.budget_settings import current_budget
+from prospection.application.campaign_stop import stop_reason
 from prospection.application.page_results import save_page
 from prospection.domain.google_cost import Pricing, billing_month, call_cost_cents, can_call
 from prospection.domain.services import Service
-from prospection.domain.stop_reasons import budget_reached, exhausted, goal_reached
+from prospection.domain.stop_reasons import budget_reached
 from prospection.sources.google_search import (
     GoogleBusy,
     GoogleRefused,
@@ -85,17 +86,6 @@ def _retry_later(
     return StepOutcome(done=False, retry_at=now + RETRY_DELAYS[attempts - 1])
 
 
-def _stop_reason(engine: Engine, campaign_id: int) -> str | None:
-    with engine.connect() as conn:
-        c = load_campaign(conn, campaign_id)
-        step = next_step(conn, campaign_id)
-    if c.status == "stopping":
-        return "Arrêtée à votre demande : les prospects trouvés sont gardés."
-    if c.qualified >= c.request.target:
-        return goal_reached(c.qualified)
-    return exhausted(c.qualified, c.request.target) if step is None else None
-
-
 def run_step(
     engine: Engine, box: SecretBox, client: httpx.Client, pricing: Pricing, campaign_id: int,
     now: datetime,
@@ -103,7 +93,7 @@ def run_step(
     with engine.connect() as conn:
         if load_campaign(conn, campaign_id).status == "done":
             return StepOutcome(done=True)
-    reason = _stop_reason(engine, campaign_id)
+    reason = stop_reason(engine, campaign_id)
     if reason:
         return _finish(engine, campaign_id, reason, now)
     key = read_key(engine, box, Service.GOOGLE)
@@ -135,5 +125,5 @@ def run_step(
     except Exception:  # sans plafond d'essais, la même page serait rappelée (et payée) sans fin
         logger.exception("Page de la campagne %s non enregistrée", campaign_id)
         return _retry_later(engine, campaign_id, step, now, UNSAVED)
-    reason = _stop_reason(engine, campaign_id)
+    reason = stop_reason(engine, campaign_id)
     return _finish(engine, campaign_id, reason, now) if reason else StepOutcome(done=False)

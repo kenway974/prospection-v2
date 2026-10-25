@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 
-from sqlalchemy import Connection, select, update
+from sqlalchemy import Connection, func, select, update
 
 from prospection.domain.google_cost import MAX_PAGES_PER_QUERY
 from prospection.domain.place import Circle
@@ -67,7 +67,14 @@ def record_page(conn: Connection, step_id: int, next_token: str | None) -> None:
 
 
 def skip_step(conn: Connection, step_id: int) -> None:
-    conn.execute(update(campaign_steps).where(campaign_steps.c.id == step_id).values(done=True))
+    s = campaign_steps.c
+    conn.execute(update(campaign_steps).where(s.id == step_id).values(done=True, skipped=True))
+
+
+def skipped_steps(conn: Connection, campaign_id: int) -> int:
+    s = campaign_steps.c
+    query = select(func.count()).where(s.campaign_id == campaign_id, s.skipped.is_(True))
+    return int(conn.execute(query).scalar_one())
 
 
 def count_attempt(conn: Connection, step_id: int) -> int:

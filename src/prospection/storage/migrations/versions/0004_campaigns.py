@@ -43,6 +43,7 @@ def upgrade() -> None:
         sa.Column("page_token", sa.Text),
         sa.Column("page_number", sa.Integer, nullable=False, server_default="0"),
         sa.Column("done", sa.Boolean, nullable=False, server_default=sa.false()),
+        sa.Column("skipped", sa.Boolean, nullable=False, server_default=sa.false()),
         sa.Column("attempts", sa.Integer, nullable=False, server_default="0"),
     )  # fmt: skip
     op.create_table(

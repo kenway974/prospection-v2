@@ -38,6 +38,7 @@ campaign_steps = Table(
     Column("region", Text), Column("country", Text, nullable=False),
     Column("page_token", Text),
     Column("page_number", Integer, nullable=False), Column("done", Boolean, nullable=False),
+    Column("skipped", Boolean, nullable=False),
     Column("attempts", Integer, nullable=False),
 )  # fmt: skip
 

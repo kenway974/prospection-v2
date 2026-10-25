@@ -1,0 +1,8 @@
+# Tarif Google Places API (New) — palier « Text Search Enterprise ».
+# Un appel = une page de 20 établissements (masque de champs avec téléphone,
+# site, note et avis). Source : page des tarifs Google Maps Platform
+# (developers.google.com/maps/billing-and-pricing/pricing), relevée le 25/10/2026.
+# À mettre à jour si Google change ses tarifs ; le taux €/$ est volontairement prudent.
+free_per_month: 1000
+usd_per_1000: "35.00"
+eur_per_usd: "0.95"

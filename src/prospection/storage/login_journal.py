@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 
-from sqlalchemy import Connection, insert, select, text
+from sqlalchemy import Connection, delete, exists, insert, select, text
 
 from prospection.storage.db import login_attempts
 
@@ -50,3 +50,19 @@ def recent_attempts(conn: Connection, limit: int) -> list[LoginAttempt]:
         .limit(limit)
     )
     return [LoginAttempt(r.at, r.ip, r.success, r.blocked) for r in conn.execute(query)]
+
+
+def has_success_since(conn: Connection, ip: str, since: datetime) -> bool:
+    c = login_attempts.c
+    query = select(exists().where(c.ip == ip, c.success.is_(True), c.at >= since))
+    return bool(conn.scalar(query))
+
+
+def has_blocked_since(conn: Connection, ip: str, since: datetime) -> bool:
+    c = login_attempts.c
+    query = select(exists().where(c.ip == ip, c.blocked.is_(True), c.at > since))
+    return bool(conn.scalar(query))
+
+
+def delete_attempts_before(conn: Connection, before: datetime) -> None:
+    conn.execute(delete(login_attempts).where(login_attempts.c.at < before))

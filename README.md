@@ -53,7 +53,9 @@ Le conteneur applique les migrations au démarrage, puis lance l'app. Railway v�
 
 **En cas de souci**
 - 5 essais ratés depuis une même adresse bloquent cette adresse 15 minutes ; 50 essais ratés en tout (attaque depuis de nombreuses adresses) bloquent tout le monde 15 minutes. Il suffit d'attendre.
+- Une adresse qui s'est déjà connectée avec succès (dans les 90 jours) n'est jamais bloquée par les essais des autres.
 - Une session dure 30 jours sans utilisation et 90 jours au plus après la connexion.
+- Le journal des connexions garde 90 jours d'historique.
 - Pour fermer tout de suite toutes les sessions ouvertes (téléphone perdu, par exemple), changer `SESSION_SECRET` ou le mot de passe.
 
 ## Installer l'app sur Android

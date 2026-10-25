@@ -58,3 +58,13 @@ def test_C82_old_failures_do_not_count() -> None:
 def test_C82_failures_exactly_15_minutes_old_no_longer_block() -> None:
     failures = minutes_ago(15, 15, 15, 15, 15)
     assert check_login_allowed(failures, failures, NOW) == ALLOWED
+
+
+def test_C82_known_ip_ignores_the_global_ceiling() -> None:
+    everyone = [NOW - timedelta(seconds=s) for s in range(50)]
+    assert check_login_allowed([], everyone, NOW, known_ip=True) == ALLOWED
+
+
+def test_C82_known_ip_still_has_its_own_limit() -> None:
+    failures = minutes_ago(4, 3, 2, 1, 0)
+    assert check_login_allowed(failures, failures, NOW, known_ip=True).allowed is False

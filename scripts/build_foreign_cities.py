@@ -9,6 +9,7 @@ import json
 import re
 import sys
 from pathlib import Path
+from typing import Any
 
 COUNTRIES = ("BE", "CH", "LU", "MC")
 BIG_CITY = 15_000  # au-delà, on garde aussi les autres noms (« Bruxelles », « Gand »)
@@ -37,8 +38,14 @@ def main(source: str) -> None:
     ]
     for country in COUNTRIES:
         lines.append(f"{country}:")
-        rows = sorted((c for c in cities if c["countrycode"] == country), key=lambda c: c["name"])
-        for c in rows:
+        kept: dict[tuple[str, str], dict[str, Any]] = {}
+        for c in cities:  # un seul « Saint-Denis » par région : le plus peuplé
+            key = (c["name"], c["admin1code"])
+            if c["countrycode"] == country and (
+                key not in kept or c["population"] > kept[key]["population"]
+            ):
+                kept[key] = c
+        for c in sorted(kept.values(), key=lambda c: c["name"]):
             others = ", ".join(_quote(n) for n in _other_names(c))
             lines.append(
                 f"- [{_quote(c['name'])}, {_quote(c['admin1code'])}, "

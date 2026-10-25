@@ -1,57 +1,23 @@
 """Pays proposés, villes et provinces / cantons hors de France (C121 à C123).
 
-Données : `data/zones_etrangeres.yaml` (écrit à la main) et `data/villes_etrangeres.yaml`
-(GeoNames, généré par scripts/build_foreign_cities.py).
+Données lues et validées par domain/foreign_data.py.
 """
 
-import re
-from functools import cache
-from importlib import resources
-from typing import Any
+__all__ = ["InvalidZoneFile", "parse_cities"]  # pour les tests des fichiers de données
 
-import yaml
-from pydantic import BaseModel, Field
+import re
 
 from prospection.domain.campaign_request import CityZone, DepartmentZone
+from prospection.domain.foreign_data import InvalidZoneFile, Region, cities, parse_cities, zones
 from prospection.domain.trades import normalize
 
 MAX_CHOICES = 10
 _BELGIAN_POSTAL = re.compile(r"\b(\d{4})\b")
 
 
-class Region(BaseModel):
-    code: str = Field(pattern=r"^[A-Z]{2,3}$")
-    nom: str = Field(min_length=1, max_length=80)
-    court: str = Field(min_length=1, max_length=60)
-    postaux: list[tuple[int, int]] = []
-
-
-class ForeignZones(BaseModel):
-    pays: dict[str, str]
-    regions: dict[str, list[Region]]
-
-
-def _read(name: str) -> Any:
-    return yaml.safe_load(resources.files("prospection.data").joinpath(name).read_text("utf-8"))
-
-
-@cache
-def _zones() -> ForeignZones:
-    return ForeignZones.model_validate(_read("zones_etrangeres.yaml"))
-
-
-@cache
-def _cities() -> dict[str, list[tuple[str, str, float, float, tuple[str, ...]]]]:
-    data = _read("villes_etrangeres.yaml")
-    return {
-        country: [(n, "" if r == "00" else r, la, lo, tuple(o)) for n, r, la, lo, o in rows]
-        for country, rows in data.items()
-    }
-
-
 def countries() -> dict[str, str]:
     """Code → nom, France en premier."""
-    return dict(_zones().pays)
+    return {code: country.nom for code, country in zones().pays.items()}
 
 
 def find_foreign_cities(text: str, country: str) -> list[CityZone]:
@@ -61,7 +27,8 @@ def find_foreign_cities(text: str, country: str) -> list[CityZone]:
         return []
     exact: list[CityZone] = []
     starting: list[CityZone] = []
-    for name, region, lat, lon, others in _cities().get(country, []):
+    for city in cities().get(country, []):
+        name, region, lat, lon, others = city.name, city.region, city.lat, city.lon, city.others
         same = [n for n in (name, *others) if normalize(n) == wanted]
         if same:  # le nom tel que saisi s'il existe (« Genève » plutôt que « Geneve »)
             typed = text.strip().casefold()
@@ -72,15 +39,22 @@ def find_foreign_cities(text: str, country: str) -> list[CityZone]:
     return (exact or starting)[:MAX_CHOICES]
 
 
+def resolve_foreign_city(name: str, code: str, country: str) -> CityZone | None:
+    """La ville telle qu'elle est dans les données, ou None (valeur de formulaire trafiquée)."""
+    found = find_foreign_cities(name, country)
+    return next((c for c in found if (c.name, c.code) == (name, code)), None)
+
+
 def _regions(country: str) -> list[Region]:
-    return _zones().regions.get(country, [])
+    return zones().regions.get(country, [])
 
 
 def find_region(text: str, country: str) -> DepartmentZone | None:
     """Province (Belgique) ou canton (Suisse, Luxembourg) par code ou par nom."""
     wanted = normalize(text)
     for region in _regions(country):
-        if wanted in {normalize(region.code), normalize(region.nom), normalize(region.court)}:
+        names = (region.code, region.nom, region.court, *region.autres)
+        if wanted in {normalize(n) for n in names}:
             return DepartmentZone(region.code, region.nom, country)
     return None
 
@@ -98,3 +72,19 @@ def postal_region(address: str, country: str) -> str | None:
         if any(low <= codes[-1] <= high for low, high in region.postaux):
             return region.code
     return None
+
+
+def city_choice_label(city: CityZone) -> str:
+    """Ex. « Liège (Wallonie, Belgique) », « Genève (Genève, Suisse) »."""
+    country = zones().pays[city.country]
+    region = country.regions_des_villes.get(city.code) or next(
+        (r.court for r in _regions(city.country) if r.code == city.code), ""
+    )
+    return f"{city.name} ({region}, {country.nom})" if region else f"{city.name} ({country.nom})"
+
+
+def unknown_region_message(text: str, country: str) -> str:
+    data = zones().pays[country]
+    if not data.inconnu:
+        return f"{data.nom} n'a ni province ni canton : choisissez seulement la ville."
+    return f"{data.inconnu} {data.dans} : {text.strip()}. Exemple : {data.exemple}."

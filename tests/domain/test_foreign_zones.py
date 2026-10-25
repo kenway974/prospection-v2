@@ -45,3 +45,43 @@ def test_C123_belgian_province_from_postal_code() -> None:
     assert postal_region("Grand-Place 1, 1000 Bruxelles", "BE") == "BRU"
     assert postal_region("Markt 1, 3000 Leuven", "BE") == "VBR"
     assert postal_region("Rue du Rhône 1, 1204 Genève", "CH") is None
+
+
+def test_C122_city_choices_name_their_region_and_country() -> None:
+    from prospection.domain.foreign_zones import city_choice_label
+
+    [liege] = find_foreign_cities("Liège", "BE")
+    assert city_choice_label(liege) == "Liège (Wallonie, Belgique)"
+    [geneva] = find_foreign_cities("Genève", "CH")
+    assert city_choice_label(geneva) == "Genève (Genève, Suisse)"
+    assert city_choice_label(find_foreign_cities("Monaco", "MC")[0]) == "Monaco (Monaco)"
+
+
+def test_C122_belgian_luxembourg_province_by_its_usual_name() -> None:
+    assert find_region("Luxembourg", "BE") == DepartmentZone("WLX", "Province de Luxembourg", "BE")
+
+
+def test_C122_unknown_region_message_says_what_to_type() -> None:
+    from prospection.domain.foreign_zones import unknown_region_message
+
+    assert unknown_region_message("Vaud", "BE") == (
+        "Province inconnue en Belgique : Vaud. Exemple : Liège, Hainaut."
+    )
+    assert unknown_region_message("X", "LU") == (
+        "Canton inconnu au Luxembourg : X. Exemple : Mersch, Esch-sur-Alzette."
+    )
+    assert unknown_region_message("X", "MC") == (
+        "Monaco n'a ni province ni canton : choisissez seulement la ville."
+    )
+
+
+def test_cities_file_is_validated() -> None:
+    import pytest
+
+    from prospection.domain.foreign_zones import InvalidZoneFile, parse_cities
+
+    assert parse_cities('BE:\n- ["Liège", "WAL", 50.6, 5.5, ["Luik"]]\n')["BE"][0].name == "Liège"
+    for broken in ('BE:\n- ["Liège", "WAL", 95.0, 5.5, []]\n', 'XYZ:\n- ["A", "", 1, 1, []]\n',
+                   'BE:\n- ["", "WAL", 1, 1, []]\n', "- 1\n"):  # fmt: skip
+        with pytest.raises(InvalidZoneFile):
+            parse_cities(broken)

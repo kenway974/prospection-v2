@@ -90,7 +90,7 @@ def test_C13_ambiguous_city_asks_to_choose(client: TestClient) -> None:
 
 def test_C13_unknown_department_refused(client: TestClient) -> None:
     response = post(client, commune="", departements="974, Atlantide")
-    assert "Département inconnu : Atlantide." in text(response)
+    assert "Département inconnu en France : Atlantide. Exemple : 974, Rhône." in text(response)
 
 
 def test_C13_tampered_commune_refused(client: TestClient) -> None:

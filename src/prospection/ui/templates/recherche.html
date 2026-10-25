@@ -39,7 +39,7 @@
   </section>
   <section class="group form">
     <label for="pays">Pays</label>
-    <select id="pays" name="pays">
+    <select id="pays" name="pays" hx-get="/recherche/communes" hx-trigger="change" hx-target="#communes" hx-swap="innerHTML" hx-include="#ville, this">
       {% for code, name in countries.items() %}<option value="{{ code }}"{% if values.get('pays', 'FR') == code %} selected{% endif %}>{{ name }}</option>{% endfor %}
     </select>
     <label for="ville">Ville</label>
@@ -51,7 +51,7 @@
     <label for="rayon">Rayon autour (km)</label>
     <input id="rayon" name="rayon" inputmode="numeric" value="{{ values.get('rayon', '0') }}">
     <label for="departements">Départements, provinces ou cantons</label>
-    <input id="departements" name="departements" value="{{ values.get('departements', '') }}" placeholder="974, Rhône" autocomplete="off">
+    <input id="departements" name="departements" value="{{ values.get('departements', '') }}" placeholder="974, Rhône, Liège, Vaud" autocomplete="off">
     {{ error("zones") }}
   </section>
   <section class="group form">

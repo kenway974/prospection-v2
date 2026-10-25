@@ -13,12 +13,19 @@ from prospection.domain.campaign_request import (
 )
 from prospection.domain.criteria import Criteria
 from prospection.domain.departments import find_department
-from prospection.domain.foreign_zones import countries, find_region
+from prospection.domain.foreign_zones import (
+    countries,
+    find_region,
+    resolve_foreign_city,
+    unknown_region_message,
+)
+from prospection.domain.place import clip
 
 _COORD = r"(-?\d{1,3}(?:\.\d+)?)"
 _COMMUNE = re.compile(rf"([A-Z]{{2}})\|([0-9A-Z]{{0,5}})\|{_COORD}\|{_COORD}\|(.{{1,100}})")
 
 
+_INSEE = re.compile(r"\d[0-9AB]\d{3}")
 MAX_DEPARTMENTS = 20
 MAX_FIELD = 500
 
@@ -42,10 +49,22 @@ def _region(item: str, country: str) -> DepartmentZone | None:
     return find_department(item) if country == "FR" else find_region(item, country)
 
 
-def _unknown_region(item: str, country: str) -> str:
-    if country == "FR":
-        return f"Département inconnu : {item.strip()}."
-    return f"Province ou canton inconnu en {countries()[country]} : {item.strip()}."
+def _city(commune: str, country: str, errors: dict[str, str]) -> CityZone | None:
+    """Hors de France, la ville est retrouvée dans les données ; en France, le code INSEE
+    est exigé. Une valeur trafiquée est refusée."""
+    match = _COMMUNE.fullmatch(commune)
+    if match and match.group(1) != country:
+        errors["zones"] = "Cette ville n'est pas dans le pays choisi : cherchez-la à nouveau."
+        return None
+    city = None
+    if match and country != "FR":
+        city = resolve_foreign_city(match.group(5), match.group(2), country)
+    elif match and _INSEE.fullmatch(match.group(2)):
+        _, code, lat, lon, name = match.groups()
+        city = CityZone(clip(name, 100) or "", code, float(lat), float(lon))
+    if city is None:
+        errors["zones"] = "Choisissez la commune dans la liste."
+    return city
 
 
 def _zones(form: dict[str, str], errors: dict[str, str]) -> list[Zone]:
@@ -56,12 +75,8 @@ def _zones(form: dict[str, str], errors: dict[str, str]) -> list[Zone]:
         return zones
     commune = form.get("commune", "").strip()
     if commune:
-        match = _COMMUNE.fullmatch(commune)
-        if not match or match.group(1) != country:
-            errors["zones"] = "Choisissez la commune dans la liste."
-        else:
-            _, code, lat, lon, name = match.groups()
-            city = CityZone(name, code, float(lat), float(lon), country)
+        city = _city(commune, country, errors)
+        if city is not None:
             radius = _int(form.get("rayon", ""), 0) or 0
             zones.append(RadiusZone(city, radius) if radius else city)
     items = [i for i in re.split(r"[,;\n]", form.get("departements", "")) if i.strip()]
@@ -71,12 +86,11 @@ def _zones(form: dict[str, str], errors: dict[str, str]) -> list[Zone]:
         )
         return zones
     for item in items:
-        if item.strip():
-            department = _region(item, country)
-            if department is None:
-                errors["zones"] = _unknown_region(item, country)
-            else:
-                zones.append(department)
+        department = _region(item, country)
+        if department is None:
+            errors["zones"] = unknown_region_message(item, country)
+        else:
+            zones.append(department)
     return zones
 
 

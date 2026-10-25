@@ -1,12 +1,19 @@
 # Pays proposés et leurs provinces (Belgique) ou cantons (Suisse, Luxembourg).
 # Codes : ISO 3166-2 sans le préfixe du pays (BE-WLG → WLG, CH-VD → VD, LU-ME → ME).
 # Provinces belges : tranches de codes postaux de bpost, pour écarter ce qui est hors zone.
+# Pour chaque pays : nom, « dans » (en Belgique, au Luxembourg…), message d'une zone inconnue,
+# exemple valide, et pour la Belgique le nom des régions qui précisent une ville.
 pays:
-  FR: France
-  BE: Belgique
-  CH: Suisse
-  LU: Luxembourg
-  MC: Monaco
+  FR: {nom: France, dans: en France, inconnu: Département inconnu, exemple: "974, Rhône"}
+  BE:
+    nom: Belgique
+    dans: en Belgique
+    inconnu: Province inconnue
+    exemple: Liège, Hainaut
+    regions_des_villes: {BRU: Bruxelles-Capitale, WAL: Wallonie, VLG: Flandre}
+  CH: {nom: Suisse, dans: en Suisse, inconnu: Canton inconnu, exemple: "Vaud, Genève"}
+  LU: {nom: Luxembourg, dans: au Luxembourg, inconnu: Canton inconnu, exemple: "Mersch, Esch-sur-Alzette"}
+  MC: {nom: Monaco, dans: à Monaco}
 regions:
   BE:
   - {code: BRU, nom: Région de Bruxelles-Capitale, court: Bruxelles, postaux: [[1000, 1299]]}
@@ -17,7 +24,7 @@ regions:
   - {code: WLG, nom: Province de Liège, court: Liège, postaux: [[4000, 4999]]}
   - {code: WNA, nom: Province de Namur, court: Namur, postaux: [[5000, 5999]]}
   - {code: WHT, nom: Province de Hainaut, court: Hainaut, postaux: [[6000, 6599], [7000, 7999]]}
-  - {code: WLX, nom: Province de Luxembourg, court: Luxembourg belge, postaux: [[6600, 6999]]}
+  - {code: WLX, nom: Province de Luxembourg, court: Luxembourg belge, autres: [Luxembourg], postaux: [[6600, 6999]]}
   - {code: VWV, nom: Province de Flandre-Occidentale, court: Flandre-Occidentale, postaux: [[8000, 8999]]}
   - {code: VOV, nom: Province de Flandre-Orientale, court: Flandre-Orientale, postaux: [[9000, 9999]]}
   CH:

@@ -11,6 +11,7 @@ from prospection.application.budget_settings import search_readiness
 from prospection.application.campaigns import latest_campaigns
 from prospection.application.search_screen import (
     TemplateNameTaken,
+    choice_label,
     estimate_raw,
     find_city,
     launch,
@@ -88,7 +89,7 @@ def communes(
     client: httpx.Client = Depends(get_http_client),  # noqa: B008
 ) -> Response:
     result = find_city(client, ville, pays)
-    choices = [(commune_value(c), c.label) for c in result.choices]
+    choices = [(commune_value(c), choice_label(c)) for c in result.choices]
     context = {"choices": choices, "problem": result.problem}
     return tpl.TemplateResponse(request, "_communes.html", context)
 

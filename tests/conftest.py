@@ -10,6 +10,12 @@ from alembic import command
 from alembic.config import Config
 from sqlalchemy import Connection, Engine, create_engine, make_url, text
 
+from prospection.application.api_keys import store_key
+from prospection.domain.services import Service
+from tests.application.campaign_helpers import BOX as CAMPAIGN_BOX
+from tests.application.campaign_helpers import NOW as CAMPAIGN_NOW
+from tests.application.campaign_helpers import TABLES as CAMPAIGN_TABLES
+
 SERVER_URL = os.environ.get(
     "TEST_DATABASE_URL", "postgresql+psycopg://postgres:postgres@localhost:5432/postgres"
 )
@@ -52,3 +58,12 @@ def conn(engine: Engine) -> Iterator[Connection]:
         transaction = connection.begin()
         yield connection
         transaction.rollback()
+
+
+@pytest.fixture
+def campaign_db(engine: Engine) -> Iterator[Engine]:
+    store_key(engine, CAMPAIGN_BOX, Service.GOOGLE, "AIza-test", CAMPAIGN_NOW)
+    yield engine
+    with engine.begin() as conn:
+        conn.exec_driver_sql(f"TRUNCATE {CAMPAIGN_TABLES} RESTART IDENTITY CASCADE")
+        conn.exec_driver_sql("UPDATE app_settings SET google_budget_cents = NULL")

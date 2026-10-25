@@ -5,8 +5,5 @@
 {% if not readiness.has_google_key %}
 <p class="notice" role="status">Ajoutez votre clé Google dans Réglages pour chercher sur Google Maps. Les entreprises récemment créées restent disponibles. <a href="/reglages/cles">Ajouter la clé</a></p>
 {% endif %}
-{% if not readiness.budget_cents %}
-<p class="notice" role="status">Fixez un budget Google mensuel avant de lancer une recherche Google Maps. <a href="/reglages/budget">Fixer le budget</a></p>
-{% endif %}
 <p class="empty">La recherche de prospects arrive bientôt. Elle se lancera depuis cet écran.</p>
 {% endblock %}

@@ -14,12 +14,13 @@ from prospection.storage.secret_box import SecretBox
 @dataclass(frozen=True)
 class SearchReadiness:
     has_google_key: bool
-    budget_cents: int | None
+    budget_cents: int
 
 
-def current_budget(engine: Engine) -> int | None:
+def current_budget(engine: Engine) -> int:
+    """Plafond en centimes ; jamais réglé = 0 € (rester dans le quota gratuit de Google)."""
     with engine.connect() as conn:
-        return load_app_settings(conn).google_budget_cents
+        return load_app_settings(conn).google_budget_cents or 0
 
 
 def set_budget(engine: Engine, text: str) -> None:

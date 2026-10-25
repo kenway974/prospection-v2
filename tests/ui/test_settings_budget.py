@@ -1,4 +1,4 @@
-"""C07 : je fixe un budget Google maximum par mois ; C08 : clé Google manquante signalée."""
+"""C07 : plafond Google mensuel, 0 € par défaut ; C08 : clé Google manquante signalée."""
 
 import html
 from collections.abc import Iterator
@@ -35,36 +35,39 @@ def text_of(client: TestClient, path: str) -> str:
     return html.unescape(client.get(path).text)
 
 
-def test_C07_budget_saved_and_displayed(client: TestClient) -> None:
+def test_C07_default_is_zero_meaning_free_quota_only(client: TestClient) -> None:
+    page = text_of(client, "/reglages/budget")
+    assert "Plafond actuel : 0 € par mois" in page
+    assert "l'app reste dans le quota gratuit de Google" in page
+
+
+def test_C07_ceiling_saved_and_displayed(client: TestClient) -> None:
     response = client.post(
         "/reglages/budget", data={"montant": "12,50"}, headers=ORIGIN, follow_redirects=False
     )
     assert response.status_code == 303
-    assert "Budget actuel : 12,50 € par mois" in text_of(client, "/reglages/budget")
+    page = text_of(client, "/reglages/budget")
+    assert "Plafond actuel : 12,50 € par mois" in page
+    assert "au-delà du quota gratuit de Google" in page
 
 
-def test_C07_invalid_budget_message(client: TestClient) -> None:
-    response = client.post("/reglages/budget", data={"montant": "0"}, headers=ORIGIN)
+def test_C07_invalid_ceiling_message(client: TestClient) -> None:
+    response = client.post("/reglages/budget", data={"montant": "100"}, headers=ORIGIN)
     assert response.status_code == 400
-    assert "Indiquez un montant supérieur à 0 €." in html.unescape(response.text)
+    assert "Le plafond est limité à 50 € par mois." in html.unescape(response.text)
 
 
-def test_C08_search_screen_says_google_key_and_budget_missing(client: TestClient) -> None:
+def test_C08_search_screen_says_google_key_missing(client: TestClient) -> None:
     page = text_of(client, "/recherche")
     assert "Ajoutez votre clé Google dans Réglages pour chercher sur Google Maps." in page
     assert "Les entreprises récemment créées restent disponibles." in page
     assert 'href="/reglages/cles"' in page
-    assert "Fixez un budget Google mensuel avant de lancer une recherche Google Maps." in page
+    assert "budget" not in page.lower()
 
 
-def test_C08_messages_disappear_when_key_and_budget_saved(
-    client: TestClient, engine: Engine
-) -> None:
+def test_C08_message_disappears_when_key_saved(client: TestClient, engine: Engine) -> None:
     store_key(engine, client.app.state.box, Service.GOOGLE, "AIza-x", NOW)  # type: ignore[attr-defined]
-    client.post("/reglages/budget", data={"montant": "25"}, headers=ORIGIN)
-    page = text_of(client, "/recherche")
-    assert "Ajoutez votre clé Google" not in page
-    assert "Fixez un budget Google" not in page
+    assert "Ajoutez votre clé Google" not in text_of(client, "/recherche")
 
 
 def test_C08_unreadable_google_key_still_reported_missing(

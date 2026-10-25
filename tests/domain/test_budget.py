@@ -1,4 +1,4 @@
-"""C07 : budget Google mensuel."""
+"""C07 : plafond de dépense Google par mois (0 € = rester dans le gratuit de Google)."""
 
 import pytest
 
@@ -12,9 +12,9 @@ from prospection.domain.budget import InvalidBudget, parse_budget
         ("12,50", 1250),
         ("12.50", 1250),
         (" 7,5 € ", 750),
-        ("1000", 100_000),
-        ("1\u00a0000", 100_000),
-        ("1\u202f000", 100_000),
+        ("0", 0),
+        ("50", 5000),
+        ("0\u00a0€", 0),
     ],
 )
 def test_C07_budget_parsing(text: str, cents: int) -> None:
@@ -24,12 +24,12 @@ def test_C07_budget_parsing(text: str, cents: int) -> None:
 @pytest.mark.parametrize(
     ("text", "message"),
     [
-        ("0", "Indiquez un montant supérieur à 0 €."),
-        ("-5", "Indiquez un montant supérieur à 0 €."),
-        ("1000,01", "Le budget mensuel est limité à 1 000 €."),
-        ("beaucoup", "Indiquez un montant en euros, par exemple 25 ou 12,50."),
-        ("", "Indiquez un montant en euros, par exemple 25 ou 12,50."),
-        ("12,345", "Indiquez un montant en euros, par exemple 25 ou 12,50."),
+        ("-5", "Indiquez 0 € ou plus."),
+        ("50,01", "Le plafond est limité à 50 € par mois."),
+        ("1000", "Le plafond est limité à 50 € par mois."),
+        ("beaucoup", "Indiquez un montant en euros, par exemple 0 ou 5."),
+        ("", "Indiquez un montant en euros, par exemple 0 ou 5."),
+        ("12,345", "Indiquez un montant en euros, par exemple 0 ou 5."),
     ],
 )
 def test_C07_invalid_budget(text: str, message: str) -> None:

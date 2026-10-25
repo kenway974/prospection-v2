@@ -67,7 +67,7 @@ Chaque clé est chiffrée en base et ne s'affiche plus jamais. Le bouton « Test
 - **Notion** : [notion.so/profile/integrations](https://www.notion.so/profile/integrations) → Nouvelle intégration interne → copier le **secret**. Puis, dans Notion, ouvrir la base **Prospects v2** (page DEV → 11. Prospection v2 (CRM)) → menu ••• → Connexions → ajouter l'intégration.
 - **Sirène (INSEE)** : [portail-api.insee.fr](https://portail-api.insee.fr/) → créer un compte et une application → s'abonner à l'**API Sirene** → copier la clé d'API.
 
-Ensuite : Réglages → **CRM** (Notion et la base « Prospects v2 », ou aucun) et **Budget Google** (plafond mensuel).
+Ensuite : Réglages → **CRM** (Notion et la base « Prospects v2 », ou aucun) et **Budget Google** : 0 € par défaut, l'app reste alors dans le quota gratuit mensuel de Google ; un plafond de 0 à 50 € autorise une dépense au-delà.
 
 ## Installer l'app sur Android
 

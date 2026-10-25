@@ -14,7 +14,7 @@ Ajouter ou retirer un comportement = modifier ce fichier (avec l'accord du propr
 - C04 Les clés ne s'affichent plus jamais en clair après la saisie
 - C05 Je choisis mon CRM : Notion ou aucun (HubSpot reporté)
 - C06 Je choisis la base Notion de destination (par défaut « Prospects v2 », page DEV)
-- C07 Je fixe un budget Google maximum par mois ; l'app refuse de le dépasser
+- C07 Je fixe un plafond de dépense Google par mois ; l'app refuse de le dépasser. Par défaut 0 € : l'app reste dans le quota gratuit de Google
 - C08 Sans clé Google, l'app le dit et bloque seulement les recherches Google Maps
 - C09 Sans CRM configuré, l'app fonctionne quand même (export fichier, y compris des intéressés)
 

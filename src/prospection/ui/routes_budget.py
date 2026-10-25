@@ -1,4 +1,4 @@
-"""Réglages : budget Google mensuel (C07)."""
+"""Réglages : plafond de dépense Google par mois, 0 € par défaut (C07)."""
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
@@ -15,7 +15,7 @@ router = APIRouter(prefix="/reglages", dependencies=[Depends(require_session)])
 
 def _page(request: Request, engine: Engine, error: str | None, status_code: int) -> Response:
     cents = current_budget(engine)
-    context = {"tab": "", "budget": euros(cents) if cents else None, "error": error}
+    context = {"tab": "", "budget": euros(cents), "free_only": cents == 0, "error": error}
     return templates.TemplateResponse(
         request, "reglages_budget.html", context, status_code=status_code
     )

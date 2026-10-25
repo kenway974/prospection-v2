@@ -17,6 +17,10 @@ from prospection.domain.departments import find_department
 _COMMUNE = re.compile(r"(\d[0-9AB]\d{3})\|(-?\d{1,3}(?:\.\d+)?)\|(-?\d{1,3}(?:\.\d+)?)\|(.{1,100})")
 
 
+MAX_DEPARTMENTS = 20
+MAX_FIELD = 500
+
+
 @dataclass
 class ParsedForm:
     raw: RawRequest
@@ -25,7 +29,7 @@ class ParsedForm:
 
 def _int(value: str, default: int | None) -> int | None:
     value = value.strip()
-    return int(value) if value.isdigit() else default
+    return int(value) if value.isascii() and value.isdigit() and len(value) < 7 else default
 
 
 def commune_value(city: CityZone) -> str:
@@ -44,7 +48,11 @@ def _zones(form: dict[str, str], errors: dict[str, str]) -> list[Zone]:
             city = CityZone(name, code, float(lat), float(lon))
             radius = _int(form.get("rayon", ""), 0) or 0
             zones.append(RadiusZone(city, radius) if radius else city)
-    for item in re.split(r"[,;\n]", form.get("departements", "")):
+    items = [i for i in re.split(r"[,;\n]", form.get("departements", "")) if i.strip()]
+    if len(items) > MAX_DEPARTMENTS:
+        errors["zones"] = f"{MAX_DEPARTMENTS} départements au plus par campagne."
+        return zones
+    for item in items:
         if item.strip():
             department = find_department(item)
             if department is None:
@@ -80,15 +88,19 @@ def _text(number: int | None) -> str:
     return "" if number is None else str(number)
 
 
+def criteria_to_form(criteria: Criteria) -> dict[str, str]:
+    return {
+        "avis_max": _text(criteria.max_reviews), "avis_min": _text(criteria.min_reviews),
+        "site": criteria.website, "telephone": criteria.phone,
+        "franchises": "on" if criteria.exclude_franchises else "",
+    }  # fmt: skip
+
+
 def request_to_form(request: CampaignRequest) -> dict[str, str]:
     """Pour pré-remplir le formulaire depuis un modèle (C18)."""
     values = {
         "nom": request.name, "metiers": ", ".join(request.trades), "nombre": str(request.target),
-        "synonymes": "on" if request.synonyms_on else "",
-        "avis_max": _text(request.criteria.max_reviews),
-        "avis_min": _text(request.criteria.min_reviews),
-        "site": request.criteria.website, "telephone": request.criteria.phone,
-        "franchises": "on" if request.criteria.exclude_franchises else "",
+        "synonymes": "on" if request.synonyms_on else "", **criteria_to_form(request.criteria),
         "departements": ", ".join(z.code for z in request.zones if isinstance(z, DepartmentZone)),
         "commune": "", "ville": "", "rayon": "0",
     }  # fmt: skip

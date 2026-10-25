@@ -9,10 +9,16 @@ from sqlalchemy import Engine
 
 from prospection.application.budget_settings import search_readiness
 from prospection.application.campaigns import latest_campaigns
-from prospection.application.search_screen import estimate_raw, launch, synonyms, templates
+from prospection.application.search_screen import (
+    estimate_raw,
+    find_city,
+    launch,
+    synonyms,
+    templates,
+)
 from prospection.domain.campaign_request import InvalidRequest, validate_request
+from prospection.domain.criteria import Criteria
 from prospection.domain.google_cost import Pricing
-from prospection.sources.geo_communes import GeoUnavailable, find_communes
 from prospection.storage.secret_box import SecretBox
 from prospection.ui.deps import (
     get_box,
@@ -25,13 +31,23 @@ from prospection.ui.deps import (
     templates as tpl,
 )
 from prospection.ui.formatting import euros
-from prospection.ui.search_form import commune_value, parse_form, request_to_form
+from prospection.ui.search_form import (
+    MAX_FIELD,
+    commune_value,
+    criteria_to_form,
+    parse_form,
+    request_to_form,
+)
 from prospection.ui.session import require_session
 
 router = APIRouter(prefix="/recherche", dependencies=[Depends(require_session)])
 NO_GOOGLE_KEY = "Ajoutez votre clé Google dans Réglages pour chercher sur Google Maps."
-DEFAULTS = {"nombre": "20", "avis_max": "30", "site": "any", "telephone": "with",
-            "franchises": "on", "synonymes": "on", "rayon": "0"}  # fmt: skip
+DEFAULTS = {**criteria_to_form(Criteria()), "nombre": "20", "synonymes": "on", "rayon": "0"}
+
+
+async def _read_form(request: Request) -> dict[str, str]:
+    """Champs du formulaire, chacun borné : une saisie démesurée ne coûte rien à traiter."""
+    return {k: str(v)[:MAX_FIELD] for k, v in (await request.form()).items()}
 
 
 def _page(
@@ -62,13 +78,9 @@ def communes(
     ville: str = "",
     client: httpx.Client = Depends(get_http_client),  # noqa: B008
 ) -> Response:
-    try:
-        found = find_communes(client, ville)
-        problem = None if found else "Aucune commune de ce nom. Vérifiez l'orthographe."
-    except GeoUnavailable:
-        found, problem = [], "Le service des communes ne répond pas. Réessayez dans un instant."
-    choices = [(commune_value(c), c.label) for c in found]
-    context = {"choices": choices, "problem": problem}
+    result = find_city(client, ville)
+    choices = [(commune_value(c), c.label) for c in result.choices]
+    context = {"choices": choices, "problem": result.problem}
     return tpl.TemplateResponse(request, "_communes.html", context)
 
 
@@ -82,7 +94,7 @@ async def estimation(
     request: Request, engine: Engine = Depends(get_engine),  # noqa: B008
     pricing: Pricing = Depends(get_pricing), now: datetime = Depends(get_now),  # noqa: B008
 ) -> Response:  # fmt: skip
-    form = {k: str(v) for k, v in (await request.form()).items()}
+    form = await _read_form(request)
     result = estimate_raw(engine, pricing, parse_form(form).raw, now)
     context = {"estimate": result, "paid": euros(result.paid_cents)}
     return tpl.TemplateResponse(request, "_estimate.html", context)
@@ -93,7 +105,7 @@ async def launch_campaign(
     request: Request, engine: Engine = Depends(get_engine),  # noqa: B008
     box: SecretBox = Depends(get_box), now: datetime = Depends(get_now),  # noqa: B008
 ) -> Response:  # fmt: skip
-    form = {k: str(v)[:500] for k, v in (await request.form()).items()}
+    form = await _read_form(request)
     parsed = parse_form(form)
     errors = dict(parsed.errors)
     try:

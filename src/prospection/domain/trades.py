@@ -7,8 +7,9 @@ chargement). Source des métiers du bâtiment : prospection-bot/trades.py (530ba
 import re
 import unicodedata
 from collections.abc import Iterable, Sequence
+from functools import cache
 from importlib import resources
-from pathlib import Path
+from importlib.resources.abc import Traversable
 from typing import Literal
 
 import yaml
@@ -49,11 +50,16 @@ def _key(text: str) -> str:
     return _singular(normalize(text))
 
 
-def load_trades(path: Path | None = None) -> tuple[Trade, ...]:
+@cache
+def _bundled_trades() -> tuple[Trade, ...]:
+    return load_trades(resources.files("prospection.data").joinpath("trades.yaml"))
+
+
+def load_trades(path: Traversable | None = None) -> tuple[Trade, ...]:
+    """Métiers du fichier de données ; celui livré avec l'app n'est lu qu'une fois."""
     if path is None:
-        text = resources.files("prospection.data").joinpath("trades.yaml").read_text("utf-8")
-    else:
-        text = path.read_text("utf-8")
+        return _bundled_trades()
+    text = path.read_text("utf-8")
     try:
         entries = yaml.safe_load(text)
         return tuple(Trade.model_validate(entry) for entry in entries)

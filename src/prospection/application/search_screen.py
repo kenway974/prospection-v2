@@ -1,14 +1,17 @@
 """Écran Recherche : estimation, lancement, modèles (C08, C16, C18)."""
 
+from dataclasses import dataclass
 from datetime import datetime
 
+import httpx
 from sqlalchemy import Engine
 
 from prospection.application.budget_settings import current_budget
 from prospection.application.campaigns import create_campaign, plan_steps
-from prospection.domain.campaign_request import CampaignRequest, RawRequest
+from prospection.domain.campaign_request import CampaignRequest, CityZone, RawRequest
 from prospection.domain.google_cost import Estimate, Pricing, billing_month, estimate, pages_needed
 from prospection.domain.trades import expand_queries, load_trades
+from prospection.sources.geo_communes import GeoUnavailable, find_communes
 from prospection.storage.google_usage import month_usage
 from prospection.storage.templates import Template, list_templates, save_template
 
@@ -39,3 +42,17 @@ def templates(engine: Engine) -> list[Template]:
 def synonyms(trades_text: str, synonyms_on: bool = True) -> list[str]:
     keywords = [t for t in trades_text.split(",") if t.strip()]
     return expand_queries(keywords, load_trades(), synonyms_on)
+
+
+@dataclass(frozen=True)
+class CitySearch:
+    choices: list[CityZone]
+    problem: str | None
+
+
+def find_city(client: httpx.Client, name: str) -> CitySearch:
+    try:
+        found = find_communes(client, name)
+    except GeoUnavailable:
+        return CitySearch([], "Le service des communes ne répond pas. Réessayez dans un instant.")
+    return CitySearch(found, None if found else "Aucune commune de ce nom. Vérifiez l'orthographe.")

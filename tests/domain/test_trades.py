@@ -46,3 +46,9 @@ def test_trades_file_is_valid(tmp_path: Path) -> None:
     bad.write_text("- id: x\n  label: X\n")
     with pytest.raises(InvalidTradeFile):
         load_trades(bad)
+
+
+def test_bundled_trades_read_once() -> None:
+    from prospection.domain.trades import load_trades
+
+    assert load_trades() is load_trades()

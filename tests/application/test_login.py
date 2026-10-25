@@ -46,11 +46,29 @@ def test_C82_locked_after_five_failures_even_with_right_password(
         attempt_login(conn, password_hash, "faux", "1.1.1.1", NOW + timedelta(seconds=i))
     result = attempt_login(conn, password_hash, GOOD, "1.1.1.1", NOW + timedelta(minutes=1))
     assert result == LoginResult(LoginOutcome.LOCKED, timedelta(minutes=15))
-    assert len(recent_attempts(conn, 10)) == 5
 
 
-def test_C82_failures_from_two_ips_add_up(conn: Connection, password_hash: str) -> None:
-    for i, ip in enumerate(["1.1.1.1"] * 3 + ["2.2.2.2"] * 2):
-        attempt_login(conn, password_hash, "faux", ip, NOW + timedelta(seconds=i))
-    result = attempt_login(conn, password_hash, GOOD, "3.3.3.3", NOW + timedelta(minutes=1))
+def test_C82_another_ip_cannot_lock_out_the_owner(conn: Connection, password_hash: str) -> None:
+    for i in range(5):
+        attempt_login(conn, password_hash, "faux", "6.6.6.6", NOW + timedelta(seconds=i))
+    result = attempt_login(conn, password_hash, GOOD, "1.1.1.1", NOW + timedelta(minutes=1))
+    assert result.outcome is LoginOutcome.OK
+
+
+def test_C82_many_ips_trigger_the_global_ceiling(conn: Connection, password_hash: str) -> None:
+    for i in range(50):
+        attempt_login(conn, password_hash, "faux", f"10.0.0.{i}", NOW + timedelta(seconds=i))
+    result = attempt_login(conn, password_hash, GOOD, "1.1.1.1", NOW + timedelta(minutes=1))
     assert result.outcome is LoginOutcome.LOCKED
+
+
+def test_C83_blocked_attempts_are_journaled_without_extending_the_block(
+    conn: Connection, password_hash: str
+) -> None:
+    for i in range(5):
+        attempt_login(conn, password_hash, "faux", "6.6.6.6", NOW + timedelta(seconds=i))
+    attempt_login(conn, password_hash, "faux", "6.6.6.6", NOW + timedelta(minutes=10))
+    last = recent_attempts(conn, 1)[0]
+    assert (last.ip, last.success, last.blocked) == ("6.6.6.6", False, True)
+    later = attempt_login(conn, password_hash, GOOD, "6.6.6.6", NOW + timedelta(minutes=16))
+    assert later.outcome is LoginOutcome.OK

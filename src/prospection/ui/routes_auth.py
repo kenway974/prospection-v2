@@ -8,6 +8,7 @@ from sqlalchemy import Engine
 
 from prospection.application.login import LoginOutcome, attempt_login
 from prospection.config import Settings
+from prospection.ui.client_ip import client_ip
 from prospection.ui.cookies import set_session_cookie
 from prospection.ui.deps import get_engine, get_now, get_settings, templates
 from prospection.ui.session import COOKIE_NAME, make_session_value
@@ -37,7 +38,7 @@ def login(
     engine: Engine = Depends(get_engine),  # noqa: B008
     now: datetime = Depends(get_now),  # noqa: B008
 ) -> Response:
-    ip = request.client.host if request.client else "inconnue"
+    ip = client_ip(request, settings)
     password_hash = settings.app_password_hash.get_secret_value()
     with engine.begin() as conn:
         result = attempt_login(conn, password_hash, mot_de_passe, ip, now)

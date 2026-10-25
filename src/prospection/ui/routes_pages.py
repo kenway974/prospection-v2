@@ -6,14 +6,14 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, Response
 from sqlalchemy import Engine
 
+from prospection.application.connection_journal import JOURNAL_SIZE, latest_attempts
 from prospection.config import Settings
-from prospection.storage.login_journal import recent_attempts
 from prospection.ui.deps import get_engine, get_now, get_settings, templates
 from prospection.ui.formatting import long_day, short_datetime
 from prospection.ui.session import require_session
 
 router = APIRouter(dependencies=[Depends(require_session)])
-JOURNAL_SIZE = 50
+STATUS_LABELS = {"ok": "Réussie", "refused": "Refusée", "blocked": "Bloquée"}
 
 
 def _page(request: Request, name: str, tab: str, **context: object) -> Response:
@@ -50,7 +50,9 @@ def connection_journal(
     settings: Settings = Depends(get_settings),  # noqa: B008
     engine: Engine = Depends(get_engine),  # noqa: B008
 ) -> Response:
-    with engine.connect() as conn:
-        attempts = recent_attempts(conn, JOURNAL_SIZE)
-    rows = [(short_datetime(a.at, settings.timezone), a.ip, a.success) for a in attempts]
-    return _page(request, "reglages_connexions.html", "", rows=rows)
+    rows = []
+    for attempt in latest_attempts(engine):
+        status = "blocked" if attempt.blocked else "ok" if attempt.success else "refused"
+        when = short_datetime(attempt.at, settings.timezone)
+        rows.append((when, attempt.ip, status, STATUS_LABELS[status]))
+    return _page(request, "reglages_connexions.html", "", rows=rows, size=JOURNAL_SIZE)

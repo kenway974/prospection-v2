@@ -78,9 +78,12 @@ def test_C83_connection_journal_lists_date_ip_result(client: TestClient, engine:
     with engine.begin() as conn:
         record_attempt(conn, datetime(2026, 10, 24, 8, 0, tzinfo=UTC), "1.2.3.4", True)
         record_attempt(conn, datetime(2026, 10, 24, 9, 0, tzinfo=UTC), "5.6.7.8", False)
+        at = datetime(2026, 10, 24, 10, 0, tzinfo=UTC)
+        record_attempt(conn, at, "9.9.9.9", False, blocked=True)
     page = client.get("/reglages/connexions").text
     assert re.search(r"24/10/2026 13:00.*5\.6\.7\.8.*Refusée", page, re.S)
     assert re.search(r"24/10/2026 12:00.*1\.2\.3\.4.*Réussie", page, re.S)
+    assert re.search(r"24/10/2026 14:00.*9\.9\.9\.9.*Bloquée", page, re.S)
     assert "Se déconnecter" in page
 
 

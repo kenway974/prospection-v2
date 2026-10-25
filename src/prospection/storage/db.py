@@ -11,6 +11,7 @@ from sqlalchemy import (
     Table,
     Text,
     create_engine,
+    false,
 )
 
 metadata = MetaData()
@@ -22,7 +23,9 @@ login_attempts = Table(
     Column("at", DateTime(timezone=True), nullable=False),
     Column("ip", Text, nullable=False),
     Column("success", Boolean, nullable=False),
+    Column("blocked", Boolean, nullable=False, server_default=false()),
     Index("ix_login_attempts_at", "at"),
+    Index("ix_login_attempts_ip_at", "ip", "at"),
 )
 
 

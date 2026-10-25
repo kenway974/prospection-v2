@@ -30,14 +30,18 @@ class LoginResult:
 def attempt_login(
     conn: Connection, password_hash: str, plain: str, ip: str, now: datetime
 ) -> LoginResult:
-    """Vérifie le mot de passe sauf si l'accès est bloqué ; journalise la tentative.
+    """Vérifie le mot de passe sauf si l'accès est bloqué ; journalise chaque tentative.
 
     Le verrou rend « vérifier puis enregistrer » atomique : des tentatives
     simultanées ne peuvent pas dépasser la limite. L'appelant valide la transaction.
     """
     lock_login_attempts(conn)
-    throttle = check_login_allowed(failures_since(conn, now - WINDOW), now)
+    since = now - WINDOW
+    throttle = check_login_allowed(
+        failures_since(conn, since, ip=ip), failures_since(conn, since), now
+    )
     if not throttle.allowed:
+        record_attempt(conn, now, ip, success=False, blocked=True)
         return LoginResult(LoginOutcome.LOCKED, throttle.retry_after)
     success = bool(plain) and verify_password(password_hash, plain)
     record_attempt(conn, now, ip, success)

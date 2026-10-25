@@ -22,7 +22,7 @@ FIELD_MASK = ",".join(
         "places.types", "places.primaryType", "places.businessStatus",
         "places.nationalPhoneNumber", "places.internationalPhoneNumber", "places.websiteUri",
         "places.rating", "places.userRatingCount", "places.regularOpeningHours",
-        "places.googleMapsUri", "places.photos", "nextPageToken",
+        "places.googleMapsUri", "places.photos", "places.addressComponents", "nextPageToken",
     ]
 )  # fmt: skip
 PAGE_SIZE = 20

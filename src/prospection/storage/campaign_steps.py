@@ -17,7 +17,7 @@ class StepSpec:
     zone_label: str
     bias: Circle | None
     restrict_to_bias: bool = False
-    department: str | None = None  # zone département : on écarte ce qui est hors du département
+    region: str | None = None  # département, province ou canton : on écarte ce qui en sort
     country: str = "FR"  # code région envoyé à Google
 
 
@@ -29,7 +29,7 @@ class Step:
     zone_label: str
     bias: Circle | None
     restrict_to_bias: bool
-    department: str | None
+    region: str | None
     country: str
     page_token: str | None
     page_number: int
@@ -48,7 +48,7 @@ def next_step(conn: Connection, campaign_id: int) -> Step | None:
         return None
     return Step(
         row.id, row.query, row.keyword, row.zone_label, decode_circle(row.bias),
-        row.restrict_to_bias, row.department, row.country,
+        row.restrict_to_bias, row.region, row.country,
         row.page_token, row.page_number, row.attempts,
     )  # fmt: skip
 

@@ -85,8 +85,10 @@ def find_region(text: str, country: str) -> DepartmentZone | None:
     return None
 
 
-def region_names(country: str) -> dict[str, str]:
-    return {r.code: r.nom for r in _regions(country)}
+def known_region(text: str, country: str) -> str | None:
+    """Code du canton nommé par Google (« VD », « Vaud »), ou None s'il n'est pas reconnu."""
+    region = find_region(text, country) if text else None
+    return region.code if region else None
 
 
 def postal_region(address: str, country: str) -> str | None:

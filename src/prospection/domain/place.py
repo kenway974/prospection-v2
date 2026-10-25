@@ -35,6 +35,8 @@ class Place:
     maps_url: str | None
     photo_count: int
     owner_photo_estimate: PhotoOwnership
+    country: str | None = None  # code ISO du pays d'après Google (« BE »)
+    admin_area: str | None = None  # région administrative d'après Google (canton « VD »…)
 
 
 def clip(text: str | None, size: int = MAX_TEXT) -> str | None:

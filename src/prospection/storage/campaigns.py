@@ -46,7 +46,7 @@ def create_campaign(
     rows = [
         {"campaign_id": campaign_id, "position": i, "query": s.query, "keyword": s.keyword,
          "zone_label": s.zone_label, "bias": encode_circle(s.bias),
-         "restrict_to_bias": s.restrict_to_bias, "department": s.department,
+         "restrict_to_bias": s.restrict_to_bias, "region": s.region,
          "country": s.country,         "page_number": 0, "done": False, "attempts": 0}
         for i, s in enumerate(steps)
     ]  # fmt: skip

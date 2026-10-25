@@ -29,6 +29,12 @@ class _Photo(BaseModel):
     authorAttributions: list[_Author] = []
 
 
+class _Component(BaseModel):
+    shortText: str = ""
+    longText: str = ""
+    types: list[str] = []
+
+
 class ApiPlace(BaseModel):
     id: str
     displayName: _Text
@@ -45,6 +51,7 @@ class ApiPlace(BaseModel):
     regularOpeningHours: _Hours | None = None
     googleMapsUri: str | None = None
     photos: list[_Photo] = []
+    addressComponents: list[_Component] = []
 
 
 def _ownership(api: ApiPlace) -> PhotoOwnership:
@@ -67,6 +74,11 @@ def _web_link(url: str | None) -> str | None:
     return clean if parts.scheme in ("http", "https") and parts.netloc else None
 
 
+def _component(api: ApiPlace, kind: str) -> str | None:
+    found = next((c for c in api.addressComponents if kind in c.types), None)
+    return clip(found.shortText or found.longText, 60) if found else None
+
+
 def to_place(api: ApiPlace) -> Place:
     hours = api.regularOpeningHours.weekdayDescriptions if api.regularOpeningHours else []
     return Place(
@@ -86,4 +98,6 @@ def to_place(api: ApiPlace) -> Place:
         maps_url=_web_link(api.googleMapsUri),
         photo_count=len(api.photos),
         owner_photo_estimate=_ownership(api),
+        country=_component(api, "country"),
+        admin_area=_component(api, "administrative_area_level_1"),
     )

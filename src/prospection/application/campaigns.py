@@ -50,11 +50,9 @@ def _zone_step(query: str, keyword: str, zone: Zone) -> StepSpec:
         return StepSpec(
             f"{query} {zone.city.name}", keyword, zone.label, bias, True, country=zone.city.country
         )
-    department = zone.code if zone.country == "FR" else None
     return StepSpec(
-        f"{query} {zone.name}", keyword, zone.label, None, department=department,
-        country=zone.country,
-    )  # fmt: skip
+        f"{query} {zone.name}", keyword, zone.label, None, region=zone.code, country=zone.country
+    )
 
 
 def plan_steps(keywords: Sequence[str], zones: Sequence[Zone], synonyms_on: bool) -> list[StepSpec]:

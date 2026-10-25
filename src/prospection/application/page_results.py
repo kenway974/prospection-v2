@@ -7,6 +7,7 @@ from sqlalchemy import Engine
 
 from prospection.domain.criteria import Verdict, evaluate
 from prospection.domain.departments import postal_department
+from prospection.domain.foreign_zones import known_region, postal_region
 from prospection.domain.geo import distance_m
 from prospection.domain.place import Place
 from prospection.domain.trades import find_trade, load_trades
@@ -20,14 +21,25 @@ logger = logging.getLogger(__name__)
 
 
 def _outside_zone(place: Place, step: Step) -> str | None:
-    """Rayon : distance au centre ; département : code postal de l'adresse (C13)."""
-    if step.department:
-        found = postal_department(place.address)
-        return f"Hors zone ({found})" if found and found != step.department else None
+    """Pays d'après Google, puis département ou province (code postal), canton (région
+    Google) ou rayon (distance au centre). Au moindre doute, l'établissement est gardé."""
+    if place.country and place.country != step.country:
+        return f"Hors zone ({place.country})"
+    if step.region:
+        found = _region_of(place, step.country)
+        return f"Hors zone ({found})" if found and found != step.region else None
     if not (step.restrict_to_bias and step.bias) or place.lat is None or place.lon is None:
         return None
     km = distance_m(step.bias.lat, step.bias.lon, place.lat, place.lon) / 1000
     return f"Hors zone ({km:.0f} km)" if km * 1000 > step.bias.radius_m else None
+
+
+def _region_of(place: Place, country: str) -> str | None:
+    if country == "FR":
+        return postal_department(place.address)
+    if country == "BE":
+        return postal_region(place.address, country)
+    return known_region(place.admin_area or "", country)
 
 
 def save_page(

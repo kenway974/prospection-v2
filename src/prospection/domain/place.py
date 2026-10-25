@@ -1,9 +1,11 @@
 """Établissement trouvé sur Google Maps (C42, C43), après validation."""
 
+import re
 from dataclasses import dataclass
 from typing import Literal
 
 MAX_TEXT = 300
+_CONTROL = re.compile(r"[\x00-\x1f\x7f-\x9f]+")
 
 PhotoOwnership = Literal["probable propriétaire", "clients seulement", "inconnu"]
 
@@ -35,5 +37,6 @@ class Place:
     owner_photo_estimate: PhotoOwnership
 
 
-def clip(text: str | None) -> str | None:
-    return None if text is None else text[:MAX_TEXT]
+def clip(text: str | None, size: int = MAX_TEXT) -> str | None:
+    """Texte externe : sans caractères de contrôle (NUL refusé par la base), espaces réduits."""
+    return None if text is None else " ".join(_CONTROL.sub(" ", text).split())[:size]

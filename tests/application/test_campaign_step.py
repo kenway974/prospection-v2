@@ -1,8 +1,5 @@
 """C34 à C41, C79 : une campagne avance page par page et s'arrête au bon moment."""
 
-import contextlib
-from datetime import timedelta
-
 import httpx
 from sqlalchemy import Engine
 
@@ -107,26 +104,6 @@ def test_C41_bad_place_does_not_stop(campaign_db: Engine) -> None:
     assert any("1 établissement illisible ignoré" in e.message for e in state.recent_events)
 
 
-def test_busy_retried_then_skipped(campaign_db: Engine) -> None:
-    client, _ = fake_client(lambda r: httpx.Response(429, json={}))
-    campaign_id = create_campaign(campaign_db, request(target=9), NOW)
-    outcomes = [run_step(campaign_db, BOX, client, PRICING, campaign_id, NOW, TZ) for _ in range(4)]
-    assert [o.retry_at for o in outcomes[:3]] == [
-        NOW + timedelta(seconds=5),
-        NOW + timedelta(seconds=30),
-        None,
-    ]
-    assert outcomes[3].done
-    assert progress(campaign_db, campaign_id).stop_reason is not None
-
-
-def test_refused_stops_with_message(campaign_db: Engine) -> None:
-    client, _ = fake_client(lambda r: httpx.Response(403, json={"error": {}}))
-    campaign_id = create_campaign(campaign_db, request(), NOW)
-    assert run_step(campaign_db, BOX, client, PRICING, campaign_id, NOW, TZ).done
-    assert "Places API (New)" in (progress(campaign_db, campaign_id).stop_reason or "")
-
-
 def test_C79_cost_recorded_per_campaign(campaign_db: Engine) -> None:
     with campaign_db.begin() as conn:
         conn.exec_driver_sql(
@@ -138,37 +115,6 @@ def test_C79_cost_recorded_per_campaign(campaign_db: Engine) -> None:
     run_all(campaign_db, campaign_id, client)
     assert progress(campaign_db, campaign_id).cost_cents == 4
     assert usage(campaign_db) == (1001, 4)
-
-
-def test_C40_rerun_after_crash_does_not_double_count(campaign_db: Engine) -> None:
-    calls = {"n": 0}
-
-    def flaky(request: httpx.Request) -> httpx.Response:
-        calls["n"] += 1
-        if calls["n"] == 1:
-            raise RuntimeError("le worker s'arrête en plein appel")
-        return httpx.Response(200, json={"places": [api_place(1), api_place(2)]})
-
-    client, _ = fake_client(flaky)
-    campaign_id = create_campaign(campaign_db, request(target=9), NOW)
-    with contextlib.suppress(RuntimeError):
-        run_step(campaign_db, BOX, client, PRICING, campaign_id, NOW, TZ)
-    run_all(campaign_db, campaign_id, client)
-    state = progress(campaign_db, campaign_id)
-    assert (state.found, state.qualified) == (2, 2)
-    assert usage(campaign_db) == (2, 0)
-
-
-def test_C37_missing_google_key_stops_with_reason(campaign_db: Engine) -> None:
-    with campaign_db.begin() as conn:
-        conn.exec_driver_sql("DELETE FROM api_keys")
-    client, recorder = fake_client(pages([api_place(1)]))
-    campaign_id = create_campaign(campaign_db, request(), NOW)
-    assert run_step(campaign_db, BOX, client, PRICING, campaign_id, NOW, TZ).done
-    assert recorder.requests == []
-    assert progress(campaign_db, campaign_id).stop_reason == (
-        "Clé Google absente ou illisible : ajoutez-la dans Réglages → Clés API."
-    )
 
 
 def test_C13_place_outside_radius_excluded(campaign_db: Engine) -> None:

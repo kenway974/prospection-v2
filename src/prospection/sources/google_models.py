@@ -56,12 +56,12 @@ def _ownership(api: ApiPlace) -> PhotoOwnership:
 def to_place(api: ApiPlace) -> Place:
     hours = api.regularOpeningHours.weekdayDescriptions if api.regularOpeningHours else []
     return Place(
-        place_id=api.id[:200],
+        place_id=clip(api.id, 200) or "",
         name=clip(api.displayName.text) or "",
         address=clip(api.formattedAddress) or "",
         lat=api.location.latitude if api.location else None,
         lon=api.location.longitude if api.location else None,
-        types=tuple(t[:60] for t in api.types[:20]),
+        types=tuple(clip(t, 60) or "" for t in api.types[:20]),
         primary_type=clip(api.primaryType),
         business_status=clip(api.businessStatus),
         phone=clip(api.internationalPhoneNumber or api.nationalPhoneNumber),

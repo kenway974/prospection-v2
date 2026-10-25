@@ -40,7 +40,9 @@ def save_page(
                 outside = _outside_radius(place, step)
                 if outside:
                     verdict = Verdict(False, (*verdict.reasons, outside), verdict.to_check)
-                if insert_prospect(conn, campaign_id, place, step.keyword, verdict, now):
+                with conn.begin_nested():  # une erreur de base n'annule que cet établissement
+                    new = insert_prospect(conn, campaign_id, place, step.keyword, verdict, now)
+                if new:
                     found += 1
                     qualified += verdict.qualified
                     excluded += not verdict.qualified

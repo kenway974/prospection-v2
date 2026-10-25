@@ -5,6 +5,7 @@ Rejouée par la tâche de fond jusqu'à `done`. Chaque appel Google est réserv�
 ensemble : une reprise après coupure ne compte rien deux fois (C40).
 """
 
+import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
@@ -23,12 +24,15 @@ from prospection.storage.campaigns import add_counts, add_event, load_campaign, 
 from prospection.storage.google_usage import add_call, lock_google, month_usage
 from prospection.storage.secret_box import SecretBox
 
-RETRY_DELAYS = (timedelta(seconds=5), timedelta(seconds=30))
+RETRY_DELAYS = (timedelta(seconds=5), timedelta(seconds=30), timedelta(seconds=120))
+BUSY = "Google trop sollicité"
+UNSAVED = "Page de résultats impossible à enregistrer"
 QUOTA_REACHED = (
     "Quota gratuit de Google atteint pour ce mois (plafond {budget}). Relevez le plafond "
     "dans Réglages → Budget Google, ou attendez le 1er du mois."
 )
 NO_KEY = "Clé Google absente ou illisible : ajoutez-la dans Réglages → Clés API."
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -60,14 +64,17 @@ def _reserve_call(
     return True
 
 
-def _busy(engine: Engine, campaign_id: int, step: Step, now: datetime) -> StepOutcome:
+def _retry_later(
+    engine: Engine, campaign_id: int, step: Step, now: datetime, problem: str
+) -> StepOutcome:
+    """Nouvel essai après 5 s, 30 s puis 2 min ; ensuite la page est ignorée (C41)."""
     with engine.begin() as conn:
         attempts = count_attempt(conn, step.id)
         if attempts > len(RETRY_DELAYS):
             skip_step(conn, step.id)
-            add_event(conn, campaign_id, now, "warning", "Google trop sollicité : page ignorée")
+            add_event(conn, campaign_id, now, "warning", f"{problem} : page ignorée")
             return StepOutcome(done=False)
-        add_event(conn, campaign_id, now, "warning", "Google trop sollicité : nouvel essai bientôt")
+        add_event(conn, campaign_id, now, "warning", f"{problem} : nouvel essai bientôt")
     return StepOutcome(done=False, retry_at=now + RETRY_DELAYS[attempts - 1])
 
 
@@ -113,9 +120,13 @@ def run_step(
     try:
         page = search_page(client, key, step.query, step.bias, step.page_token)
     except GoogleBusy:
-        return _busy(engine, campaign_id, step, now)
+        return _retry_later(engine, campaign_id, step, now, BUSY)
     except GoogleRefused as refused:
         return _finish(engine, campaign_id, str(refused), now)
-    save_page(engine, campaign_id, step, page, now)
+    try:
+        save_page(engine, campaign_id, step, page, now)
+    except Exception:  # sans plafond d'essais, la même page serait rappelée (et payée) sans fin
+        logger.exception("Page de la campagne %s non enregistrée", campaign_id)
+        return _retry_later(engine, campaign_id, step, now, UNSAVED)
     reason = _stop_reason(engine, campaign_id)
     return _finish(engine, campaign_id, reason, now) if reason else StepOutcome(done=False)

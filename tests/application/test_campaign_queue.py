@@ -4,7 +4,7 @@ from datetime import timedelta
 
 from sqlalchemy import Engine, text
 
-from prospection.application.campaign_queue import claim_next, heartbeat, release_until
+from prospection.application.campaign_queue import claim_next, release_until
 from prospection.application.campaigns import create_campaign, progress
 from tests.application.campaign_helpers import NOW, request
 
@@ -36,7 +36,7 @@ def test_C40_stale_running_campaign_is_reclaimed(campaign_db: Engine) -> None:
 def test_campaign_waiting_for_retry_is_not_claimed_before_time(campaign_db: Engine) -> None:
     campaign_id = create_campaign(campaign_db, request(), NOW)
     claim_next(campaign_db, NOW, "w1")
-    release_until(campaign_db, campaign_id, NOW + timedelta(seconds=30))
+    release_until(campaign_db, campaign_id, NOW + timedelta(seconds=30), "w1")
     assert claim_next(campaign_db, NOW + timedelta(seconds=10), "w1") is None
     assert claim_next(campaign_db, NOW + timedelta(seconds=31), "w1") == campaign_id
 
@@ -50,10 +50,20 @@ def test_done_campaign_is_never_claimed(campaign_db: Engine) -> None:
     assert claim_next(campaign_db, NOW + timedelta(hours=1), "w1") is None
 
 
-def test_C40_heartbeat_refused_once_another_worker_took_over(campaign_db: Engine) -> None:
+def test_C40_old_worker_cannot_release_a_campaign_taken_over(campaign_db: Engine) -> None:
     campaign_id = create_campaign(campaign_db, request(), NOW)
     claim_next(campaign_db, NOW, "w1")
     later = NOW + timedelta(minutes=3)
     assert claim_next(campaign_db, later, "w2") == campaign_id
-    assert heartbeat(campaign_db, campaign_id, later, "w1") is False
-    assert heartbeat(campaign_db, campaign_id, later, "w2") is True
+    release_until(campaign_db, campaign_id, later, "w1")  # w1 se réveille et croit la tenir
+    assert claim_next(campaign_db, later, "w3") is None  # toujours à w2
+
+
+def test_C35_stop_does_not_wait_for_the_retry_pause(campaign_db: Engine) -> None:
+    from prospection.application.campaigns import request_stop
+
+    campaign_id = create_campaign(campaign_db, request(), NOW)
+    claim_next(campaign_db, NOW, "w1")
+    release_until(campaign_db, campaign_id, NOW + timedelta(minutes=2), "w1")  # Google occupé
+    request_stop(campaign_db, campaign_id, NOW)
+    assert claim_next(campaign_db, NOW, "w1") == campaign_id

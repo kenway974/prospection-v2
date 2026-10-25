@@ -1,14 +1,14 @@
 """File des campagnes pour la tâche de fond (C40).
 
 Une campagne est prise par un seul worker à la fois (`FOR UPDATE SKIP LOCKED`),
-qui y inscrit son nom. Il la « signe » avant chaque page (heartbeat) ; si la
-signature date de plus de 2 minutes (redémarrage, worker figé), un autre worker
-la reprend, et la signature de l'ancien est alors refusée : il la lâche.
+pour une page, puis rendue à la file : les campagnes avancent à tour de rôle.
+Si elle n'est pas rendue dans les 2 minutes (redémarrage, worker figé), un autre
+worker la reprend ; l'ancien ne peut plus la rendre, elle n'est plus à lui.
 """
 
 from datetime import datetime, timedelta
 
-from sqlalchemy import Engine, or_, select, update
+from sqlalchemy import Engine, func, or_, select, update
 
 from prospection.storage.schema_campaigns import campaigns
 
@@ -26,7 +26,7 @@ def claim_next(
         .where(
             waiting, or_(c.status == "queued", (c.status.in_(["running", "stopping"])) & abandoned)
         )
-        .order_by(c.created_at, c.id)
+        .order_by(func.coalesce(c.retry_at, c.created_at), c.id)  # la plus en attente d'abord
         .limit(1)
         .with_for_update(skip_locked=True)
     )
@@ -42,21 +42,12 @@ def claim_next(
     return int(row.id)
 
 
-def heartbeat(engine: Engine, campaign_id: int, now: datetime, worker_id: str) -> bool:
-    """Faux si un autre worker a repris la campagne entre-temps."""
+def release_until(engine: Engine, campaign_id: int, retry_at: datetime, worker_id: str) -> None:
+    """Rend la campagne à la file (reprise à partir de `retry_at`), seulement si ce worker
+    la tient encore : un worker figé puis réveillé ne lâche pas celle d'un autre."""
     c = campaigns.c
     with engine.begin() as conn:
-        signed = conn.execute(
-            update(campaigns).where(c.id == campaign_id, c.claimed_by == worker_id)
-            .values(heartbeat_at=now).returning(c.id)
-        ).first()  # fmt: skip
-    return signed is not None
-
-
-def release_until(engine: Engine, campaign_id: int, retry_at: datetime) -> None:
-    """Rend la campagne à la file ; elle sera reprise à partir de `retry_at`."""
-    with engine.begin() as conn:
         conn.execute(
-            update(campaigns).where(campaigns.c.id == campaign_id)
+            update(campaigns).where(c.id == campaign_id, c.claimed_by == worker_id)
             .values(retry_at=retry_at, heartbeat_at=None, claimed_by=None)
         )  # fmt: skip

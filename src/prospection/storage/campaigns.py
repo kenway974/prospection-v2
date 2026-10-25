@@ -67,8 +67,9 @@ def set_status(
     conn: Connection, campaign_id: int, status: str, now: datetime, reason: str | None = None,
     only_from: tuple[str, ...] | None = None,
 ) -> bool:  # fmt: skip
-    """Vrai si l'état a changé ; `only_from` : seulement depuis ces états (pas de course)."""
-    values: dict[str, object] = {"status": status, "updated_at": now}
+    """Vrai si l'état a changé ; `only_from` : seulement depuis ces états (pas de course).
+    Toute pause de nouvel essai est levée : un arrêt demandé est traité tout de suite."""
+    values: dict[str, object] = {"status": status, "updated_at": now, "retry_at": None}
     if reason is not None:
         values["stop_reason"] = reason
     query = update(campaigns).where(campaigns.c.id == campaign_id)

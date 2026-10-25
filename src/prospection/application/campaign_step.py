@@ -127,6 +127,9 @@ def run_step(
         return _skip(engine, campaign_id, step, now, "Requête refusée par Google")
     except GoogleRefused as refused:
         return _finish(engine, campaign_id, str(refused), now)
+    except Exception:  # réponse imprévue : l'appel réservé ne doit pas être refait sans fin
+        logger.exception("Réponse Google illisible pour la campagne %s", campaign_id)
+        return _retry_later(engine, campaign_id, step, now, BUSY)
     try:
         save_page(engine, campaign_id, step, page, now)
     except Exception:  # sans plafond d'essais, la même page serait rappelée (et payée) sans fin

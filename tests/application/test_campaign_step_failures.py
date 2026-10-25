@@ -127,3 +127,17 @@ def test_C40_results_and_next_page_saved_together_or_not_at_all(
         saved = conn.exec_driver_sql("SELECT count(*) FROM prospects").scalar_one()
         page = conn.exec_driver_sql("SELECT page_number FROM campaign_steps").scalar_one()
     assert (saved, page) == (0, 0)  # rien d'enregistré : la page sera relue en entier
+
+
+def test_C41_unexpected_error_reading_google_retried_then_skipped(
+    campaign_db: Engine, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def deep_json(*args: object) -> None:
+        raise RecursionError("JSON trop imbriqué")
+
+    monkeypatch.setattr(campaign_step, "search_page", deep_json)
+    campaign_id = create_campaign(campaign_db, request(target=9), NOW)
+    client, _ = fake_client(pages())
+    outcomes = [run_step(campaign_db, BOX, client, PRICING, campaign_id, NOW) for _ in range(5)]
+    assert [o.retry_at is not None for o in outcomes[:3]] == [True, True, True]
+    assert outcomes[4].done and usage(campaign_db) == (4, 0)

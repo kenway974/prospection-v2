@@ -3,11 +3,15 @@
 from sqlalchemy import (
     BigInteger,
     Boolean,
+    CheckConstraint,
     Column,
     DateTime,
     Engine,
     Index,
+    Integer,
+    LargeBinary,
     MetaData,
+    SmallInteger,
     Table,
     Text,
     create_engine,
@@ -27,6 +31,28 @@ login_attempts = Table(
     Column("blocked", Boolean, nullable=False, server_default=false()),
     Index("ix_login_attempts_at", "at"),
     Index("ix_login_attempts_ip_at", "ip", "at"),
+)
+
+api_keys = Table(
+    "api_keys",
+    metadata,
+    Column("service", Text, primary_key=True),
+    Column("ciphertext", LargeBinary, nullable=False),
+    Column("saved_at", DateTime(timezone=True), nullable=False),
+    Column("tested_at", DateTime(timezone=True)),
+    Column("test_ok", Boolean),
+    Column("test_message", Text),
+)
+
+app_settings = Table(
+    "app_settings",
+    metadata,
+    Column("id", SmallInteger, primary_key=True),
+    Column("crm", Text, nullable=False, server_default="none"),
+    Column("notion_database_id", Text),
+    Column("notion_database_title", Text),
+    Column("google_budget_cents", Integer),
+    CheckConstraint("id = 1", name="app_settings_single_row"),
 )
 
 

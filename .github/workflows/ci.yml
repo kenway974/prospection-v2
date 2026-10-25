@@ -55,6 +55,7 @@ jobs:
           docker run -d --name app --network host -e PORT=8077 \
             -e DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/prospection_e2e \
             -e SESSION_SECRET=$(openssl rand -hex 32) -e APP_PASSWORD_HASH="$HASH" \
+            -e ENCRYPTION_KEY=$(uv run python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())") \
             -e BEHIND_PROXY=false prospection:ci
           curl -sf --retry 30 --retry-delay 1 --retry-all-errors localhost:8077/sante \
             || { echo "L'app n'a pas démarré"; exit 1; }

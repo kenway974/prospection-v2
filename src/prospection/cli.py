@@ -3,6 +3,7 @@
 import sys
 from getpass import getpass
 
+from cryptography.fernet import Fernet
 from sqlalchemy.exc import OperationalError
 
 from prospection.application.password import hash_password
@@ -31,11 +32,19 @@ def migrate() -> int:
     return 0
 
 
+def generate_encryption_key() -> int:
+    print("Collez cette valeur dans la variable ENCRYPTION_KEY (et gardez-en une copie) :")
+    print(Fernet.generate_key().decode())
+    return 0
+
+
 def main(argv: list[str]) -> int:
     if argv == ["migrate"]:
         return migrate()
+    if argv == ["generate-encryption-key"]:
+        return generate_encryption_key()
     if argv != ["hash-password"]:
-        print("Usage : python -m prospection.cli hash-password | migrate")
+        print("Usage : python -m prospection.cli hash-password | migrate | generate-encryption-key")
         return 2
     first = getpass("Mot de passe : ")
     if len(first) < MIN_LENGTH:

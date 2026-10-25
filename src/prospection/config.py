@@ -2,6 +2,7 @@
 
 from argon2 import extract_parameters
 from argon2.exceptions import InvalidHashError
+from cryptography.fernet import Fernet
 from pydantic import Field, SecretStr, ValidationError, field_validator
 from pydantic_settings import BaseSettings
 
@@ -14,6 +15,7 @@ class Settings(BaseSettings):
     database_url: str
     session_secret: SecretStr = Field(min_length=32)
     app_password_hash: SecretStr
+    encryption_key: SecretStr
     behind_proxy: bool = True
     timezone: str = "Europe/Paris"
 
@@ -24,6 +26,15 @@ class Settings(BaseSettings):
             extract_parameters(value.get_secret_value())
         except InvalidHashError:
             raise ValueError("hash argon2 attendu") from None
+        return value
+
+    @field_validator("encryption_key")
+    @classmethod
+    def _is_fernet_key(cls, value: SecretStr) -> SecretStr:
+        try:
+            Fernet(value.get_secret_value().encode())
+        except ValueError:
+            raise ValueError("clé Fernet attendue") from None
         return value
 
 

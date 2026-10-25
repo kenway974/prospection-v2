@@ -11,14 +11,14 @@ from prospection.application import campaign_step
 from prospection.application.campaign_step import run_step
 from prospection.application.campaigns import create_campaign, progress
 from tests.application.campaign_helpers import BOX, NOW, PRICING, api_place, pages, request
-from tests.application.test_campaign_step import TZ, run_all, usage
+from tests.application.test_campaign_step import run_all, usage
 from tests.fake_http import fake_client
 
 
 def test_busy_retried_then_skipped(campaign_db: Engine) -> None:
     client, _ = fake_client(lambda r: httpx.Response(429, json={}))
     campaign_id = create_campaign(campaign_db, request(target=9), NOW)
-    outcomes = [run_step(campaign_db, BOX, client, PRICING, campaign_id, NOW, TZ) for _ in range(5)]
+    outcomes = [run_step(campaign_db, BOX, client, PRICING, campaign_id, NOW) for _ in range(5)]
     assert [o.retry_at for o in outcomes[:4]] == [
         NOW + timedelta(seconds=5),
         NOW + timedelta(seconds=30),
@@ -32,7 +32,7 @@ def test_busy_retried_then_skipped(campaign_db: Engine) -> None:
 def test_refused_stops_with_message(campaign_db: Engine) -> None:
     client, _ = fake_client(lambda r: httpx.Response(403, json={"error": {}}))
     campaign_id = create_campaign(campaign_db, request(), NOW)
-    assert run_step(campaign_db, BOX, client, PRICING, campaign_id, NOW, TZ).done
+    assert run_step(campaign_db, BOX, client, PRICING, campaign_id, NOW).done
     assert "Places API (New)" in (progress(campaign_db, campaign_id).stop_reason or "")
 
 
@@ -48,7 +48,7 @@ def test_C40_rerun_after_crash_does_not_double_count_prospects(campaign_db: Engi
     client, _ = fake_client(flaky)
     campaign_id = create_campaign(campaign_db, request(target=9), NOW)
     with contextlib.suppress(RuntimeError):
-        run_step(campaign_db, BOX, client, PRICING, campaign_id, NOW, TZ)
+        run_step(campaign_db, BOX, client, PRICING, campaign_id, NOW)
     run_all(campaign_db, campaign_id, client)
     state = progress(campaign_db, campaign_id)
     assert (state.found, state.qualified) == (2, 2)
@@ -60,7 +60,7 @@ def test_C37_missing_google_key_stops_with_reason(campaign_db: Engine) -> None:
         conn.exec_driver_sql("DELETE FROM api_keys")
     client, recorder = fake_client(pages([api_place(1)]))
     campaign_id = create_campaign(campaign_db, request(), NOW)
-    assert run_step(campaign_db, BOX, client, PRICING, campaign_id, NOW, TZ).done
+    assert run_step(campaign_db, BOX, client, PRICING, campaign_id, NOW).done
     assert recorder.requests == []
     assert progress(campaign_db, campaign_id).stop_reason == (
         "Clé Google absente ou illisible : ajoutez-la dans Réglages → Clés API."
@@ -88,7 +88,7 @@ def test_C41_unexpected_error_saving_a_page_retried_then_skipped(
     monkeypatch.setattr(campaign_step, "save_page", broken)
     client, recorder = fake_client(pages([api_place(1)]))
     campaign_id = create_campaign(campaign_db, request(target=9), NOW)
-    outcomes = [run_step(campaign_db, BOX, client, PRICING, campaign_id, NOW, TZ) for _ in range(5)]
+    outcomes = [run_step(campaign_db, BOX, client, PRICING, campaign_id, NOW) for _ in range(5)]
     assert [o.retry_at is not None for o in outcomes[:3]] == [True, True, True]
     assert outcomes[3].retry_at is None and not outcomes[3].done
     assert outcomes[4].done

@@ -56,3 +56,13 @@ def test_pricing_file_is_valid(tmp_path: Path) -> None:
     bad.write_text("free_per_month: beaucoup\n")
     with pytest.raises(InvalidPricingFile):
         load_pricing(bad)
+
+
+def test_C07_quota_month_follows_google_pacific_time() -> None:
+    from datetime import UTC, datetime
+
+    from prospection.domain.google_cost import billing_month
+
+    # 1er novembre 2026 : 06:59 UTC = 7h59 à Paris, mais encore le 31 octobre en Californie
+    assert billing_month(datetime(2026, 11, 1, 6, 59, tzinfo=UTC)) == "2026-10"
+    assert billing_month(datetime(2026, 11, 1, 7, 0, tzinfo=UTC)) == "2026-11"

@@ -10,7 +10,6 @@ from sqlalchemy import Engine
 from prospection.application.budget_settings import search_readiness
 from prospection.application.campaigns import latest_campaigns
 from prospection.application.search_screen import estimate_raw, launch, synonyms, templates
-from prospection.config import Settings
 from prospection.domain.campaign_request import InvalidRequest, validate_request
 from prospection.domain.google_cost import Pricing
 from prospection.sources.geo_communes import GeoUnavailable, find_communes
@@ -21,7 +20,6 @@ from prospection.ui.deps import (
     get_http_client,
     get_now,
     get_pricing,
-    get_settings,
 )  # fmt: skip
 from prospection.ui.deps import (
     templates as tpl,
@@ -83,10 +81,9 @@ def synonyms_preview(request: Request, metiers: str = "") -> Response:
 async def estimation(
     request: Request, engine: Engine = Depends(get_engine),  # noqa: B008
     pricing: Pricing = Depends(get_pricing), now: datetime = Depends(get_now),  # noqa: B008
-    settings: Settings = Depends(get_settings),  # noqa: B008
 ) -> Response:  # fmt: skip
     form = {k: str(v) for k, v in (await request.form()).items()}
-    result = estimate_raw(engine, pricing, parse_form(form).raw, now, settings.timezone)
+    result = estimate_raw(engine, pricing, parse_form(form).raw, now)
     context = {"estimate": result, "paid": euros(result.paid_cents)}
     return tpl.TemplateResponse(request, "_estimate.html", context)
 

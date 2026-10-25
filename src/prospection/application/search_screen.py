@@ -1,26 +1,23 @@
 """Écran Recherche : estimation, lancement, modèles (C08, C16, C18)."""
 
 from datetime import datetime
-from zoneinfo import ZoneInfo
 
 from sqlalchemy import Engine
 
 from prospection.application.budget_settings import current_budget
 from prospection.application.campaigns import create_campaign, plan_steps
 from prospection.domain.campaign_request import CampaignRequest, RawRequest
-from prospection.domain.google_cost import Estimate, Pricing, estimate, pages_needed
+from prospection.domain.google_cost import Estimate, Pricing, billing_month, estimate, pages_needed
 from prospection.domain.trades import expand_queries, load_trades
 from prospection.storage.google_usage import month_usage
 from prospection.storage.templates import Template, list_templates, save_template
 
 
-def estimate_raw(
-    engine: Engine, pricing: Pricing, raw: RawRequest, now: datetime, timezone: str
-) -> Estimate:
+def estimate_raw(engine: Engine, pricing: Pricing, raw: RawRequest, now: datetime) -> Estimate:
     """Coût au pire de la demande telle que saisie (même incomplète)."""
     keywords = [t.strip() for t in raw.trades if t.strip()]
     pages = pages_needed(len(plan_steps(keywords, raw.zones, raw.synonyms_on)))
-    month = now.astimezone(ZoneInfo(timezone)).strftime("%Y-%m")
+    month = billing_month(now)
     with engine.connect() as conn:
         calls, spent = month_usage(conn, month)
     return estimate(pricing, pages, calls, spent, current_budget(engine))

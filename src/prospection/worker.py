@@ -25,10 +25,10 @@ logger = logging.getLogger("prospection.worker")
 class Worker:
     def __init__(
         self, engine: Engine, box: SecretBox, client: httpx.Client, pricing: Pricing,
-        timezone: str, now: Callable[[], datetime] = lambda: datetime.now(UTC),
+        now: Callable[[], datetime] = lambda: datetime.now(UTC),
     ) -> None:  # fmt: skip
         self.engine, self.box, self.client, self.pricing = engine, box, client, pricing
-        self.timezone, self.now = timezone, now
+        self.now = now
         self.worker_id = uuid.uuid4().hex
 
     def work_once(self, stop: threading.Event | None = None) -> bool:
@@ -51,7 +51,7 @@ class Worker:
                 return True
             outcome = run_step(
                 self.engine, self.box, self.client, self.pricing, campaign_id,
-                self.now(), self.timezone,
+                self.now(),
             )  # fmt: skip
             if outcome.done:
                 logger.info("Campagne %s terminée", campaign_id)
@@ -83,9 +83,7 @@ def main() -> None:  # pragma: no cover (point d'entrée, testé en bout en bout
     signal.signal(signal.SIGTERM, lambda *_: stop.set())
     box = SecretBox(settings.encryption_key.get_secret_value())
     with make_client(settings.google_places_test_url) as client:
-        worker = Worker(
-            make_engine(settings.database_url), box, client, load_pricing(), settings.timezone
-        )
+        worker = Worker(make_engine(settings.database_url), box, client, load_pricing())
         logger.info("Tâche de fond démarrée")
         worker.run_forever(stop)
 

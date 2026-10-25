@@ -7,9 +7,11 @@ propriétaire (0 € par défaut) borne ce qui peut être dépensé au-delà du 
 
 import math
 from dataclasses import dataclass
+from datetime import datetime
 from decimal import Decimal
 from importlib import resources
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
@@ -78,3 +80,11 @@ def estimate(
 def pages_needed(steps: int, max_pages: int = MAX_PAGES_PER_QUERY) -> int:
     """Au pire : chaque étape (requête et zone) lit toutes ses pages."""
     return steps * max_pages
+
+
+GOOGLE_BILLING_TZ = ZoneInfo("America/Los_Angeles")
+
+
+def billing_month(now: datetime) -> str:
+    """Mois du quota Google : il repart le 1er à minuit, heure du Pacifique (pas de Paris)."""
+    return now.astimezone(GOOGLE_BILLING_TZ).strftime("%Y-%m")

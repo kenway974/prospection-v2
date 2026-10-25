@@ -19,12 +19,10 @@ from tests.application.campaign_helpers import (
 )
 from tests.fake_http import fake_client
 
-TZ = "Europe/Paris"
-
 
 def run_all(engine: Engine, campaign_id: int, client: httpx.Client, limit: int = 20) -> None:
     for _ in range(limit):
-        if run_step(engine, BOX, client, PRICING, campaign_id, NOW, TZ).done:
+        if run_step(engine, BOX, client, PRICING, campaign_id, NOW).done:
             return
     raise AssertionError("la campagne ne s'arrête pas")
 
@@ -77,9 +75,9 @@ def test_C37_C07_stops_at_free_quota_with_reason_and_keeps_prospects(campaign_db
 def test_C35_stop_keeps_found(campaign_db: Engine) -> None:
     client, _ = fake_client(pages([api_place(1)], [api_place(2)]))
     campaign_id = create_campaign(campaign_db, request(target=5), NOW)
-    run_step(campaign_db, BOX, client, PRICING, campaign_id, NOW, TZ)
+    run_step(campaign_db, BOX, client, PRICING, campaign_id, NOW)
     request_stop(campaign_db, campaign_id, NOW)
-    assert run_step(campaign_db, BOX, client, PRICING, campaign_id, NOW, TZ).done
+    assert run_step(campaign_db, BOX, client, PRICING, campaign_id, NOW).done
     state = progress(campaign_db, campaign_id)
     assert (state.status, state.qualified, state.stop_reason) == (
         "done",
@@ -127,3 +125,17 @@ def test_C13_place_outside_radius_excluded(campaign_db: Engine) -> None:
     run_all(campaign_db, campaign_id, client)
     state = progress(campaign_db, campaign_id)
     assert (state.qualified, state.exclusion_counts) == (1, [("Hors zone", 1)])
+
+
+def test_C07_free_quota_used_up_stays_used_up_until_google_resets_it(campaign_db: Engine) -> None:
+    from datetime import UTC, datetime
+
+    with campaign_db.begin() as conn:
+        conn.exec_driver_sql(
+            "INSERT INTO google_usage (month, calls, cost_cents) VALUES ('2026-10', 1000, 0)"
+        )
+    paris_morning = datetime(2026, 11, 1, 5, 0, tzinfo=UTC)  # 6h à Paris, octobre chez Google
+    client, recorder = fake_client(pages([api_place(1)]))
+    campaign_id = create_campaign(campaign_db, request(), paris_morning)
+    assert run_step(campaign_db, BOX, client, PRICING, campaign_id, paris_morning).done
+    assert recorder.requests == []

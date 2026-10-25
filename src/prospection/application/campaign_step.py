@@ -8,7 +8,6 @@ ensemble : une reprise après coupure ne compte rien deux fois (C40).
 import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo
 
 import httpx
 from sqlalchemy import Engine
@@ -16,7 +15,7 @@ from sqlalchemy import Engine
 from prospection.application.api_keys import read_key
 from prospection.application.budget_settings import current_budget
 from prospection.application.page_results import save_page
-from prospection.domain.google_cost import Pricing, call_cost_cents, can_call
+from prospection.domain.google_cost import Pricing, billing_month, call_cost_cents, can_call
 from prospection.domain.services import Service
 from prospection.sources.google_search import GoogleBusy, GoogleRefused, search_page
 from prospection.storage.campaign_steps import Step, count_attempt, next_step, skip_step
@@ -97,7 +96,7 @@ def _stop_reason(engine: Engine, campaign_id: int) -> str | None:
 
 def run_step(
     engine: Engine, box: SecretBox, client: httpx.Client, pricing: Pricing, campaign_id: int,
-    now: datetime, timezone: str,
+    now: datetime,
 ) -> StepOutcome:  # fmt: skip
     with engine.connect() as conn:
         if load_campaign(conn, campaign_id).status == "done":
@@ -111,8 +110,8 @@ def run_step(
     with engine.connect() as conn:
         step = next_step(conn, campaign_id)
     if step is None:  # toutes les pages lues entre-temps
-        return run_step(engine, box, client, pricing, campaign_id, now, timezone)
-    month = now.astimezone(ZoneInfo(timezone)).strftime("%Y-%m")
+        return run_step(engine, box, client, pricing, campaign_id, now)
+    month = billing_month(now)
     if not _reserve_call(engine, pricing, campaign_id, month, now):
         budget = current_budget(engine)
         euros = f"{budget // 100} €" if budget % 100 == 0 else f"{budget / 100:.2f} €"

@@ -28,5 +28,5 @@ def test_C16_estimate_counts_the_pages_the_campaign_may_read(campaign_db: Engine
     raw = RawRequest(
         "Test", ["cuisiniste", "cuisine sur mesure"], [LYON, LYON, RHONE], 9, Criteria(), True
     )
-    estimate = estimate_raw(campaign_db, PRICING, raw, NOW, "Europe/Paris")
+    estimate = estimate_raw(campaign_db, PRICING, raw, NOW)
     assert estimate.pages == 6 * 3

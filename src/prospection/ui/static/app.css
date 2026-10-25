@@ -69,4 +69,5 @@ a { color: var(--ocean); }
   gap: 3px; min-height: 52px; border-radius: 26px; color: var(--secondary); font-size: 11px;
   text-decoration: none; }
 .tab[aria-current="page"] { background: var(--ocean-soft); color: var(--ocean); font-weight: 600; }
-:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
+:focus-visible { outline: 3px solid var(--ocean); outline-offset: 2px;
+  box-shadow: 0 0 0 5px var(--sun); }

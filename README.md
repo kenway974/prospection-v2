@@ -52,9 +52,10 @@ Les tests de bout en bout (`pytest -m e2e`) tournent dans la CI sur l'image Dock
 Le conteneur applique les migrations au démarrage, puis lance l'app. Railway vérifie `/sante`.
 
 **En cas de souci**
-- Accès bloqué après 5 essais ratés : attendre 15 minutes.
-- Pour fermer toutes les sessions ouvertes (téléphone perdu, par exemple), changer `SESSION_SECRET` ou le mot de passe.
+- 5 essais ratés depuis une même adresse bloquent cette adresse 15 minutes ; 50 essais ratés en tout (attaque depuis de nombreuses adresses) bloquent tout le monde 15 minutes. Il suffit d'attendre.
+- Une session dure 30 jours sans utilisation et 90 jours au plus après la connexion.
+- Pour fermer tout de suite toutes les sessions ouvertes (téléphone perdu, par exemple), changer `SESSION_SECRET` ou le mot de passe.
 
 ## Installer l'app sur Android
 
-Ouvrir l'adresse de l'app dans Chrome, se connecter, puis menu ⋮ → **« Installer l'application »**. L'app apparaît avec son icône et s'ouvre en plein écran. La session reste ouverte 30 jours.
+Ouvrir l'adresse de l'app dans Chrome, se connecter, puis menu ⋮ → **« Installer l'application »**. L'app apparaît avec son icône et s'ouvre en plein écran. La session reste ouverte 30 jours (90 jours au plus après la connexion).

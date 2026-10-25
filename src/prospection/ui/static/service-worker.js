@@ -1,6 +1,6 @@
 // Service worker minimal (C116) : réseau d'abord ; seuls les fichiers de /static/
 // sont gardés en cache, jamais une page de l'app. Hors réseau, page d'explication.
-const CACHE = "prospection-statique-v1";
+const CACHE = "prospection-statique-v2";
 const OFFLINE = "/static/hors-ligne.html";
 
 self.addEventListener("install", (event) => {
@@ -25,13 +25,19 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE).then((cache) => cache.put(request, copy));
+          if (response.ok) {
+            const copy = response.clone();
+            caches.open(CACHE).then((cache) => cache.put(request, copy));
+          }
           return response;
         })
-        .catch(() => caches.match(request))
+        .catch(() => caches.match(request).then((cached) => cached || Response.error()))
     );
   } else if (request.mode === "navigate") {
-    event.respondWith(fetch(request).catch(() => caches.match(OFFLINE)));
+    event.respondWith(
+      fetch(request).catch(() =>
+        caches.match(OFFLINE).then((offline) => offline || Response.error())
+      )
+    );
   }
 });

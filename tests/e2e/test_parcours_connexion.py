@@ -31,3 +31,9 @@ def test_C117_nav_never_hides_the_end_of_the_page(page: Page, base_url: str) -> 
     nav = page.get_by_role("navigation", name="Navigation principale").bounding_box()
     assert last and nav
     assert last["y"] + last["height"] <= nav["y"]
+
+
+def test_C116_service_worker_activates(page: Page, base_url: str) -> None:
+    page.goto(f"{base_url}/connexion")
+    ready = page.evaluate("navigator.serviceWorker.ready.then((r) => r.active !== null)")
+    assert ready is True

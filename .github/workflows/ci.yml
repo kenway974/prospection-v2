@@ -56,7 +56,8 @@ jobs:
             -e DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/prospection_e2e \
             -e SESSION_SECRET=$(openssl rand -hex 32) -e APP_PASSWORD_HASH="$HASH" \
             -e BEHIND_PROXY=false prospection:ci
-          for i in $(seq 1 30); do curl -sf localhost:8077/sante && break; sleep 1; done
+          curl -sf --retry 30 --retry-delay 1 --retry-all-errors localhost:8077/sante \
+            || { echo "L'app n'a pas démarré"; exit 1; }
           uv run playwright install --with-deps chromium
           E2E_BASE_URL=http://localhost:8077 E2E_PASSWORD='mot de passe e2e' uv run pytest -m e2e
       - name: Journaux de l'app en cas d'échec

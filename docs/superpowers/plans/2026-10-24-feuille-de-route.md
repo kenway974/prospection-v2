@@ -8,7 +8,7 @@ Chaque lot a son propre plan détaillé (`docs/superpowers/plans/AAAA-MM-JJ-lot-
 |---|---|---|
 | **0 · Socle** | Projet, outillage, CI, base, connexion, en-têtes de sécurité, coquille mobile (navigation flottante), PWA, déploiement Railway | C01, C82, C83, C84, C96, C97, C101, C116, C117 |
 | 1 · Réglages et clés | Saisie, test et chiffrement des clés (Google, Notion, Sirène), budget, choix de la base Notion, fuseau | C02 à C09, C85, C86 |
-| 2 · Campagne Google Maps | Formulaire de recherche, synonymes, estimation de coût, tâche de fond, critères gratuits puis payants, déduplication, suivi en direct, arrêt / reprise | C10 à C23, C30 à C42, C79, C119 |
+| 2 · Campagne Google Maps | Formulaire de recherche, synonymes, estimation de coût, tâche de fond, critères gratuits puis payants, déduplication, suivi en direct, arrêt / reprise | C10 à C23, C30 à C43, C79, C119 |
 | 3 · Suivi des appels | Liste des prospects, session d'appel, statuts, prochaine action, notes, contact, écran Aujourd'hui | C61, C102 à C107, C109, C120 |
 | 4 · Registre officiel | Créations récentes (Sirène), rapprochement sûr, API Recherche d'entreprises, non-diffusibles | C24 à C27, C44, C45, C93 |
 | 5 · Site web | Site retrouvé, lecture sécurisée (SSRF, taille, durée), technologie, audit, SEO local, score du site | C28, C29, C46 à C52, C87, C88 |

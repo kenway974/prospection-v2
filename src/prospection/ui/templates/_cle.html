@@ -11,7 +11,7 @@
   {% if status.test_message %}<p class="row {{ 'ok' if status.test_ok else 'refused' }}" role="status">{{ status.test_message }}</p>{% endif %}
   <form method="post" action="/reglages/cles/{{ status.service.value }}" class="form">
     <label for="cle-champ-{{ status.service.value }}">Nouvelle clé</label>
-    <input id="cle-champ-{{ status.service.value }}" name="cle" type="password" autocomplete="off" spellcheck="false" autocapitalize="off">
+    <input id="cle-champ-{{ status.service.value }}" name="cle" type="password" autocomplete="one-time-code" spellcheck="false" autocapitalize="off">
     {% if error and error.service == status.service %}<p class="error" role="alert">{{ error.message }}</p>{% endif %}
     <button type="submit" class="button-primary">Enregistrer</button>
   </form>

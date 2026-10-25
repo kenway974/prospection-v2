@@ -25,7 +25,7 @@ def test_C85_stored_key_is_encrypted_in_database(conn: Connection) -> None:
 
 def test_record_and_reset_test_result(conn: Connection) -> None:
     save_key(conn, Service.NOTION, BOX.encrypt("secret_1"), NOW)
-    record_test(conn, Service.NOTION, NOW, ok=True, message="Jeton Notion valide.")
+    record_test(conn, Service.NOTION, NOW, NOW, ok=True, message="Jeton Notion valide.")
     stored = load_key(conn, Service.NOTION)
     assert stored is not None
     assert (stored.tested_at, stored.test_ok, stored.test_message) == (

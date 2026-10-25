@@ -96,5 +96,13 @@ def test_assets_are_linked(client: TestClient) -> None:
     page = client.get("/").text
     assert '<link rel="stylesheet" href="/static/app.css">' in page
     assert '<script src="/static/htmx-2.0.11.min.js" defer></script>' in page
-    assert '<meta name="htmx-config" content=\'{"includeIndicatorStyles": false}\'>' in page
+
     assert client.get("/static/htmx-2.0.11.min.js").status_code == 200
+
+
+def test_htmx_is_configured_defensively(client: TestClient) -> None:
+    page = client.get("/").text
+    assert (
+        '<meta name="htmx-config" content=\'{"includeIndicatorStyles": false, '
+        '"allowEval": false, "allowScriptTags": false, "historyCacheSize": 0}\'>' in page
+    )

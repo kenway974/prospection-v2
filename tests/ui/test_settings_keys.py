@@ -52,7 +52,7 @@ def test_C02_key_is_saved_once_and_status_shown(client: TestClient) -> None:
     assert "Enregistrée le 25/10/2026" in page
     assert "Pas encore saisie" in page
     assert SECRET not in page
-    assert 'type="password"' in page and 'autocomplete="off"' in page
+    assert 'type="password"' in page and 'autocomplete="one-time-code"' in page
 
 
 def test_C04_key_never_in_page_logs_or_redirect(

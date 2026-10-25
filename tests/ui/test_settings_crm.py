@@ -20,8 +20,16 @@ NOW = datetime(2026, 10, 25, 8, 0, tzinfo=UTC)
 ORIGIN = {"Origin": "https://testserver"}
 DATABASES = {
     "results": [
-        {"object": "database", "id": "id-autre", "title": [{"plain_text": "Clients"}]},
-        {"object": "database", "id": "id-pv2", "title": [{"plain_text": "Prospects v2"}]},
+        {
+            "object": "database",
+            "id": "aaaaaaaa-0000-0000-0000-000000000001",
+            "title": [{"plain_text": "Clients"}],
+        },
+        {
+            "object": "database",
+            "id": "aaaaaaaa-0000-0000-0000-000000000002",
+            "title": [{"plain_text": "Prospects v2"}],
+        },
     ]
 }
 
@@ -56,21 +64,24 @@ def test_C05_C06_databases_listed_and_prospects_v2_preselected(
 ) -> None:
     page = html.unescape(make_client(json_reply(200, DATABASES)).get("/reglages/crm").text)
     assert "Aucun (export fichier seulement)" in page
-    assert '<option value="id-pv2" selected>Prospects v2</option>' in page
-    assert '<option value="id-autre">Clients</option>' in page
+    assert (
+        '<option value="aaaaaaaa-0000-0000-0000-000000000002" selected>Prospects v2</option>'
+        in page
+    )
+    assert '<option value="aaaaaaaa-0000-0000-0000-000000000001">Clients</option>' in page
 
 
 def test_C06_choice_is_saved(make_client: Callable[..., TestClient]) -> None:
     client = make_client(json_reply(200, DATABASES))
     response = client.post(
         "/reglages/crm",
-        data={"crm": "notion", "base": "id-autre"},
+        data={"crm": "notion", "base": "aaaaaaaa-0000-0000-0000-000000000001"},
         headers=ORIGIN,
         follow_redirects=False,
     )
     assert response.status_code == 303
     page = html.unescape(client.get("/reglages/crm").text)
-    assert '<option value="id-autre" selected>Clients</option>' in page
+    assert '<option value="aaaaaaaa-0000-0000-0000-000000000001" selected>Clients</option>' in page
     assert "Base actuelle : Clients" in page
 
 

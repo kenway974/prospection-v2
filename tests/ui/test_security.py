@@ -68,3 +68,8 @@ def test_C84_forwarded_proto_is_read_leniently(client: TestClient) -> None:
             "/chemin", headers={"X-Forwarded-Proto": value}, follow_redirects=False
         )
         assert response.status_code == 308, value
+
+
+def test_pages_are_not_cached_but_static_files_are(client: TestClient) -> None:
+    assert client.get("/connexion").headers["cache-control"] == "no-store"
+    assert "no-store" not in client.get("/static/app.css").headers.get("cache-control", "")

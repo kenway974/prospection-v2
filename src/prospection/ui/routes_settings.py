@@ -10,6 +10,7 @@ from sqlalchemy import Engine
 
 from prospection.application.api_keys import (
     EmptyKey,
+    InvalidKey,
     KeyStatus,
     key_statuses,
     remove_key,
@@ -93,8 +94,13 @@ def save(
     try:
         store_key(engine, box, service, cle, now)
     except EmptyKey:
-        error = {"service": service, "message": "Collez la clé avant d'enregistrer."}
-        return keys_page(request, engine, box, settings, error=error, status_code=400)
+        message = "Collez la clé avant d'enregistrer."
+    except InvalidKey:
+        message = "Clé invalide : recopiez-la depuis le site du service, sans caractère spécial."
+    else:
+        return RedirectResponse("/reglages/cles", status_code=303)
+    error = {"service": service, "message": message}
+    return keys_page(request, engine, box, settings, error=error, status_code=400)
     return RedirectResponse("/reglages/cles", status_code=303)
 
 

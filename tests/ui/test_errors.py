@@ -51,3 +51,13 @@ def test_wrong_method_shows_french_message(client: TestClient) -> None:
     response = client.post("/sante", headers={"Origin": "https://testserver"})
     assert response.status_code == 405
     assert "Action impossible sur cette page. Revenez à l'accueil." in html.unescape(response.text)
+
+
+def test_malformed_form_never_echoes_input(client: TestClient) -> None:
+    response = client.post(
+        "/connexion",
+        files={"mot_de_passe": ("x.txt", b"SECRET-ECHO")},
+        headers={"Origin": "https://testserver"},
+    )
+    assert "SECRET-ECHO" not in response.text
+    assert response.headers["content-type"].startswith("text/html")

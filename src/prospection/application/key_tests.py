@@ -6,14 +6,13 @@ from datetime import datetime
 import httpx
 from sqlalchemy import Engine
 
-from prospection.application.api_keys import read_key
 from prospection.crm.notion import check_notion_token
 from prospection.domain.key_check import KeyCheck
 from prospection.domain.services import Service
 from prospection.sources.google_places import check_google_key
 from prospection.sources.insee import check_insee_key
 from prospection.storage.api_keys import load_key, record_test
-from prospection.storage.secret_box import SecretBox
+from prospection.storage.secret_box import SecretBox, UnreadableSecret
 
 CHECKERS: dict[Service, Callable[[httpx.Client, str], KeyCheck]] = {
     Service.GOOGLE: check_google_key,
@@ -29,12 +28,15 @@ def run_key_test(
         stored = load_key(conn, service)
     if stored is None:
         return KeyCheck(False, "Aucune clé enregistrée.")
-    key = read_key(engine, box, service)
+    try:
+        key: str | None = box.decrypt(stored.ciphertext)
+    except UnreadableSecret:
+        key = None
     result = (
         KeyCheck(False, "Clé illisible : saisissez-la à nouveau.")
         if key is None
         else CHECKERS[service](client, key)
     )
     with engine.begin() as conn:
-        record_test(conn, service, now, result.ok, result.message)
+        record_test(conn, service, stored.saved_at, now, result.ok, result.message)
     return result

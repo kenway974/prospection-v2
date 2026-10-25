@@ -55,3 +55,9 @@ def test_C03_unexpected_html() -> None:
         result = check_google_key(client, KEY)
         assert result == KeyCheck(False, "Réponse inattendue de Google Maps. Réessayez plus tard.")
         assert KEY not in result.message
+
+
+def test_C03_non_ascii_key_never_crashes() -> None:
+    client, _ = fake_client(json_reply(200, {}))
+    result = check_google_key(client, "AIza​123")
+    assert result.ok is False

@@ -47,10 +47,13 @@ def load_key(conn: Connection, service: Service) -> StoredKey | None:
     )
 
 
-def record_test(conn: Connection, service: Service, now: datetime, ok: bool, message: str) -> None:
+def record_test(
+    conn: Connection, service: Service, saved_at: datetime, now: datetime, ok: bool, message: str
+) -> None:
+    """Enregistre le résultat, seulement si la clé testée n'a pas été remplacée entre-temps."""
     conn.execute(
         update(api_keys)
-        .where(api_keys.c.service == service.value)
+        .where(api_keys.c.service == service.value, api_keys.c.saved_at == saved_at)
         .values(tested_at=now, test_ok=ok, test_message=message)
     )
 

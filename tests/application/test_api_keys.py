@@ -9,6 +9,7 @@ from sqlalchemy import Engine
 
 from prospection.application.api_keys import (
     EmptyKey,
+    InvalidKey,
     key_statuses,
     read_key,
     remove_key,
@@ -57,3 +58,10 @@ def test_remove_key(engine: Engine) -> None:
     store_key(engine, BOX, Service.INSEE, "k", NOW)
     remove_key(engine, Service.INSEE)
     assert read_key(engine, BOX, Service.INSEE) is None
+
+
+@pytest.mark.parametrize("raw", ["AIza​123", "AIza“123”", "é" * 3, "x" * 513])
+def test_C02_key_with_special_characters_is_refused(engine: Engine, raw: str) -> None:
+    with pytest.raises(InvalidKey):
+        store_key(engine, BOX, Service.GOOGLE, raw, NOW)
+    assert read_key(engine, BOX, Service.GOOGLE) is None

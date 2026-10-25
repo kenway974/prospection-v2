@@ -3,6 +3,7 @@
 from collections.abc import Iterator
 from datetime import UTC, datetime
 
+import httpx
 import pytest
 from cryptography.fernet import Fernet
 from sqlalchemy import Engine
@@ -54,3 +55,16 @@ def test_C03_test_unreadable_key(engine: Engine) -> None:
     assert run_key_test(engine, BOX, Service.INSEE, client, NOW) == KeyCheck(
         False, "Clé illisible : saisissez-la à nouveau."
     )
+
+
+def test_C03_result_not_written_on_a_key_replaced_meanwhile(engine: Engine) -> None:
+    store_key(engine, BOX, Service.GOOGLE, "ancienne", NOW)
+
+    def replace_then_answer(request: httpx.Request) -> httpx.Response:
+        store_key(engine, BOX, Service.GOOGLE, "nouvelle", NOW.replace(hour=9))
+        return httpx.Response(200, json={"places": []})
+
+    client, _ = fake_client(replace_then_answer)
+    run_key_test(engine, BOX, Service.GOOGLE, client, NOW)
+    status = key_statuses(engine, BOX)[0]
+    assert (status.test_ok, status.test_message) == (None, None)

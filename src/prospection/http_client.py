@@ -24,7 +24,7 @@ def send(
     """Envoie la requête ; rend la réponse, ou un KeyCheck d'échec si le service est muet."""
     try:
         return client.request(method, url, **kwargs)
-    except httpx.HTTPError as error:
+    except (httpx.HTTPError, UnicodeError) as error:
         logger.warning("%s injoignable : %s", service_label, type(error).__name__)
         return no_answer(service_label)
 

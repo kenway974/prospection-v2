@@ -1,5 +1,6 @@
 """Saisie, état et lecture des clés API (C02, C04, C85)."""
 
+import re
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -12,6 +13,14 @@ from prospection.storage.secret_box import SecretBox, UnreadableSecret
 
 class EmptyKey(ValueError):
     """La clé collée est vide."""
+
+
+class InvalidKey(ValueError):
+    """La clé contient des caractères qu'aucun service n'utilise (copier-coller abîmé)."""
+
+
+MAX_KEY_LENGTH = 512
+_KEY_CHARACTERS = re.compile(r"[\x21-\x7e]+")
 
 
 @dataclass(frozen=True)
@@ -60,6 +69,8 @@ def store_key(engine: Engine, box: SecretBox, service: Service, raw: str, now: d
     key = "".join(raw.split())
     if not key:
         raise EmptyKey
+    if len(key) > MAX_KEY_LENGTH or not _KEY_CHARACTERS.fullmatch(key):
+        raise InvalidKey
     with engine.begin() as conn:
         save_key(conn, service, box.encrypt(key), now)
 

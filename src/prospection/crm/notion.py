@@ -1,5 +1,6 @@
 """API officielle de Notion (version épinglée)."""
 
+import uuid
 from dataclasses import dataclass
 
 import httpx
@@ -48,17 +49,24 @@ class _TitlePart(BaseModel):
 
 
 class _Database(BaseModel):
-    id: str
+    id: uuid.UUID
     title: list[_TitlePart]
 
 
 class _SearchResult(BaseModel):
     results: list[_Database]
+    has_more: bool = False
+    next_cursor: str | None = None
 
 
-def list_notion_databases(client: httpx.Client, token: str) -> list[NotionDatabase]:
-    """Bases partagées avec l'intégration, triées par titre (C06)."""
-    body = {"filter": {"property": "object", "value": "database"}}
+MAX_PAGES = 5
+MAX_TITLE_LENGTH = 200
+
+
+def _search_page(client: httpx.Client, token: str, cursor: str | None) -> _SearchResult:
+    body: dict[str, object] = {"filter": {"property": "object", "value": "database"}}
+    if cursor:
+        body["start_cursor"] = cursor
     response = send(client, "POST", f"{API_URL}/search", LABEL, headers=headers(token), json=body)
     if isinstance(response, KeyCheck):
         raise NotionUnavailable(no_answer(LABEL).message)
@@ -70,11 +78,26 @@ def list_notion_databases(client: httpx.Client, token: str) -> list[NotionDataba
     try:
         if response.status_code != 200 or data is None:
             raise ValueError
-        parsed = _SearchResult.model_validate(data)
+        return _SearchResult.model_validate(data)
     except (ValueError, ValidationError):
         raise NotionUnavailable(unexpected(LABEL).message) from None
+
+
+def list_notion_databases(client: httpx.Client, token: str) -> list[NotionDatabase]:
+    """Bases partagées avec l'intégration (au plus 5 pages de 100), triées par titre (C06)."""
+    found: list[_Database] = []
+    cursor: str | None = None
+    for _ in range(MAX_PAGES):
+        page = _search_page(client, token, cursor)
+        found.extend(page.results)
+        if not (page.has_more and page.next_cursor):
+            break
+        cursor = page.next_cursor
     databases = [
-        NotionDatabase(db.id, "".join(part.plain_text for part in db.title) or "Sans titre")
-        for db in parsed.results
+        NotionDatabase(
+            str(db.id),
+            "".join(part.plain_text for part in db.title)[:MAX_TITLE_LENGTH] or "Sans titre",
+        )
+        for db in found
     ]
     return sorted(databases, key=lambda db: db.title.casefold())

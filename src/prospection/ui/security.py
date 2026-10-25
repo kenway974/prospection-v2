@@ -26,6 +26,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         response = await call_next(request)
         response.headers.update(SECURITY_HEADERS)
+        if not request.url.path.startswith("/static/"):
+            # Pages de l'app : jamais gardées par le navigateur (bouton Retour après déconnexion).
+            response.headers.setdefault("Cache-Control", "no-store")
         return response
 
 

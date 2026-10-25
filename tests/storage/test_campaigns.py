@@ -37,7 +37,7 @@ def test_request_roundtrip() -> None:
     assert decode_request(encode_request(REQUEST)) == REQUEST
 
 
-def test_C40_next_page_saved_with_results_atomically(conn: Connection) -> None:
+def test_C40_next_page_token_recorded_until_last_page(conn: Connection) -> None:
     campaign_id = create_campaign(conn, REQUEST, STEPS, NOW)
     step = next_step(conn, campaign_id)
     assert step is not None and (step.page_number, step.page_token) == (0, None)

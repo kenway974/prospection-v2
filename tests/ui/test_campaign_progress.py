@@ -43,6 +43,7 @@ def test_C34_progress_fragment_shows_counts(client: TestClient, campaign_db: Eng
     assert 'hx-trigger="every 3s"' in page
     fragment = client.get(f"/campagnes/{campaign_id}/progression").text
     assert "<html" not in fragment and "14 sur 20 qualifiés" in fragment
+    assert "En cours : cuisiniste Lyon · page 1" in html.unescape(fragment)
 
 
 def test_polling_stops_when_done(client: TestClient, campaign_db: Engine) -> None:

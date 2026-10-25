@@ -213,7 +213,7 @@ Celles des lots 0 et 1, plus :
   - `test_C41_bad_place_does_not_stop` ;
   - `test_busy_retried_then_skipped` ;
   - `test_C79_cost_recorded_per_campaign` ;
-  - `test_C40_rerun_after_crash_does_not_double_count` (Review Focus 2 : l'étape est rejouée après une exception simulée entre l'appel et l'enregistrement, et le compteur d'appels est correct, appel réservé une seule fois).
+  - `test_C40_rerun_after_crash_does_not_double_count_prospects` (Review Focus 2 : l'étape est rejouée après une exception simulée pendant l'appel ; les prospects ne sont pas comptés deux fois ; l'appel interrompu, qui a pu avoir lieu chez Google, reste compté : décision prudente pour le budget, donc 2 appels comptés).
 - [ ] Implémenter ; tout vert ; **commit**.
 
 ### Task 7 : Tâche de fond (worker) (C40)

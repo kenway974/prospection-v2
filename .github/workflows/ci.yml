@@ -36,7 +36,7 @@ jobs:
           uv run ruff check .
           uv run ruff format --check .
           uv run lint-imports
-          uv run python scripts/check_file_size.py src
+          uv run python scripts/check_file_size.py src tests
       - name: 4. Types
         run: uv run mypy
       - name: 5. Tests (fuseau éloigné d'UTC) et couverture

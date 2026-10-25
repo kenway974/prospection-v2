@@ -38,3 +38,9 @@ def test_form_defaults_are_the_criteria_defaults() -> None:
     assert DEFAULTS["avis_max"] == str(criteria.max_reviews)
     assert DEFAULTS["telephone"] == criteria.phone and DEFAULTS["site"] == criteria.website
     assert parse_form({**DEFAULTS, "nom": "x", "metiers": "x"}).raw.criteria == criteria
+
+
+def test_C11_source_shown_google_now_registry_soon(client: TestClient) -> None:
+    page = text(client.get("/recherche"))
+    assert '<input type="radio" name="source" value="google" checked> Google Maps' in page
+    assert "Entreprises récemment créées · bientôt" in page

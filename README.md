@@ -29,7 +29,7 @@ Puis ouvrir http://localhost:8000.
 
 ```bash
 uv run ruff check . && uv run ruff format --check . && uv run lint-imports
-uv run python scripts/check_file_size.py src
+uv run python scripts/check_file_size.py src tests
 uv run mypy
 TZ=America/Los_Angeles uv run pytest --cov --cov-fail-under=80
 ```

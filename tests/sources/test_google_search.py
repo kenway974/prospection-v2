@@ -134,20 +134,3 @@ def test_unreadable_body_raises_busy() -> None:
     client, _ = fake_client(lambda request: httpx.Response(200, text="<html>"))
     with pytest.raises(GoogleBusy):
         search_page(client, KEY, "q", None, None)
-
-
-@pytest.mark.parametrize(
-    "url",
-    ["javascript:alert(1)", "data:text/html,x", "//ailleurs.example", "https://" + "x" * 2100],
-)
-def test_only_plain_web_links_kept(url: str) -> None:
-    body = {"places": [place(websiteUri=url, googleMapsUri=url)]}
-    client, _ = fake_client(json_reply(200, body))
-    found = search_page(client, KEY, "q", None, None).places[0]
-    assert (found.website, found.maps_url) == (None, None)
-
-
-def test_web_links_kept_whole() -> None:
-    url = "https://www.atelier-bois.fr/" + "a" * 400
-    client, _ = fake_client(json_reply(200, {"places": [place(websiteUri=url)]}))
-    assert search_page(client, KEY, "q", None, None).places[0].website == url

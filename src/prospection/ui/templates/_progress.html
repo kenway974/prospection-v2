@@ -3,6 +3,7 @@
     <p class="big-number">{{ state.qualified }} sur {{ state.target }} qualifiés</p>
     <progress max="{{ state.target }}" value="{{ [state.qualified, state.target] | min }}">{{ state.qualified }} sur {{ state.target }}</progress>
     <p class="secondary">{{ state.found }} trouvés · {{ state.excluded }} exclus · {{ spent }} dépensés</p>
+    {% if state.current_step %}<p class="secondary">En cours : {{ state.current_step }}</p>{% endif %}
     {% if state.status == "stopping" %}<p class="secondary" role="status">Arrêt en cours…</p>
     {% elif state.status == "queued" %}<p class="secondary" role="status">En attente de démarrage…</p>
     {% elif state.stop_reason %}<p role="status">{{ state.stop_reason }}</p>{% endif %}

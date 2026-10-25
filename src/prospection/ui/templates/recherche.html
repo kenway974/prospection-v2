@@ -19,6 +19,13 @@
 {% endif %}
 <form method="post" action="/recherche" class="stack" hx-post="/recherche/estimation" hx-trigger="change, load" hx-target="#estimation" hx-swap="innerHTML">
   <section class="group form">
+    <fieldset class="choices">
+      <legend>Source</legend>
+      <label class="choice"><input type="radio" name="source" value="google" checked> Google Maps</label>
+      <p class="secondary">Entreprises récemment créées · bientôt</p>
+    </fieldset>
+  </section>
+  <section class="group form">
     <label for="nom">Nom de la campagne</label>
     <input id="nom" name="nom" value="{{ values.get('nom', '') }}" maxlength="100" autocomplete="off">
     {{ error("name") }}

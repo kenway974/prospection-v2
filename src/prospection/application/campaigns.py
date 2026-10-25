@@ -10,7 +10,7 @@ from sqlalchemy.exc import NoResultFound
 from prospection.domain.campaign_request import CampaignRequest, CityZone, RadiusZone, Zone
 from prospection.domain.place import Circle
 from prospection.domain.trades import expand_queries, load_trades, normalize
-from prospection.storage.campaign_steps import StepSpec
+from prospection.storage.campaign_steps import StepSpec, next_step
 from prospection.storage.campaigns import (
     Campaign,
     Event,
@@ -38,6 +38,7 @@ class Progress:
     stop_reason: str | None
     exclusion_counts: list[tuple[str, int]]
     recent_events: list[Event]
+    current_step: str | None = None  # « cuisiniste Lyon · page 2 » tant qu'elle tourne
 
 
 def _zone_step(query: str, keyword: str, zone: Zone) -> StepSpec:
@@ -100,7 +101,9 @@ def progress(engine: Engine, campaign_id: int) -> Progress:
             raise UnknownCampaign(campaign_id) from None
         counts = exclusion_counts(conn, campaign_id)
         events = recent_events(conn, campaign_id, 5)
+        step = next_step(conn, campaign_id) if c.status == "running" else None
+    current = f"{step.query} · page {step.page_number + 1}" if step else None
     return Progress(
         c.status, c.request.name, c.found, c.excluded, c.qualified, c.request.target,
-        c.cost_cents, c.stop_reason, counts, events,
+        c.cost_cents, c.stop_reason, counts, events, current,
     )  # fmt: skip

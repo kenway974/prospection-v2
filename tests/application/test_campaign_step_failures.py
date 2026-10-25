@@ -109,3 +109,21 @@ def test_C41_request_refused_by_google_skips_only_that_page(campaign_db: Engine)
     state = progress(campaign_db, campaign_id)
     assert state.stop_reason == "Objectif atteint : 1 prospect qualifié."
     assert "Requête refusée par Google : page ignorée" in [e.message for e in state.recent_events]
+
+
+def test_C40_results_and_next_page_saved_together_or_not_at_all(
+    campaign_db: Engine, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from prospection.application import page_results
+
+    def crash_at_the_end(*args: object) -> None:
+        raise RuntimeError("coupure juste avant la fin de l'enregistrement")
+
+    monkeypatch.setattr(page_results, "add_counts", crash_at_the_end)
+    client, _ = fake_client(pages([api_place(1)], [api_place(2)]))
+    campaign_id = create_campaign(campaign_db, request(target=9), NOW)
+    run_step(campaign_db, BOX, client, PRICING, campaign_id, NOW)
+    with campaign_db.connect() as conn:
+        saved = conn.exec_driver_sql("SELECT count(*) FROM prospects").scalar_one()
+        page = conn.exec_driver_sql("SELECT page_number FROM campaign_steps").scalar_one()
+    assert (saved, page) == (0, 0)  # rien d'enregistré : la page sera relue en entier

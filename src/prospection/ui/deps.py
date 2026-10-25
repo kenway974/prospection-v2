@@ -36,8 +36,8 @@ def get_box(request: Request) -> SecretBox:
     return box
 
 
-def get_http_client() -> Iterator[httpx.Client]:
-    with make_client() as client:
+def get_http_client(request: Request) -> Iterator[httpx.Client]:
+    with make_client(get_settings(request).google_places_test_url) as client:
         yield client
 
 

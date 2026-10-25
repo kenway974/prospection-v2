@@ -14,8 +14,32 @@ TIMEOUT_SECONDS = 10.0
 logger = logging.getLogger(__name__)
 
 
-def make_client() -> httpx.Client:
-    return httpx.Client(timeout=TIMEOUT_SECONDS, follow_redirects=False)
+GOOGLE_HOST = "places.googleapis.com"
+
+
+class GoogleToFake(httpx.BaseTransport):
+    """Bout en bout seulement : envoie les appels Google vers un faux Google local."""
+
+    def __init__(self, fake_url: str, inner: httpx.BaseTransport | None = None) -> None:
+        self.fake = httpx.URL(fake_url)
+        self.inner = inner or httpx.HTTPTransport()
+
+    def handle_request(self, request: httpx.Request) -> httpx.Response:
+        if request.url.host == GOOGLE_HOST:
+            request.url = request.url.copy_with(
+                scheme=self.fake.scheme, host=self.fake.host, port=self.fake.port
+            )
+            request.headers["Host"] = request.url.netloc.decode()
+        return self.inner.handle_request(request)
+
+    def close(self) -> None:
+        self.inner.close()
+
+
+def make_client(google_test_url: str | None = None) -> httpx.Client:
+    """`google_test_url` vient d'un réglage validé (local, hors production) : voir config."""
+    transport = GoogleToFake(google_test_url) if google_test_url else None
+    return httpx.Client(timeout=TIMEOUT_SECONDS, follow_redirects=False, transport=transport)
 
 
 def send(

@@ -64,3 +64,29 @@ def test_C86_invalid_encryption_key_is_refused(monkeypatch: pytest.MonkeyPatch) 
     monkeypatch.setenv("ENCRYPTION_KEY", "pas-une-cle-fernet")
     with pytest.raises(ConfigError, match="ENCRYPTION_KEY"):
         load_settings()
+
+
+def test_google_test_url_accepted_only_locally_without_proxy(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    set_valid_env(monkeypatch)
+    monkeypatch.setenv("ENCRYPTION_KEY", FERNET_KEY)
+    monkeypatch.setenv("BEHIND_PROXY", "false")
+    monkeypatch.setenv("GOOGLE_PLACES_TEST_URL", "http://127.0.0.1:8099")
+    assert load_settings().google_places_test_url == "http://127.0.0.1:8099"
+
+
+@pytest.mark.parametrize(
+    ("behind_proxy", "url"),
+    [("true", "http://127.0.0.1:8099"), ("false", "https://espion.example"),
+     ("false", "http://10.0.0.5:8099"), ("false", "ftp://localhost:21")],
+)  # fmt: skip
+def test_google_test_url_refused_in_production_or_remote(
+    monkeypatch: pytest.MonkeyPatch, behind_proxy: str, url: str
+) -> None:
+    set_valid_env(monkeypatch)
+    monkeypatch.setenv("ENCRYPTION_KEY", FERNET_KEY)
+    monkeypatch.setenv("BEHIND_PROXY", behind_proxy)
+    monkeypatch.setenv("GOOGLE_PLACES_TEST_URL", url)
+    with pytest.raises(ConfigError, match="GOOGLE_PLACES_TEST_URL"):
+        load_settings()

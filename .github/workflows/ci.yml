@@ -52,15 +52,22 @@ jobs:
           docker run --network host -e PGPASSWORD=postgres postgres:16 \
             psql -h localhost -U postgres -c 'CREATE DATABASE prospection_e2e'
           HASH=$(uv run python -c "from prospection.application.password import hash_password; print(hash_password('mot de passe e2e'))")
-          docker run -d --name app --network host -e PORT=8077 \
-            -e DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/prospection_e2e \
-            -e SESSION_SECRET=$(openssl rand -hex 32) -e APP_PASSWORD_HASH="$HASH" \
-            -e ENCRYPTION_KEY=$(uv run python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())") \
-            -e BEHIND_PROXY=false prospection:ci
+          {
+            echo "DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/prospection_e2e"
+            echo "SESSION_SECRET=$(openssl rand -hex 32)"
+            echo "APP_PASSWORD_HASH=$HASH"
+            echo "ENCRYPTION_KEY=$(uv run python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())")"
+            echo "BEHIND_PROXY=false"
+          } > e2e.env
+          docker run -d --name app --network host -e PORT=8077 --env-file e2e.env prospection:ci
           curl -sf --retry 30 --retry-delay 1 --retry-all-errors localhost:8077/sante \
             || { echo "L'app n'a pas démarré"; exit 1; }
+          # Tâche de fond, une fois les migrations faites, branchée sur le faux Google local
+          uv run python -m tests.e2e.fake_google 8099 &
+          docker run -d --name worker --network host --env-file e2e.env \
+            -e GOOGLE_PLACES_TEST_URL=http://127.0.0.1:8099 prospection:ci python -m prospection.worker
           uv run playwright install --with-deps chromium
           E2E_BASE_URL=http://localhost:8077 E2E_PASSWORD='mot de passe e2e' uv run pytest -m e2e
       - name: Journaux de l'app en cas d'échec
         if: failure()
-        run: docker logs app || true
+        run: '{ docker logs app; docker logs worker; } || true'

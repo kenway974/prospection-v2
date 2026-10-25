@@ -28,3 +28,13 @@ def test_departments_file_is_validated() -> None:
     for broken in ("'974': ''\n", "'9999': Nulle part\n", "- 974\n"):
         with pytest.raises(InvalidDepartmentFile):
             parse_departments(broken)
+
+
+def test_C13_department_read_from_postal_code() -> None:
+    from prospection.domain.departments import postal_department
+
+    assert postal_department("12 rue de la République, 69002 Lyon, France") == "69"
+    assert postal_department("1 rue de Paris, 97400 Saint-Denis") == "974"
+    assert postal_department("Cours Napoléon, 20000 Ajaccio") == "2A"
+    assert postal_department("Rue César Campinchi, 20200 Bastia") == "2B"
+    assert postal_department("Lyon") is None

@@ -47,7 +47,7 @@ def _zone_step(query: str, keyword: str, zone: Zone) -> StepSpec:
     if isinstance(zone, RadiusZone):
         bias = Circle(zone.city.lat, zone.city.lon, zone.radius_km * 1000)
         return StepSpec(f"{query} {zone.city.name}", keyword, zone.label, bias, True)
-    return StepSpec(f"{query} {zone.name}", keyword, zone.label, None)
+    return StepSpec(f"{query} {zone.name}", keyword, zone.label, None, department=zone.code)
 
 
 def plan_steps(keywords: Sequence[str], zones: Sequence[Zone], synonyms_on: bool) -> list[StepSpec]:

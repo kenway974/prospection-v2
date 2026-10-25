@@ -6,6 +6,7 @@ from datetime import datetime
 from sqlalchemy import Engine
 
 from prospection.domain.criteria import Verdict, evaluate
+from prospection.domain.departments import postal_department
 from prospection.domain.geo import distance_m
 from prospection.domain.place import Place
 from prospection.domain.trades import find_trade, load_trades
@@ -18,8 +19,12 @@ from prospection.storage.prospects import insert_prospect
 logger = logging.getLogger(__name__)
 
 
-def _outside_radius(place: Place, step: Step) -> str | None:
-    if not (step.restrict_to_bias and step.bias and place.lat is not None and place.lon):
+def _outside_zone(place: Place, step: Step) -> str | None:
+    """Rayon : distance au centre ; département : code postal de l'adresse (C13)."""
+    if step.department:
+        found = postal_department(place.address)
+        return f"Hors zone ({found})" if found and found != step.department else None
+    if not (step.restrict_to_bias and step.bias) or place.lat is None or place.lon is None:
         return None
     km = distance_m(step.bias.lat, step.bias.lon, place.lat, place.lon) / 1000
     return f"Hors zone ({km:.0f} km)" if km * 1000 > step.bias.radius_m else None
@@ -37,7 +42,7 @@ def save_page(
         for place in page.places:
             try:
                 verdict = evaluate(place, trade, criteria, exclusions)
-                outside = _outside_radius(place, step)
+                outside = _outside_zone(place, step)
                 if outside:
                     verdict = Verdict(False, (*verdict.reasons, outside), verdict.to_check)
                 with conn.begin_nested():  # une erreur de base n'annule que cet établissement

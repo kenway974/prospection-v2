@@ -5,7 +5,7 @@ from sqlalchemy import Engine
 
 from prospection.application.campaign_step import run_step
 from prospection.application.campaigns import create_campaign, progress, request_stop
-from prospection.domain.campaign_request import CampaignRequest, RadiusZone
+from prospection.domain.campaign_request import CampaignRequest, DepartmentZone, RadiusZone
 from prospection.domain.criteria import Criteria
 from prospection.storage.google_usage import month_usage
 from tests.application.campaign_helpers import (
@@ -140,3 +140,16 @@ def test_C07_free_quota_used_up_stays_used_up_until_google_resets_it(campaign_db
     campaign_id = create_campaign(campaign_db, request(), paris_morning)
     assert run_step(campaign_db, BOX, client, PRICING, campaign_id, paris_morning).done
     assert recorder.requests == []
+
+
+def test_C13_place_outside_department_excluded(campaign_db: Engine) -> None:
+    paris = {**api_place(2), "formattedAddress": "3 rue de Rivoli, 75001 Paris, France"}
+    lyon = {**api_place(1), "formattedAddress": "3 rue de la Ré, 69002 Lyon, France"}
+    client, _ = fake_client(pages([lyon, paris]))
+    rhone = CampaignRequest(
+        "Test", ("cuisiniste",), (DepartmentZone("69", "Rhône"),), 9, Criteria(phone="any"), False
+    )
+    campaign_id = create_campaign(campaign_db, rhone, NOW)
+    run_all(campaign_db, campaign_id, client)
+    state = progress(campaign_db, campaign_id)
+    assert (state.qualified, state.exclusion_counts) == (1, [("Hors zone", 1)])

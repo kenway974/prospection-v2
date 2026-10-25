@@ -17,6 +17,7 @@ class StepSpec:
     zone_label: str
     bias: Circle | None
     restrict_to_bias: bool = False
+    department: str | None = None  # zone département : on écarte ce qui est hors du département
 
 
 @dataclass(frozen=True)
@@ -27,6 +28,7 @@ class Step:
     zone_label: str
     bias: Circle | None
     restrict_to_bias: bool
+    department: str | None
     page_token: str | None
     page_number: int
     attempts: int
@@ -44,7 +46,7 @@ def next_step(conn: Connection, campaign_id: int) -> Step | None:
         return None
     return Step(
         row.id, row.query, row.keyword, row.zone_label, decode_circle(row.bias),
-        row.restrict_to_bias,
+        row.restrict_to_bias, row.department,
         row.page_token, row.page_number, row.attempts,
     )  # fmt: skip
 

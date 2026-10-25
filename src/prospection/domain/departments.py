@@ -1,5 +1,6 @@
 """Départements français (C13), depuis le fichier de données `data/departements.yaml`."""
 
+import re
 from functools import cache
 from importlib import resources
 from typing import Annotated
@@ -43,3 +44,19 @@ def find_department(text: str) -> DepartmentZone | None:
     by_name = {normalize(name): code for code, name in departments.items()}
     code = by_name.get(normalize(text))
     return DepartmentZone(code, departments[code]) if code else None
+
+
+_POSTAL_CODE = re.compile(r"\b(\d{5})\b")
+
+
+def postal_department(address: str) -> str | None:
+    """Département d'après le dernier code postal de l'adresse (Corse : 2A ou 2B)."""
+    codes: list[str] = _POSTAL_CODE.findall(address)
+    if not codes:
+        return None
+    code = codes[-1]
+    if code.startswith("97"):
+        return code[:3]
+    if code.startswith("20"):
+        return "2A" if code[2] in "01" else "2B"
+    return code[:2]

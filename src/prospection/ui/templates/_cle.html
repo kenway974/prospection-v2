@@ -16,6 +16,10 @@
     <button type="submit" class="button-primary">Enregistrer</button>
   </form>
   {% if status.saved_at %}
+  <form method="post" action="/reglages/cles/{{ status.service.value }}/tester" class="form"
+        hx-post="/reglages/cles/{{ status.service.value }}/tester" hx-target="#cle-{{ status.service.value }}" hx-swap="outerHTML">
+    <button type="submit" class="button-secondary">Tester<span class="htmx-indicator"> : test en cours…</span></button>
+  </form>
   <form method="post" action="/reglages/cles/{{ status.service.value }}/supprimer" class="form">
     <button type="submit" class="button-danger">Supprimer</button>
   </form>

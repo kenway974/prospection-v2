@@ -1,12 +1,15 @@
 """Dépendances communes des routes (horloge, base, réglages)."""
 
+from collections.abc import Iterator
 from datetime import UTC, datetime
 
+import httpx
 from fastapi import Request
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import Engine
 
 from prospection.config import Settings
+from prospection.http_client import make_client
 from prospection.storage.secret_box import SecretBox
 from prospection.ui.paths import TEMPLATES_DIR
 
@@ -30,3 +33,8 @@ def get_engine(request: Request) -> Engine:
 def get_box(request: Request) -> SecretBox:
     box: SecretBox = request.app.state.box
     return box
+
+
+def get_http_client() -> Iterator[httpx.Client]:
+    with make_client() as client:
+        yield client

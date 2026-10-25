@@ -52,11 +52,14 @@ a { color: var(--ocean); }
 .form input { min-height: 48px; padding: 0 14px; border: 0; border-radius: 10px;
   background: var(--bg); font: 17px var(--font); color: var(--ink); }
 
-.button-primary, .button-danger { display: flex; justify-content: center; align-items: center;
+.button-primary, .button-danger, .button-secondary { display: flex; justify-content: center; align-items: center;
   width: 100%; min-height: 52px; border: 0; border-radius: var(--radius);
   font: 600 17px var(--font); text-decoration: none; cursor: pointer; }
 .button-primary { background: var(--ocean); color: #FFFFFF; }
 .button-danger { background: var(--card); color: var(--danger); }
+.button-secondary { background: var(--ocean-soft); color: var(--ocean); }
+.htmx-indicator { display: none; }
+.htmx-request .htmx-indicator, .htmx-request.htmx-indicator { display: inline; }
 .icon-button { display: flex; justify-content: center; align-items: center;
   width: 44px; height: 44px; color: var(--ocean); }
 

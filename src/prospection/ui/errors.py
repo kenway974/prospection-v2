@@ -1,7 +1,7 @@
 """Pages d'erreur en français, sans trace technique."""
 
 import logging
-from urllib.parse import quote
+from urllib.parse import quote, urlsplit
 
 from fastapi import FastAPI, Request
 from fastapi.responses import RedirectResponse, Response
@@ -40,6 +40,13 @@ async def _http_error(request: Request, exc: Exception) -> Response:
 
 async def _login_required(request: Request, exc: Exception) -> Response:
     path = exc.path if isinstance(exc, LoginRequired) else "/"
+    if request.headers.get("hx-request") == "true":
+        # Requête HTMX : on recharge toute la page vers la connexion, en revenant
+        # ensuite sur la page affichée (pas sur l'adresse de l'action).
+        current = urlsplit(request.headers.get("hx-current-url", ""))
+        same_site = current.netloc == request.headers.get("host")
+        page = current.path if same_site and current.path.startswith("/") else "/"
+        return Response(status_code=200, headers={"HX-Redirect": f"/connexion?suite={quote(page)}"})
     return RedirectResponse(f"/connexion?suite={quote(path)}", status_code=303)
 
 

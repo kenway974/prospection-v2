@@ -1,0 +1,23 @@
+{% set status = key.status %}
+<section class="group key-card" id="cle-{{ status.service.value }}" aria-labelledby="titre-{{ status.service.value }}">
+  <div class="row">
+    <h2 class="row-title" id="titre-{{ status.service.value }}">{{ status.service.label }}</h2>
+    <span class="secondary">
+    {%- if not status.saved_at %}Pas encore saisie
+    {%- elif not status.readable %}Clé illisible : saisissez-la à nouveau
+    {%- else %}Enregistrée le {{ key.saved_on }}{% endif -%}
+    </span>
+  </div>
+  {% if status.test_message %}<p class="row {{ 'ok' if status.test_ok else 'refused' }}" role="status">{{ status.test_message }}</p>{% endif %}
+  <form method="post" action="/reglages/cles/{{ status.service.value }}" class="form">
+    <label for="cle-champ-{{ status.service.value }}">Nouvelle clé</label>
+    <input id="cle-champ-{{ status.service.value }}" name="cle" type="password" autocomplete="off" spellcheck="false" autocapitalize="off">
+    {% if error and error.service == status.service %}<p class="error" role="alert">{{ error.message }}</p>{% endif %}
+    <button type="submit" class="button-primary">Enregistrer</button>
+  </form>
+  {% if status.saved_at %}
+  <form method="post" action="/reglages/cles/{{ status.service.value }}/supprimer" class="form">
+    <button type="submit" class="button-danger">Supprimer</button>
+  </form>
+  {% endif %}
+</section>

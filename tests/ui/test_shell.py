@@ -21,7 +21,7 @@ TABS = [
     ("Terrain", "/terrain"),
     ("Recherche", "/recherche"),
 ]
-PAGES = [path for _, path in TABS] + ["/reglages/connexions"]
+PAGES = [path for _, path in TABS] + ["/reglages", "/reglages/cles", "/reglages/connexions"]
 
 
 @pytest.fixture

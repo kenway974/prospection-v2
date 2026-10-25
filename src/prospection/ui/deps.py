@@ -9,6 +9,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy import Engine
 
 from prospection.config import Settings
+from prospection.domain.google_cost import Pricing, load_pricing
 from prospection.http_client import make_client
 from prospection.storage.secret_box import SecretBox
 from prospection.ui.paths import TEMPLATES_DIR
@@ -38,3 +39,7 @@ def get_box(request: Request) -> SecretBox:
 def get_http_client() -> Iterator[httpx.Client]:
     with make_client() as client:
         yield client
+
+
+def get_pricing() -> Pricing:
+    return load_pricing()

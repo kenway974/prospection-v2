@@ -12,6 +12,7 @@ from prospection.ui import (
     routes_crm,
     routes_health,
     routes_pages,
+    routes_search,
     routes_settings,
 )
 from prospection.ui.cookies import SessionRefreshMiddleware
@@ -30,7 +31,10 @@ def create_app(settings: Settings, engine: Engine) -> FastAPI:
     app.state.engine = engine
     app.state.box = SecretBox(settings.encryption_key.get_secret_value())
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
-    modules = (routes_health, routes_auth, routes_pages, routes_settings, routes_crm, routes_budget)
+    modules = (
+        routes_health, routes_auth, routes_pages, routes_settings, routes_crm, routes_budget,
+        routes_search,
+    )  # fmt: skip
     for module in modules:
         app.include_router(module.router)
     install_error_handlers(app)

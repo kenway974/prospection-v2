@@ -6,11 +6,9 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, Response
 from sqlalchemy import Engine
 
-from prospection.application.budget_settings import search_readiness
 from prospection.application.connection_journal import JOURNAL_SIZE, latest_attempts
 from prospection.config import Settings
-from prospection.storage.secret_box import SecretBox
-from prospection.ui.deps import get_box, get_engine, get_now, get_settings, templates
+from prospection.ui.deps import get_engine, get_now, get_settings, templates
 from prospection.ui.formatting import long_day, short_datetime
 from prospection.ui.session import require_session
 
@@ -39,15 +37,6 @@ def prospects(request: Request) -> Response:
 @router.get("/terrain", response_class=HTMLResponse)
 def field(request: Request) -> Response:
     return _page(request, "terrain.html", "field")
-
-
-@router.get("/recherche", response_class=HTMLResponse)
-def search(
-    request: Request,
-    engine: Engine = Depends(get_engine),  # noqa: B008
-    box: SecretBox = Depends(get_box),  # noqa: B008
-) -> Response:
-    return _page(request, "recherche.html", "search", readiness=search_readiness(engine, box))
 
 
 @router.get("/reglages/connexions", response_class=HTMLResponse)

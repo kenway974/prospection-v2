@@ -1,5 +1,7 @@
 """Réponse de Google Places (New) : modèles de validation et conversion en Place."""
 
+from urllib.parse import urlsplit
+
 from pydantic import BaseModel
 
 from prospection.domain.place import PhotoOwnership, Place, clip
@@ -53,6 +55,18 @@ def _ownership(api: ApiPlace) -> PhotoOwnership:
     return "probable propriétaire" if own in authors else "clients seulement"
 
 
+MAX_URL = 2000
+
+
+def _web_link(url: str | None) -> str | None:
+    """Lien http(s) complet, ou rien : jamais `javascript:` ni lien tronqué."""
+    clean = clip(url, MAX_URL + 1)
+    if not clean or len(clean) > MAX_URL:
+        return None
+    parts = urlsplit(clean)
+    return clean if parts.scheme in ("http", "https") and parts.netloc else None
+
+
 def to_place(api: ApiPlace) -> Place:
     hours = api.regularOpeningHours.weekdayDescriptions if api.regularOpeningHours else []
     return Place(
@@ -65,11 +79,11 @@ def to_place(api: ApiPlace) -> Place:
         primary_type=clip(api.primaryType),
         business_status=clip(api.businessStatus),
         phone=clip(api.internationalPhoneNumber or api.nationalPhoneNumber),
-        website=clip(api.websiteUri),
+        website=_web_link(api.websiteUri),
         rating=api.rating,
         review_count=api.userRatingCount,
         opening_hours=tuple(clip(h) or "" for h in hours[:7]),
-        maps_url=clip(api.googleMapsUri),
+        maps_url=_web_link(api.googleMapsUri),
         photo_count=len(api.photos),
         owner_photo_estimate=_ownership(api),
     )

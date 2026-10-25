@@ -45,3 +45,11 @@ def test_C82_failures_since_can_filter_by_ip_and_ignores_blocked(conn: Connectio
     since = NOW - timedelta(minutes=15)
     assert failures_since(conn, since, ip="1.1.1.1") == [NOW - timedelta(minutes=3)]
     assert len(failures_since(conn, since)) == 2
+
+
+def test_database_connection_gives_up_after_5_seconds() -> None:
+    from prospection.storage.db import CONNECT_TIMEOUT_SECONDS, make_engine
+
+    engine = make_engine("postgresql+psycopg://u:p@localhost/x")
+    assert CONNECT_TIMEOUT_SECONDS == 5
+    assert engine.url.query["connect_timeout"] == "5"

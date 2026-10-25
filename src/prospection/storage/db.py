@@ -12,6 +12,7 @@ from sqlalchemy import (
     Text,
     create_engine,
     false,
+    make_url,
 )
 
 metadata = MetaData()
@@ -29,5 +30,12 @@ login_attempts = Table(
 )
 
 
+CONNECT_TIMEOUT_SECONDS = 5
+
+
 def make_engine(database_url: str) -> Engine:
-    return create_engine(database_url, pool_pre_ping=True)
+    """Base qui ne répond pas : abandon au bout de 5 s au lieu de bloquer l'app."""
+    url = make_url(database_url).update_query_dict(
+        {"connect_timeout": str(CONNECT_TIMEOUT_SECONDS)}
+    )
+    return create_engine(url, pool_pre_ping=True)

@@ -60,3 +60,11 @@ def test_same_origin_post_passes_the_check(client: TestClient) -> None:
 def test_same_origin_referer_passes_the_check(client: TestClient) -> None:
     response = client.post("/sante", headers={"Referer": "https://testserver/connexion"})
     assert response.status_code == 405
+
+
+def test_C84_forwarded_proto_is_read_leniently(client: TestClient) -> None:
+    for value in ["HTTP", "http, https", " http"]:
+        response = client.get(
+            "/chemin", headers={"X-Forwarded-Proto": value}, follow_redirects=False
+        )
+        assert response.status_code == 308, value

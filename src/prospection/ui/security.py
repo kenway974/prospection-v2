@@ -33,7 +33,8 @@ class HttpsOnlyMiddleware(BaseHTTPMiddleware):
     """Derrière le proxy de Railway, redirige toute requête arrivée en HTTP."""
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
-        if request.headers.get("x-forwarded-proto") == "http" and (request.url.path != HEALTH_PATH):
+        proto = request.headers.get("x-forwarded-proto", "").split(",")[0].strip().lower()
+        if proto == "http" and request.url.path != HEALTH_PATH:
             return RedirectResponse(str(request.url.replace(scheme="https")), status_code=308)
         return await call_next(request)
 

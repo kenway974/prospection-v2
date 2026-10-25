@@ -127,3 +127,24 @@ def test_logout_clears_session(client: TestClient) -> None:
 
 def test_cookie_uses_host_prefix() -> None:
     assert COOKIE_NAME == "__Host-session"
+
+
+def test_C116_session_expires_90_days_after_login_even_if_used(
+    client: TestClient, settings: Settings
+) -> None:
+    issued = NOW - timedelta(days=91)
+    value = make_session_value(settings, NOW - timedelta(days=1), issued_at=issued)
+    client.cookies.set(COOKIE_NAME, value)
+    assert client.get("/", follow_redirects=False).status_code == 303
+
+
+def test_C116_refresh_keeps_the_original_login_date(
+    client: TestClient, settings: Settings, clock: list[datetime]
+) -> None:
+    issued = NOW - timedelta(days=80)
+    client.cookies.set(
+        COOKIE_NAME, make_session_value(settings, NOW - timedelta(days=2), issued_at=issued)
+    )
+    assert client.get("/", follow_redirects=False).status_code == 200
+    clock[0] = NOW + timedelta(days=11)
+    assert client.get("/", follow_redirects=False).status_code == 303

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Connexion · Prospection{% endblock %}
+{% block content %}
+<h1 class="large-title">Connexion</h1>
+<form method="post" action="/connexion" class="group form">
+  <input type="hidden" name="suite" value="{{ suite }}">
+  <label for="mot_de_passe">Mot de passe</label>
+  <input id="mot_de_passe" name="mot_de_passe" type="password" autocomplete="current-password" required autofocus>
+  {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+  <button type="submit" class="button-primary">Se connecter</button>
+</form>
+{% endblock %}

@@ -11,3 +11,6 @@ __pycache__/
 htmlcov/
 output/
 *.log
+test-results/
+.superpowers/
+requirements-prod.txt

@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Connexions · Prospection{% endblock %}
+{% block content %}
+<a href="/" class="back">Aujourd'hui</a>
+<h1 class="large-title">Connexions</h1>
+<h2 class="section-header">{{ size }} dernières tentatives</h2>
+<ul class="group">
+{% for when, ip, status, label in rows %}
+  <li class="row"><span>{{ when }}</span><span class="secondary">{{ ip }}</span><span class="{{ status }}">{{ label }}</span></li>
+{% else %}
+  <li class="row secondary">Aucune tentative enregistrée.</li>
+{% endfor %}
+</ul>
+<form method="post" action="/deconnexion"><button type="submit" class="button-danger">Se déconnecter</button></form>
+{% endblock %}

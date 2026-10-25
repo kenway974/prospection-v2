@@ -106,7 +106,7 @@ def test_C15_synonyms_listed(client: TestClient) -> None:
 
 def test_C16_estimate_shown_before_launch(client: TestClient) -> None:
     fragment = text(client.post("/recherche/estimation", data=FORM, headers=ORIGIN))
-    assert "Coût estimé : 0 € (dans le quota gratuit de Google)" in fragment
+    assert "Coût estimé : 0 € (dans le quota gratuit de Google," in fragment
     assert "9 pages au plus" in fragment
     assert "selon les appels de cette app" in fragment
 

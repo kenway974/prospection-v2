@@ -7,6 +7,8 @@ from typing import Any
 from sqlalchemy import ColumnElement, Connection, Row, func, or_, select, update
 from sqlalchemy.dialects.postgresql import insert
 
+from prospection.domain.company import Company
+from prospection.storage.company_codec import decode_company
 from prospection.storage.schema_calls import call_session
 from prospection.storage.schema_campaigns import prospects
 
@@ -26,6 +28,7 @@ class ProspectRow:
     status: str
     to_check: list[str]
     contact: tuple[str | None, str | None, str | None]
+    company: Company | None = None
 
 
 @dataclass(frozen=True)
@@ -55,13 +58,16 @@ def _filters(status: str | None, query: str) -> list[ColumnElement[bool]]:
 
 _COLUMNS = (
     _P.id, _P.data_json, _P.keywords, _P.status, _P.to_check, _P.contact_name,
-    _P.contact_mobile, _P.contact_email,
+    _P.contact_mobile, _P.contact_email, _P.company_json,
 )  # fmt: skip
 
 
-def _row(r: Row[Any, Any, Any, Any, Any, Any, Any, Any]) -> ProspectRow:
+def _row(r: Row[Any, Any, Any, Any, Any, Any, Any, Any, Any]) -> ProspectRow:
     contact = (r.contact_name, r.contact_mobile, r.contact_email)
-    return ProspectRow(r.id, r.data_json, list(r.keywords), r.status, list(r.to_check), contact)
+    company = decode_company(r.company_json) if r.company_json else None
+    return ProspectRow(
+        r.id, r.data_json, list(r.keywords), r.status, list(r.to_check), contact, company
+    )
 
 
 def prospect_rows(conn: Connection, status: str | None, query: str, sort: str) -> list[ProspectRow]:

@@ -8,6 +8,7 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import Engine
 
 from prospection.domain.call_status import proposed_action
+from prospection.domain.company import describe
 from prospection.domain.place import web_link
 from prospection.domain.text import without_controls
 from prospection.storage import prospect_list as store
@@ -34,6 +35,7 @@ class Card:
     notes: list[Note]
     action: Action | None
     proposal: tuple[str, date] | None  # « Rappeler demain », préparé mais pas enregistré
+    company_lines: list[tuple[str, str]]  # bloc « L'entreprise » (registre)
     position: int | None
     total: int
     previous_id: int | None
@@ -91,6 +93,7 @@ def card(
     position, previous_id, next_id = _neighbours(queue, prospect_id)
     return Card(
         prospect, tel_link(prospect.data.get("phone")), web_link(prospect.data.get("website")),
-        web_link(prospect.data.get("maps_url")), found_notes, action, proposal, position,
+        web_link(prospect.data.get("maps_url")), found_notes, action, proposal,
+        describe(prospect.company) if prospect.company else [], position,
         len(queue), previous_id, next_id,
     )  # fmt: skip

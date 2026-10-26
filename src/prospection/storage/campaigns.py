@@ -48,7 +48,7 @@ def create_campaign(
          "zone_label": s.zone_label, "bias": encode_circle(s.bias),
          "restrict_to_bias": s.restrict_to_bias, "region": s.region,
          "country": s.country, "page_number": 0, "done": False, "skipped": False,
-         "attempts": 0}
+         "attempts": 0, "kind": s.kind, "registry_json": s.registry}
         for i, s in enumerate(steps)
     ]  # fmt: skip
     if rows:

@@ -19,4 +19,9 @@
 {% include "_suivi.html" %}
 {% include "_notes.html" %}
 {% include "_contact.html" %}
+<section class="group" aria-labelledby="titre-entreprise">
+  <h2 class="row-title form" id="titre-entreprise">L'entreprise</h2>
+  {% if card.company_lines %}{% for label, value in card.company_lines %}<p class="row"><span class="secondary">{{ label }}</span><span>{{ value }}</span></p>{% endfor %}
+  {% else %}<p class="row secondary">Pas encore rapprochée du registre des entreprises.</p>{% endif %}
+</section>
 {% endblock %}

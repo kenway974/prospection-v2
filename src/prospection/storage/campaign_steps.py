@@ -1,6 +1,7 @@
 """File des pages Google à lire pour une campagne (C40 : reprise là où on s'était arrêté)."""
 
 from dataclasses import dataclass
+from typing import Any
 
 from sqlalchemy import Connection, func, select, update
 
@@ -19,6 +20,8 @@ class StepSpec:
     restrict_to_bias: bool = False
     region: str | None = None  # département, province ou canton : on écarte ce qui en sort
     country: str = "FR"  # code région envoyé à Google
+    kind: str = "google"  # ou « registre » : entreprises récemment créées (C11)
+    registry: dict[str, Any] | None = None  # requête Sirene d'une étape « registre »
 
 
 @dataclass(frozen=True)
@@ -34,6 +37,8 @@ class Step:
     page_token: str | None
     page_number: int
     attempts: int
+    kind: str = "google"
+    registry: dict[str, Any] | None = None
 
 
 def next_step(conn: Connection, campaign_id: int) -> Step | None:
@@ -49,16 +54,17 @@ def next_step(conn: Connection, campaign_id: int) -> Step | None:
     return Step(
         row.id, row.query, row.keyword, row.zone_label, decode_circle(row.bias),
         row.restrict_to_bias, row.region, row.country,
-        row.page_token, row.page_number, row.attempts,
+        row.page_token, row.page_number, row.attempts, row.kind, row.registry_json,
     )  # fmt: skip
 
 
 def record_page(conn: Connection, step_id: int, next_token: str | None) -> None:
     """Page lue : on passe à la suivante, ou l'étape est finie (plus de page ou 3 lues)."""
     s = campaign_steps.c
-    row = conn.execute(select(s.page_number).where(s.id == step_id)).one()
+    row = conn.execute(select(s.page_number, s.kind).where(s.id == step_id)).one()
     number = row.page_number + 1
-    done = next_token is None or number >= MAX_PAGES_PER_QUERY
+    # Google : 3 pages au plus par requête ; registre : jusqu'à la fin des résultats
+    done = next_token is None or (row.kind == "google" and number >= MAX_PAGES_PER_QUERY)
     conn.execute(
         update(campaign_steps).where(s.id == step_id).values(
             page_token=next_token, page_number=number, done=done, attempts=0

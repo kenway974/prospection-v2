@@ -25,6 +25,7 @@ def test_worker_runs_campaign_to_the_end(campaign_db: Engine) -> None:
     worker = worker_for(campaign_db, client)
     assert worker.work_once() is True
     assert progress(campaign_db, campaign_id).status == "done"
+    assert worker.work_once() is True  # puis les fiches sont rapprochées du registre (C44)
     assert worker.work_once() is False
 
 

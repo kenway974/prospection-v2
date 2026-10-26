@@ -40,6 +40,7 @@ campaign_steps = Table(
     Column("page_number", Integer, nullable=False), Column("done", Boolean, nullable=False),
     Column("skipped", Boolean, nullable=False),
     Column("attempts", Integer, nullable=False),
+    Column("kind", Text, nullable=False), Column("registry_json", JSONB),
 )  # fmt: skip
 
 prospects = Table(
@@ -51,7 +52,7 @@ prospects = Table(
     Column("reasons", ARRAY(Text), nullable=False), Column("to_check", ARRAY(Text), nullable=False),
     Column("status", Text), Column("created_at", TS, nullable=False),
     Column("contact_name", Text), Column("contact_mobile", Text), Column("contact_email", Text),
-    Column("updated_at", TS),
+    Column("updated_at", TS), Column("company_json", JSONB), Column("registry_status", Text),
     UniqueConstraint("campaign_id", "place_id", name="uq_prospect_place"),
 )  # fmt: skip
 

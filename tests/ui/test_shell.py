@@ -1,5 +1,6 @@
 """C117 : navigation flottante ; C83 : journal des connexions ; coquille mobile."""
 
+import json
 import re
 from collections.abc import Iterator
 from datetime import UTC, datetime
@@ -102,7 +103,8 @@ def test_assets_are_linked(client: TestClient) -> None:
 
 def test_htmx_is_configured_defensively(client: TestClient) -> None:
     page = client.get("/").text
-    assert (
-        '<meta name="htmx-config" content=\'{"includeIndicatorStyles": false, '
-        '"allowEval": false, "allowScriptTags": false, "historyCacheSize": 0}\'>' in page
-    )
+    raw = page.split('<meta name="htmx-config" content=\'')[1].split("'>")[0]
+    config = json.loads(raw)
+    assert config["allowEval"] is False and config["allowScriptTags"] is False
+    assert config["includeIndicatorStyles"] is False and config["historyCacheSize"] == 0
+    assert {"code": "422", "swap": True} in config["responseHandling"]  # saisie refusée (C106)

@@ -6,8 +6,11 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, Response
 from sqlalchemy import Engine
 
+from prospection.application.call_actions import today_screen
 from prospection.application.connection_journal import JOURNAL_SIZE, latest_attempts
 from prospection.config import Settings
+from prospection.domain.call_status import ACTION_KINDS
+from prospection.ui.call_views import queue_query
 from prospection.ui.deps import get_engine, get_now, get_settings, templates
 from prospection.ui.formatting import long_day, short_datetime
 from prospection.ui.session import require_session
@@ -25,13 +28,15 @@ def today(
     request: Request,
     settings: Settings = Depends(get_settings),  # noqa: B008
     now: datetime = Depends(get_now),  # noqa: B008
+    engine: Engine = Depends(get_engine),  # noqa: B008
 ) -> Response:
-    return _page(request, "aujourdhui.html", "today", day=long_day(now, settings.timezone))
-
-
-@router.get("/prospects", response_class=HTMLResponse)
-def prospects(request: Request) -> Response:
-    return _page(request, "prospects.html", "prospects")
+    screen = today_screen(engine, now, settings.timezone)
+    resume = screen.resume
+    return _page(
+        request, "aujourdhui.html", "today", day=long_day(now, settings.timezone),
+        agenda=screen.agenda, resume=resume, kinds=ACTION_KINDS,
+        resume_qs=queue_query(resume.status, resume.query) if resume else "",
+    )  # fmt: skip
 
 
 @router.get("/terrain", response_class=HTMLResponse)

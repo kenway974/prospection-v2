@@ -49,14 +49,18 @@ def tel_link(phone: object) -> str | None:
     return digits[:20] or None
 
 
-def card(engine: Engine, prospect_id: int, status: str | None, query: str, now: datetime) -> Card:
-    """La fiche dans la file filtrée ; la session est mémorisée pour être reprise (C109)."""
+def card(
+    engine: Engine, prospect_id: int, status: str | None, query: str, now: datetime,
+    remember: bool = True,
+) -> Card:  # fmt: skip
+    """La fiche dans la file filtrée ; à l'affichage, la session est mémorisée (C109)."""
     with engine.begin() as conn:
         prospect = load_prospect(conn, prospect_id)
         if prospect is None:
             raise UnknownProspect(prospect_id)
         queue = [r.id for r in prospect_rows(conn, status, query)]
-        save_session(conn, status, query, prospect_id, now)
+        if remember:
+            save_session(conn, status, query, prospect_id, now)
         found_notes, action = notes(conn, prospect_id), open_action(conn, prospect_id)
     index = queue.index(prospect_id) if prospect_id in queue else None
     return Card(

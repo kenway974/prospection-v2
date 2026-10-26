@@ -1,5 +1,14 @@
 {% extends "base.html" %}
 {% block title %}Aujourd'hui · Prospection{% endblock %}
+{% macro actions(title, items) %}
+{% if items %}
+<h2 class="section-header">{{ title }}</h2>
+<ul class="group">{% for item in items %}<li class="row">
+  <a class="link-row" href="/prospects/{{ item.prospect_id }}"><span>{{ item.due_time.strftime("%H:%M") if item.due_time else "Dans la journée" }} · {{ kinds.get(item.kind, item.kind) }}</span><br><span class="secondary">{{ item.prospect_name }}</span></a>
+  <form method="post" action="/actions/{{ item.id }}/terminer"><button type="submit" class="chip" aria-label="Terminer : {{ kinds.get(item.kind, item.kind) }}, {{ item.prospect_name }}">Terminer</button></form>
+</li>{% endfor %}</ul>
+{% endif %}
+{% endmacro %}
 {% block content %}
 <header class="header">
   <div class="header-row">
@@ -9,6 +18,14 @@
   </div>
   <h1 class="large-title">Aujourd'hui</h1>
 </header>
+{% if resume %}
+<a class="group row link-row" href="/prospects/{{ resume.prospect_id }}?{{ resume_qs }}"><span>Reprendre la session<br><span class="secondary">{{ resume.name }} · {{ resume.position }} / {{ resume.total }}</span></span></a>
+{% endif %}
+{{ actions("En retard", agenda.overdue) }}
+{{ actions("Aujourd'hui", agenda.today) }}
+{{ actions("Demain", agenda.tomorrow) }}
+{% if not resume and not agenda.overdue and not agenda.today and not agenda.tomorrow %}
 <p class="empty">Rien de prévu. Lancez une recherche pour trouver vos premiers prospects.</p>
 <a href="/recherche" class="button-primary">Lancer une recherche</a>
+{% endif %}
 {% endblock %}

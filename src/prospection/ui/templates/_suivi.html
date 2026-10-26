@@ -1,0 +1,22 @@
+{% macro error(name) %}{% if errors.get(name) %}<p class="error" role="alert">{{ errors[name] }}</p>{% endif %}{% endmacro %}
+<section id="suivi" class="stack">
+<form method="post" action="/prospects/{{ p.id }}/resultat" class="group form" hx-post="/prospects/{{ p.id }}/resultat" hx-target="#suivi" hx-swap="outerHTML">
+  <h2 class="row-title">Résultat de l'appel</h2>
+  <div class="chips">{% for s in results %}<button type="submit" class="chip" name="statut" value="{{ s }}" aria-pressed="{{ 'true' if p.status == s else 'false' }}">{{ s | capitalize }}</button>{% endfor %}</div>
+  {{ error("status") }}
+</form>
+<form method="post" action="/prospects/{{ p.id }}/action" class="group form" hx-post="/prospects/{{ p.id }}/action" hx-target="#suivi" hx-swap="outerHTML">
+  <h2 class="row-title">Prochaine action</h2>
+  <label for="type">Action</label>
+  <select id="type" name="type">{% for key, label in kinds.items() %}<option value="{{ key }}"{% if action.type == key %} selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+  {{ error("kind") }}
+  <label for="date">Date</label>
+  <input id="date" name="date" type="date" value="{{ action.date }}">
+  {{ error("date") }}
+  <label for="heure">Heure (facultative)</label>
+  <input id="heure" name="heure" inputmode="numeric" placeholder="14:30" value="{{ action.heure }}" autocomplete="off">
+  {{ error("time") }}
+  <button type="submit" class="button-secondary">Enregistrer l'action</button>
+  {% if saved == "suivi" %}<p class="secondary" role="status">Enregistré</p>{% endif %}
+</form>
+</section>

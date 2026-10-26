@@ -37,6 +37,8 @@ class Resume:
     name: str
     position: int
     total: int
+    status: str | None
+    query: str
 
 
 @dataclass(frozen=True)
@@ -126,5 +128,12 @@ def today_screen(engine: Engine, now: datetime, timezone: str) -> TodayScreen:
             if session.prospect_id in ids:
                 index = ids.index(session.prospect_id)
                 name = str(queue[index].data.get("name", ""))
-                resume = Resume(session.prospect_id, name, index + 1, len(ids))
+                resume = Resume(
+                    session.prospect_id,
+                    name,
+                    index + 1,
+                    len(ids),
+                    session.status,
+                    session.query,
+                )
     return TodayScreen(agenda(items, now, timezone), resume)

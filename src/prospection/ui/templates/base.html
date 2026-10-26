@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="htmx-config" content='{"includeIndicatorStyles": false, "allowEval": false, "allowScriptTags": false, "historyCacheSize": 0}'>
+<meta name="htmx-config" content='{"includeIndicatorStyles": false, "allowEval": false, "allowScriptTags": false, "historyCacheSize": 0, "responseHandling": [{"code": "204", "swap": false}, {"code": "[23]..", "swap": true}, {"code": "422", "swap": true}, {"code": "[45]..", "swap": false, "error": true}]}'>
 <title>{% block title %}Prospection{% endblock %}</title>
 <meta name="theme-color" content="#1A3E8F">
 <link rel="manifest" href="/static/manifest.webmanifest">
@@ -15,6 +15,7 @@
 </head>
 <body>
 <main class="page{% if tab is defined %} with-nav{% endif %}">
+<p id="erreur-reseau" class="notice" role="alert" hidden>Pas de connexion : rien n'a été enregistré. Votre saisie est gardée, réessayez.</p>
 {% block content %}{% endblock %}
 </main>
 {% if tab is defined %}{% include "_nav.html" %}{% endif %}

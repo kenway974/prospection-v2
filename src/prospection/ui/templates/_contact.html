@@ -1,0 +1,13 @@
+<form id="contact" method="post" action="/prospects/{{ p.id }}/contact" class="group form" hx-post="/prospects/{{ p.id }}/contact" hx-target="#contact" hx-swap="outerHTML">
+  <h2 class="row-title">Contact</h2>
+  <label for="dirigeant">Dirigeant</label>
+  <input id="dirigeant" name="dirigeant" value="{{ contact.dirigeant }}" maxlength="100" autocomplete="off">
+  <label for="mobile">Mobile</label>
+  <input id="mobile" name="mobile" type="tel" value="{{ contact.mobile }}" maxlength="30" autocomplete="off">
+  {% if errors.get("mobile") %}<p class="error" role="alert">{{ errors["mobile"] }}</p>{% endif %}
+  <label for="email">Email</label>
+  <input id="email" name="email" type="email" value="{{ contact.email }}" maxlength="254" autocomplete="off">
+  {% if errors.get("email") %}<p class="error" role="alert">{{ errors["email"] }}</p>{% endif %}
+  <button type="submit" class="button-secondary">Enregistrer le contact</button>
+  {% if saved == "contact" %}<p class="secondary" role="status">Enregistré</p>{% endif %}
+</form>

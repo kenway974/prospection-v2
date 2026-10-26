@@ -51,13 +51,22 @@ def test_C120_list_searched_and_filtered_with_counts(
     assert "Cuisines Martin" in filtered and "alert(1)" not in filtered
     assert "Cuisines Martin" in text(client.get("/prospects", params={"q": "martin"}))
     assert 'href="/prospects/' in page and "Démarrer la session d'appel" in page
+    assert (
+        client.post(
+            "/prospects/session", headers={"Origin": "https://ailleurs.example"}
+        ).status_code
+        == 403
+    )
 
 
 def test_C109_session_started_from_the_list_then_resumed(
     client: TestClient, campaign_db: Engine
 ) -> None:
     first, second, third = names(campaign_db, "Alpha", "Bravo", "Charlie")
-    start = client.get("/prospects/session", params={"statut": "à appeler"}, follow_redirects=False)
+    start = client.post(
+        "/prospects/session", data={"statut": "à appeler"},
+        headers={"Origin": "https://testserver"}, follow_redirects=False,
+    )  # fmt: skip
     assert start.headers["location"] == f"/prospects/{first}?session=1"
     page = text(client.get(f"/prospects/{second}?session=1"))
     assert "2 / 3" in page

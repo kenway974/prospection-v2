@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlalchemy import Engine
 
@@ -37,14 +37,15 @@ def prospects_page(
     context = {
         "tab": "prospects", "rows": listing.rows, "counts": listing.counts,
         "total": sum(listing.counts.values()), "statuses": STATUSES, "status": status,
-        "query": query, "sort": sort, "sorts": SORT_LABELS, "qs": list_query(status, query, sort),
+        "query": query, "sort": sort, "sorts": SORT_LABELS,
     }  # fmt: skip
     return templates.TemplateResponse(request, "prospects.html", context)
 
 
-@router.get("/session")
+@router.post("/session")
 def session_start(
-    statut: str = "", q: str = "", tri: str = "",
+    statut: str = Form("", max_length=30), q: str = Form("", max_length=200),
+    tri: str = Form("", max_length=20),
     engine: Engine = Depends(get_engine), now: datetime = Depends(get_now),  # noqa: B008
 ) -> Response:  # fmt: skip
     """Démarre une session sur la liste affichée ; sa file ne bouge plus ensuite (C109)."""

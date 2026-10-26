@@ -49,7 +49,7 @@ def test_C102_C107_C109_call_session_then_today(page: Page, base_url: str) -> No
     """Suite du parcours : les prospects trouvés s'appellent et se suivent."""
     _login(page, base_url)
     page.goto(f"{base_url}/prospects")
-    page.get_by_role("link", name="Démarrer la session d'appel").click()
+    page.get_by_role("button", name="Démarrer la session d'appel").click()
     page.get_by_role("button", name="Messagerie").click()
     expect(page.locator('button[value="messagerie"]')).to_have_attribute("aria-pressed", "true")
     page.get_by_role("button", name="Enregistrer l'action").click()  # « Rappeler demain » proposé

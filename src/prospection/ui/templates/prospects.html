@@ -18,7 +18,10 @@
   {% for s in statuses %}{% if counts.get(s) %}<li><a class="chip" href="/prospects?{{ {'statut': s, 'q': query, 'tri': sort} | urlencode }}"{% if status == s %} aria-current="true"{% endif %}>{{ s | capitalize }} · {{ counts[s] }}</a></li>{% endif %}{% endfor %}
 </ul>
 {% if rows %}
-<a class="button-primary" href="/prospects/session?{{ qs }}">Démarrer la session d'appel</a>
+<form method="post" action="/prospects/session">
+  <input type="hidden" name="statut" value="{{ status or '' }}"><input type="hidden" name="q" value="{{ query }}"><input type="hidden" name="tri" value="{{ sort }}">
+  <button type="submit" class="button-primary">Démarrer la session d'appel</button>
+</form>
 <ul class="group">{% for r in rows %}<li><a class="row link-row" href="/prospects/{{ r.id }}"><span>{{ r.data.name }}<br><span class="secondary">{{ r.data.address }}</span></span><span class="secondary">{{ r.status }}</span></a></li>{% endfor %}</ul>
 {% else %}
 <p class="empty">Aucun prospect ne correspond. Changez la recherche ou le filtre.</p>

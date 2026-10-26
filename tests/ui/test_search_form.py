@@ -37,6 +37,8 @@ FORM = {
     "site": "any",
     "telephone": "with",
     "franchises": "on",
+    "source_google": "on",
+    "jours": "90",
 }
 
 

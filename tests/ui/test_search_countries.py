@@ -11,7 +11,8 @@ from prospection.domain.campaign_request import (
     Zone,
 )
 from prospection.domain.criteria import Criteria
-from prospection.ui.search_form import commune_value, parse_form, request_to_form
+from prospection.ui.search_form import commune_value, parse_form
+from prospection.ui.search_form_fill import request_to_form
 from tests.ui.test_search_form import FORM, client, post, text
 
 __all__ = ["client"]  # fixture partagée

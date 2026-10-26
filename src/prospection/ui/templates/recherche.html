@@ -20,9 +20,16 @@
 <form method="post" action="/recherche" class="stack" hx-post="/recherche/estimation" hx-trigger="change, load" hx-target="#estimation" hx-swap="innerHTML">
   <section class="group form">
     <fieldset class="choices">
-      <legend>Source</legend>
-      <label class="choice"><input type="radio" name="source" value="google" checked> Google Maps</label>
-      <p class="secondary">Entreprises récemment créées · bientôt</p>
+      <legend>Sources</legend>
+      <label class="choice"><input type="checkbox" name="source_google"{% if values.get('source_google') == 'on' %} checked{% endif %}> Google Maps</label>
+      <label class="choice"><input type="checkbox" name="source_registre"{% if values.get('source_registre') == 'on' %} checked{% endif %}> Entreprises récemment créées</label>
+      <p class="secondary">Registre officiel (France), avec votre clé Sirène ; chaque entreprise est cherchée sur Google Maps pour son numéro.</p>
+      {{ error("sources") }}
+      <label for="jours">Créées depuis (jours)</label>
+      <input id="jours" name="jours" inputmode="numeric" value="{{ values.get('jours', '90') }}">
+      {{ error("days") }}
+      <label for="effectif_max">Effectif au plus</label>
+      <select id="effectif_max" name="effectif_max">{% for code, label in workforce.items() %}<option value="{{ code }}"{% if values.get('effectif_max', '') == code %} selected{% endif %}>{{ label }}</option>{% endfor %}</select>
     </fieldset>
   </section>
   <section class="group form">

@@ -7,8 +7,10 @@ from datetime import datetime
 from sqlalchemy import Engine
 from sqlalchemy.exc import NoResultFound
 
+from prospection.application.registry_plan import registry_steps
 from prospection.domain.campaign_request import CampaignRequest, CityZone, RadiusZone, Zone
 from prospection.domain.place import Circle
+from prospection.domain.registry import GOOGLE
 from prospection.domain.trades import expand_queries, load_trades, normalize
 from prospection.storage.campaign_steps import StepSpec, next_step
 from prospection.storage.campaigns import (
@@ -70,13 +72,16 @@ def plan_steps(keywords: Sequence[str], zones: Sequence[Zone], synonyms_on: bool
     return steps
 
 
-def build_steps(request: CampaignRequest) -> list[StepSpec]:
-    return plan_steps(request.trades, request.zones, request.synonyms_on)
+def build_steps(request: CampaignRequest, now: datetime | None = None) -> list[StepSpec]:
+    """Étapes « registre » d'abord (C11), puis les recherches Google Maps."""
+    registry = registry_steps(request, now.date()) if now else []
+    google = plan_steps(request.trades, request.zones, request.synonyms_on)
+    return registry + (google if GOOGLE in request.sources else [])
 
 
 def create_campaign(engine: Engine, request: CampaignRequest, now: datetime) -> int:
     with engine.begin() as conn:
-        campaign_id = store_campaign(conn, request, build_steps(request), now)
+        campaign_id = store_campaign(conn, request, build_steps(request, now), now)
         add_event(conn, campaign_id, now, "info", "Campagne créée, en attente de démarrage")
     return campaign_id
 

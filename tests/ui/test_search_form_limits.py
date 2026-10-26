@@ -9,6 +9,11 @@ from prospection.ui.routes_search import DEFAULTS
 from prospection.ui.search_form import parse_form
 from tests.ui.test_search_form import FORM, ORIGIN, client, post, text
 
+
+def post_form(client: TestClient, form: dict[str, str]):  # type: ignore[no-untyped-def]
+    return client.post("/recherche", data=form, headers=ORIGIN, follow_redirects=False)
+
+
 __all__ = ["client"]  # fixture partagée
 
 
@@ -40,7 +45,23 @@ def test_form_defaults_are_the_criteria_defaults() -> None:
     assert parse_form({**DEFAULTS, "nom": "x", "metiers": "x"}).raw.criteria == criteria
 
 
-def test_C11_source_shown_google_now_registry_soon(client: TestClient) -> None:
+def test_C11_sources_offered_google_checked(client: TestClient) -> None:
     page = text(client.get("/recherche"))
-    assert '<input type="radio" name="source" value="google" checked> Google Maps' in page
-    assert "Entreprises récemment créées · bientôt" in page
+    assert '<input type="checkbox" name="source_google" checked> Google Maps' in page
+    assert '<input type="checkbox" name="source_registre"> Entreprises récemment créées' in page
+    assert '<label for="jours">Créées depuis (jours)</label>' in page
+
+
+def test_C125_registry_refused_abroad_with_reason(client: TestClient) -> None:
+    form = {**FORM, "pays": "BE", "commune": "", "departements": "Liège",
+            "source_registre": "on"}  # fmt: skip
+    form.pop("source_google", None)
+    response = post_form(client, form)
+    assert response.status_code == 400
+    assert "Belgique : pas de registre officiel ouvert gratuitement" in text(response)
+
+
+def test_C16_registry_adds_one_google_lookup_per_company(client: TestClient) -> None:
+    form = {**FORM, "source_registre": "on", "nombre": "10"}
+    estimate = text(client.post("/recherche/estimation", data=form, headers=ORIGIN))
+    assert "19 pages au plus" in estimate  # 9 pages Google + 10 recherches d'entreprises

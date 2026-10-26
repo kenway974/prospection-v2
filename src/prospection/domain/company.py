@@ -10,6 +10,7 @@ from importlib import resources
 import yaml
 from pydantic import BaseModel
 
+from prospection.domain.place import Place
 from prospection.domain.trades import normalize
 
 _POSTAL = re.compile(r"\b(\d{5})\b")
@@ -49,7 +50,7 @@ def _words(name: str) -> frozenset[str]:
     return frozenset(w for w in normalize(name).split() if w not in _LEGAL_WORDS)
 
 
-def _same_name(a: str, b: str) -> bool:
+def same_name(a: str, b: str) -> bool:
     """Mêmes mots (hors forme juridique), ou l'un contient tous les mots de l'autre (2 au moins)."""
     small, big = sorted((_words(a), _words(b)), key=len)
     return bool(small) and (small == big or (len(small) >= 2 and small <= big))
@@ -60,9 +61,20 @@ def match_company(name: str, postal: str | None, candidates: Sequence[Company]) 
     sure = [
         c for c in candidates
         if postal and c.postal_code == postal
-        and any(_same_name(name, n) for n in (c.name, *c.other_names))
+        and any(same_name(name, n) for n in (c.name, *c.other_names))
     ]  # fmt: skip
     return Match(sure[0], True) if len(sure) == 1 else Match(None, False)
+
+
+def match_place(company: Company, places: Sequence[Place]) -> Place | None:
+    """La fiche Google de l'entreprise, seulement si une seule a le même nom et code postal."""
+    names = (company.name, *company.other_names)
+    sure = [
+        p for p in places
+        if company.postal_code and postal_code(p.address) == company.postal_code
+        and any(same_name(p.name, n) for n in names)
+    ]  # fmt: skip
+    return sure[0] if len(sure) == 1 else None
 
 
 class _Labels(BaseModel):

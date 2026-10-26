@@ -34,13 +34,8 @@ from prospection.ui.deps import (
     templates as tpl,
 )
 from prospection.ui.formatting import euros
-from prospection.ui.search_form import (
-    MAX_FIELD,
-    commune_value,
-    criteria_to_form,
-    parse_form,
-    request_to_form,
-)
+from prospection.ui.search_form import MAX_FIELD, commune_value, parse_form
+from prospection.ui.search_form_fill import criteria_to_form, request_to_form
 from prospection.ui.session import require_session
 
 router = APIRouter(prefix="/recherche", dependencies=[Depends(require_session)])
@@ -51,7 +46,10 @@ DEFAULTS = {
     "synonymes": "on",
     "rayon": "0",
     "pays": "FR",
+    "source_google": "on",
 }
+WORKFORCE_CHOICES = {"": "Peu importe", "00": "Aucun salarié", "01": "1 ou 2 salariés",
+                     "02": "5 au plus", "03": "9 au plus", "11": "19 au plus"}  # fmt: skip
 
 
 async def _read_form(request: Request) -> dict[str, str]:
@@ -67,6 +65,7 @@ def _page(
         "tab": "search", "values": values, "errors": errors or {},
         "readiness": search_readiness(engine, box), "templates": templates(engine),
         "campaigns": latest_campaigns(engine), "countries": countries(),
+        "workforce": WORKFORCE_CHOICES,
     }  # fmt: skip
     return tpl.TemplateResponse(request, "recherche.html", context, status_code=status_code)
 

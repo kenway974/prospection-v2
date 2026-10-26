@@ -42,3 +42,12 @@ def save_match(conn: Connection, prospect_id: int, company: Company | None, stat
     if status == TO_CONFIRM:
         values["to_check"] = func.array_append(p.to_check, TO_CONFIRM_FLAG)
     conn.execute(update(prospects).where(p.id == prospect_id).values(**values))
+
+
+def set_company(conn: Connection, campaign_id: int, place_id: str, company: Company) -> None:
+    """Prospect venu du registre : l'entreprise est connue d'emblée."""
+    p = prospects.c
+    conn.execute(
+        update(prospects).where(p.campaign_id == campaign_id, p.place_id == place_id)
+        .values(company_json=encode_company(company), registry_status=SURE)
+    )  # fmt: skip

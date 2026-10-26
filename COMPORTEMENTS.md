@@ -28,6 +28,11 @@ Ajouter ou retirer un comportement = modifier ce fichier (avec l'accord du propr
 - C16 L'app m'affiche une estimation du coût avant de lancer
 - C17 L'app refuse de lancer sans métier ou sans zone, et dit pourquoi
 - C18 Je peux enregistrer une campagne comme modèle et la relancer
+- C121 Je choisis le pays de la zone : France (par défaut), Belgique, Suisse, Luxembourg ou Monaco ; Google ne cherche que dans ce pays *(validé le 25/10/2026)*
+- C122 Hors de France, je saisis une ville, une province (Belgique) ou un canton (Suisse, Luxembourg), ou un rayon autour d'une ville *(validé le 25/10/2026)*
+- C123 Un établissement situé hors du pays ou de la province / du canton choisi est exclu « Hors zone » *(validé le 25/10/2026)*
+- C124 Les numéros belges, suisses, luxembourgeois et monégasques sont reconnus (mobile ou fixe) *(validé le 25/10/2026)*
+- C125 Entreprises récemment créées hors de France : registre officiel du pays quand il est ouvert (Belgique : BCE ; Suisse : Zefix) ; sinon l'app dit que cette source n'existe pas pour ce pays *(validé le 25/10/2026)*
 
 ## 3. Critères de qualification
 **Fiche Google Maps**

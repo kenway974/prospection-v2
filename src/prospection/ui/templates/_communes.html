@@ -1,0 +1,3 @@
+{% if problem %}<p class="secondary">{{ problem }}</p>{% endif %}
+{% for value, label in choices %}<label class="choice"><input type="radio" name="commune" value="{{ value }}"{% if loop.first %} checked{% endif %}> {{ label }}</label>
+{% endfor %}

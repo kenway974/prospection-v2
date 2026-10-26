@@ -18,6 +18,11 @@ def check_google_key(client: httpx.Client, key: str) -> KeyCheck:
     )
     if isinstance(response, KeyCheck):
         return response
+    return check_google_key_response(response)
+
+
+def check_google_key_response(response: httpx.Response) -> KeyCheck:
+    """Traduit une réponse Google en message clair (sans jamais citer la clé)."""
     body = json_object(response)
     if body is None:
         return unexpected(LABEL)

@@ -1,10 +1,14 @@
 """Configuration lue dans les variables d'environnement de l'hébergeur."""
 
+from urllib.parse import urlsplit
+
 from argon2 import extract_parameters
 from argon2.exceptions import InvalidHashError
 from cryptography.fernet import Fernet
-from pydantic import Field, SecretStr, ValidationError, field_validator
+from pydantic import Field, SecretStr, ValidationError, ValidationInfo, field_validator
 from pydantic_settings import BaseSettings
+
+LOCAL_HOSTS = ("127.0.0.1", "localhost")
 
 
 class ConfigError(Exception):
@@ -18,6 +22,7 @@ class Settings(BaseSettings):
     encryption_key: SecretStr
     behind_proxy: bool = True
     timezone: str = "Europe/Paris"
+    google_places_test_url: str | None = None  # bout en bout seulement : faux Google local
 
     @field_validator("app_password_hash")
     @classmethod
@@ -36,6 +41,18 @@ class Settings(BaseSettings):
         except ValueError:
             raise ValueError("clé Fernet attendue") from None
         return value
+
+    @field_validator("google_places_test_url")
+    @classmethod
+    def _test_url_stays_local(cls, url: str | None, info: ValidationInfo) -> str | None:
+        """La clé Google ne doit partir que vers un faux Google local, jamais en production."""
+        if url is None:
+            return None
+        parts = urlsplit(url)
+        behind_proxy = info.data.get("behind_proxy", True)
+        if behind_proxy or parts.scheme != "http" or parts.hostname not in LOCAL_HOSTS:
+            raise ValueError("http://127.0.0.1:port seulement, avec BEHIND_PROXY=false")
+        return url
 
 
 def load_settings() -> Settings:

@@ -79,3 +79,9 @@ def test_C08_unreadable_google_key_still_reported_missing(
 
     store_key(engine, SecretBox(Fernet.generate_key().decode()), Service.GOOGLE, "AIza-x", NOW)
     assert "Ajoutez votre clé Google" in text_of(client, "/recherche")
+
+
+def test_C07_budget_page_says_only_this_app_is_counted(client: TestClient) -> None:
+    page = html.unescape(client.get("/reglages/budget").text)
+    assert "L'app ne compte que ses propres appels." in page
+    assert "projet Google réservé à cette app" in page

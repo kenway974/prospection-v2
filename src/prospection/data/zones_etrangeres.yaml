@@ -1,0 +1,70 @@
+# Pays proposés et leurs provinces (Belgique) ou cantons (Suisse, Luxembourg).
+# Codes : ISO 3166-2 sans le préfixe du pays (BE-WLG → WLG, CH-VD → VD, LU-ME → ME).
+# Provinces belges : tranches de codes postaux de bpost, pour écarter ce qui est hors zone.
+# Pour chaque pays : nom, « dans » (en Belgique, au Luxembourg…), message d'une zone inconnue,
+# exemple valide, et pour la Belgique le nom des régions qui précisent une ville.
+pays:
+  FR: {nom: France, dans: en France, inconnu: Département inconnu, exemple: "974, Rhône"}
+  BE:
+    nom: Belgique
+    dans: en Belgique
+    inconnu: Province inconnue
+    exemple: Liège, Hainaut
+    regions_des_villes: {BRU: Bruxelles-Capitale, WAL: Wallonie, VLG: Flandre}
+  CH: {nom: Suisse, dans: en Suisse, inconnu: Canton inconnu, exemple: "Vaud, Genève"}
+  LU: {nom: Luxembourg, dans: au Luxembourg, inconnu: Canton inconnu, exemple: "Mersch, Esch-sur-Alzette"}
+  MC: {nom: Monaco, dans: à Monaco}
+regions:
+  BE:
+  - {code: BRU, nom: Région de Bruxelles-Capitale, court: Bruxelles, postaux: [[1000, 1299]]}
+  - {code: WBR, nom: Province du Brabant wallon, court: Brabant wallon, postaux: [[1300, 1499]]}
+  - {code: VBR, nom: Province du Brabant flamand, court: Brabant flamand, postaux: [[1500, 1999], [3000, 3499]]}
+  - {code: VAN, nom: Province d'Anvers, court: Anvers, postaux: [[2000, 2999]]}
+  - {code: VLI, nom: Province de Limbourg, court: Limbourg, postaux: [[3500, 3999]]}
+  - {code: WLG, nom: Province de Liège, court: Liège, postaux: [[4000, 4999]]}
+  - {code: WNA, nom: Province de Namur, court: Namur, postaux: [[5000, 5999]]}
+  - {code: WHT, nom: Province de Hainaut, court: Hainaut, postaux: [[6000, 6599], [7000, 7999]]}
+  - {code: WLX, nom: Province de Luxembourg, court: Luxembourg belge, autres: [Luxembourg], postaux: [[6600, 6999]]}
+  - {code: VWV, nom: Province de Flandre-Occidentale, court: Flandre-Occidentale, postaux: [[8000, 8999]]}
+  - {code: VOV, nom: Province de Flandre-Orientale, court: Flandre-Orientale, postaux: [[9000, 9999]]}
+  CH:
+  - {code: AG, nom: Canton d'Argovie, court: Argovie}
+  - {code: AI, nom: Canton d'Appenzell Rhodes-Intérieures, court: Appenzell Rhodes-Intérieures}
+  - {code: AR, nom: Canton d'Appenzell Rhodes-Extérieures, court: Appenzell Rhodes-Extérieures}
+  - {code: BE, nom: Canton de Berne, court: Berne}
+  - {code: BL, nom: Canton de Bâle-Campagne, court: Bâle-Campagne}
+  - {code: BS, nom: Canton de Bâle-Ville, court: Bâle-Ville}
+  - {code: FR, nom: Canton de Fribourg, court: Fribourg}
+  - {code: GE, nom: Canton de Genève, court: Genève}
+  - {code: GL, nom: Canton de Glaris, court: Glaris}
+  - {code: GR, nom: Canton des Grisons, court: Grisons}
+  - {code: JU, nom: Canton du Jura, court: Jura}
+  - {code: LU, nom: Canton de Lucerne, court: Lucerne}
+  - {code: NE, nom: Canton de Neuchâtel, court: Neuchâtel}
+  - {code: NW, nom: Canton de Nidwald, court: Nidwald}
+  - {code: OW, nom: Canton d'Obwald, court: Obwald}
+  - {code: SG, nom: Canton de Saint-Gall, court: Saint-Gall}
+  - {code: SH, nom: Canton de Schaffhouse, court: Schaffhouse}
+  - {code: SO, nom: Canton de Soleure, court: Soleure}
+  - {code: SZ, nom: Canton de Schwytz, court: Schwytz}
+  - {code: TG, nom: Canton de Thurgovie, court: Thurgovie}
+  - {code: TI, nom: Canton du Tessin, court: Tessin}
+  - {code: UR, nom: Canton d'Uri, court: Uri}
+  - {code: VD, nom: Canton de Vaud, court: Vaud}
+  - {code: VS, nom: Canton du Valais, court: Valais}
+  - {code: ZG, nom: Canton de Zoug, court: Zoug}
+  - {code: ZH, nom: Canton de Zurich, court: Zurich}
+  LU:
+  - {code: CA, nom: Canton de Capellen, court: Capellen}
+  - {code: CL, nom: Canton de Clervaux, court: Clervaux}
+  - {code: DI, nom: Canton de Diekirch, court: Diekirch}
+  - {code: EC, nom: Canton d'Echternach, court: Echternach}
+  - {code: ES, nom: Canton d'Esch-sur-Alzette, court: Esch-sur-Alzette}
+  - {code: GR, nom: Canton de Grevenmacher, court: Grevenmacher}
+  - {code: LU, nom: Canton de Luxembourg, court: Luxembourg}
+  - {code: ME, nom: Canton de Mersch, court: Mersch}
+  - {code: RD, nom: Canton de Redange, court: Redange}
+  - {code: RM, nom: Canton de Remich, court: Remich}
+  - {code: VD, nom: Canton de Vianden, court: Vianden}
+  - {code: WI, nom: Canton de Wiltz, court: Wiltz}
+  MC: []

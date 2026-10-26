@@ -1,0 +1,130 @@
+# Métiers reconnus : mots-clés saisis (aliases), requêtes Google lancées (queries,
+# la première étant le mot-clé saisi), mots du nom qui confirment le métier,
+# catégories Google compatibles et codes NAF cohérents.
+# Source des métiers du bâtiment : prospection-bot/trades.py (version 530ba12).
+# Un métier absent d'ici reste utilisable : seul le mot-clé saisi est cherché.
+- id: cuisiniste
+  label: Cuisiniste
+  aliases: [cuisiniste, magasin de cuisine, cuisine equipee, cuisine sur mesure, cuisines]
+  queries: [magasin de cuisines équipées, cuisine sur mesure]
+  name_words: [cuisine, cuisines, cuisiniste, cuisinistes, kitchen, agencement]
+  maps_types: [general_contractor, home_goods_store, furniture_store, hardware_store]
+  naf_prefixes: ["47.59", "43.32", "31.02", "31.09", "46.47", "43.39", "43.22"]
+  family: batiment
+  off_target_name_words: [cours de cuisine, atelier culinaire, ecole de cuisine, chef, chefs, restaurant, traiteur, brasserie, pizzeria, boulangerie]
+- id: salle_de_bain
+  label: Salle de bain
+  aliases: [salle de bain, salles de bain, amenagement salle de bain]
+  queries: [aménagement salle de bain, rénovation salle de bain]
+  name_words: [bain, bains, sanitaire, douche]
+  maps_types: [general_contractor, home_goods_store, furniture_store, hardware_store, plumber]
+  naf_prefixes: ["43.22", "43.33", "43.39", "47.59", "47.52", "43.32"]
+  family: batiment
+
+- id: carreleur
+  label: Carreleur
+  aliases: [carreleur, carrelage, carrelages]
+  queries: [carrelage pose]
+  name_words: [carrelage, carrelages, carreleur, carreleurs, faience]
+  maps_types: [general_contractor, home_goods_store, furniture_store, hardware_store]
+  naf_prefixes: ["43.33", "43.39", "47.52", "46.73"]
+  family: batiment
+
+- id: chauffagiste
+  label: Chauffagiste
+  aliases: [chauffagiste, chauffage, pompe a chaleur, climatisation]
+  queries: [installateur pompe à chaleur, entreprise de chauffage]
+  name_words: [chauffage, chauffagiste, thermique, clim, climatisation, energie, pac]
+  maps_types: [general_contractor, home_goods_store, furniture_store, hardware_store, plumber, electrician]
+  naf_prefixes: ["43.22", "33.12", "43.21", "71.12"]
+  family: batiment
+
+- id: electricien
+  label: Électricien
+  aliases: [electricien, electricite, electricite generale]
+  queries: [entreprise d'électricité]
+  name_words: [elec, electricite, electricien, electrique, electricity]
+  maps_types: [general_contractor, home_goods_store, furniture_store, hardware_store, electrician]
+  naf_prefixes: ["43.21"]
+  family: batiment
+
+- id: plombier
+  label: Plombier
+  aliases: [plombier, plomberie]
+  queries: [entreprise de plomberie]
+  name_words: [plomberie, plombier, plombiers, sanitaire, sanitaires]
+  maps_types: [general_contractor, home_goods_store, furniture_store, hardware_store, plumber]
+  naf_prefixes: ["43.22"]
+  family: batiment
+
+- id: pisciniste
+  label: Pisciniste
+  aliases: [pisciniste, piscine, piscines, construction piscine]
+  queries: [construction piscine, entretien piscine]
+  name_words: [piscine, piscines, pisciniste, pool, pools, spa, spas]
+  maps_types: [general_contractor, home_goods_store, furniture_store, hardware_store]
+  naf_prefixes: ["43.99", "42.99", "43.22", "47.64", "81.30", "41.20", "43.29", "33.19"]
+  family: batiment
+
+- id: menuisier
+  label: Menuisier
+  aliases: [menuisier, menuiserie, fenetres, poseur de fenetres]
+  queries: [menuiserie, pose de fenêtres]
+  name_words: [menuiserie, menuiseries, menuisier, menuisiers, bois, fenetre, fenetres, ebeniste, ebenisterie]
+  maps_types: [general_contractor, home_goods_store, furniture_store, hardware_store]
+  naf_prefixes: ["43.32", "16.23", "31.09", "43.39"]
+  family: batiment
+
+- id: fleuriste
+  label: Fleuriste
+  aliases: [fleuriste, fleuristes, fleurs, artisan fleuriste]
+  queries: [artisan fleuriste, magasin de fleurs]
+  name_words: [fleur, fleurs, fleuriste, flore, bouquet, bouquets]
+  maps_types: [florist]
+  naf_prefixes: ["47.76"]
+  family: commerce
+
+- id: boulangerie
+  label: Boulangerie
+  aliases: [boulangerie, boulanger, boulangerie patisserie, patisserie]
+  queries: [boulangerie pâtisserie, artisan boulanger]
+  name_words: [boulangerie, boulanger, pain, patisserie, fournil]
+  maps_types: [bakery]
+  naf_prefixes: ["10.71", "47.24"]
+  family: commerce
+
+- id: coiffeur
+  label: Coiffeur
+  aliases: [coiffeur, coiffeuse, salon de coiffure, coiffure, barbier]
+  queries: [salon de coiffure, barbier]
+  name_words: [coiffure, coiffeur, coiffeuse, hair, barber, barbier]
+  maps_types: [hair_care, hair_salon, barber_shop, beauty_salon]
+  naf_prefixes: ["96.02"]
+  family: commerce
+
+- id: estheticienne
+  label: Esthéticienne
+  aliases: [estheticienne, institut de beaute, esthetique, onglerie]
+  queries: [institut de beauté, onglerie]
+  name_words: [beaute, esthetique, institut, ongles, nail, spa]
+  maps_types: [beauty_salon, spa, nail_salon]
+  naf_prefixes: ["96.02", "96.04"]
+  family: commerce
+
+- id: garage
+  label: Garage automobile
+  aliases: [garage, garagiste, garage automobile, mecanicien, mecanique auto]
+  queries: [garagiste, réparation automobile]
+  name_words: [garage, auto, autos, automobile, mecanique, carrosserie, pneus]
+  maps_types: [car_repair, car_dealer]
+  naf_prefixes: ["45.20", "45.11", "45.32"]
+  family: commerce
+
+- id: restaurant
+  label: Restaurant indépendant
+  aliases: [restaurant, restaurants, restauration, bistrot, brasserie]
+  queries: [restaurant traditionnel, bistrot]
+  name_words: [restaurant, bistrot, brasserie, cuisine, table, auberge]
+  maps_types: [restaurant, food, cafe, bar, meal_takeaway]
+  naf_prefixes: ["56.10", "56.30"]
+  family: commerce

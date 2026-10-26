@@ -1,0 +1,23 @@
+<div id="progression" class="stack"{% if running %} hx-get="/campagnes/{{ id }}/progression" hx-trigger="every 3s" hx-swap="outerHTML"{% endif %}>
+  <section class="group form" aria-live="polite">
+    <p class="big-number">{{ state.qualified }} sur {{ state.target }} qualifiés</p>
+    <progress max="{{ state.target }}" value="{{ [state.qualified, state.target] | min }}">{{ state.qualified }} sur {{ state.target }}</progress>
+    <p class="secondary">{{ state.found }} trouvés · {{ state.excluded }} exclus · {{ spent }} dépensés</p>
+    {% if state.current_step %}<p class="secondary">En cours : {{ state.current_step }}</p>{% endif %}
+    {% if state.status == "stopping" %}<p class="secondary" role="status">Arrêt en cours…</p>
+    {% elif state.status == "queued" %}<p class="secondary" role="status">En attente de démarrage…</p>
+    {% elif state.stop_reason %}<p role="status">{{ state.stop_reason }}</p>{% endif %}
+  </section>
+  {% if state.qualified %}<a href="/prospects?campagne={{ id }}" class="button-primary">Appeler les {{ state.qualified }} déjà prêts</a>{% endif %}
+  {% if state.exclusion_counts %}
+  <h2 class="section-header">Pourquoi exclus</h2>
+  <ul class="group">{% for reason, n in state.exclusion_counts %}<li class="row"><span>{{ reason }}</span><span class="secondary">{{ n }}</span></li>{% endfor %}</ul>
+  {% endif %}
+  {% if events %}
+  <h2 class="section-header">Derniers événements</h2>
+  <ul class="group">{% for when, message in events %}<li class="row"><span>{{ message }}</span><span class="secondary">{{ when }}</span></li>{% endfor %}</ul>
+  {% endif %}
+  {% if state.status in ["queued", "running"] %}
+  <form method="post" action="/campagnes/{{ id }}/arreter"><button type="submit" class="button-danger">Arrêter (on garde les {{ state.qualified }})</button></form>
+  {% endif %}
+</div>

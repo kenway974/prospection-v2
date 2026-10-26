@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Exclusions · Prospection{% endblock %}
+{% block content %}
+<a href="/reglages" class="back">Réglages</a>
+<h1 class="large-title">Exclusions</h1>
+<p class="empty">Ces noms sont écartés de toutes les recherches. Les majuscules, les accents et la ponctuation ne comptent pas.</p>
+<form method="post" action="/reglages/exclusions" class="group form">
+  <label for="franchises">Franchises et chaînes (un nom par ligne)</label>
+  <textarea id="franchises" name="franchises" rows="6" autocomplete="off">{{ franchises }}</textarea>
+  <label for="liste_noire">Liste noire (un nom par ligne)</label>
+  <textarea id="liste_noire" name="liste_noire" rows="6" autocomplete="off">{{ blacklist }}</textarea>
+  {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+  <button type="submit" class="button-primary">Enregistrer</button>
+</form>
+{% endblock %}

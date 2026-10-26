@@ -22,3 +22,25 @@ def test_redirect_is_an_unexpected_answer() -> None:
     assert check_google_key(client, "AIza-x") == KeyCheck(
         False, "Réponse inattendue de Google Maps. Réessayez plus tard."
     )
+
+
+def test_google_calls_go_to_local_fake_only_when_asked() -> None:
+    import httpx
+
+    from prospection.http_client import GoogleToFake
+
+    seen: list[str] = []
+
+    def record(request: httpx.Request) -> httpx.Response:
+        seen.append(str(request.url))
+        return httpx.Response(200, json={})
+
+    transport = GoogleToFake("http://127.0.0.1:8099", httpx.MockTransport(record))
+    with httpx.Client(transport=transport) as client:
+        client.post("https://places.googleapis.com/v1/places:searchText")
+        client.get("https://api.notion.com/v1/users/me")
+    assert seen == [
+        "http://127.0.0.1:8099/v1/places:searchText",
+        "https://api.notion.com/v1/users/me",
+    ]
+    assert make_client()._transport.__class__ is not GoogleToFake

@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}{{ state.name }} · Prospection{% endblock %}
+{% block content %}
+<a href="/recherche" class="back">Recherche</a>
+<h1 class="large-title">{{ state.name }}</h1>
+{% include "_progress.html" %}
+{% endblock %}

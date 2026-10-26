@@ -1,0 +1,3 @@
+{% if estimate.pages == 0 %}Indiquez métiers et zone pour voir le coût estimé.
+{%- elif estimate.paid_cents == 0 %}Coût estimé : 0 € (dans le quota gratuit de Google, selon les appels de cette app) · {{ estimate.pages }} pages au plus.
+{%- else %}Coût estimé : {{ paid }} au plus au-delà du quota gratuit · {{ estimate.pages }} pages au plus.{% if not estimate.fits %} Ce montant dépasse votre plafond : la recherche s'arrêtera avant.{% endif %}{% endif %}

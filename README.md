@@ -7,7 +7,7 @@ Outil personnel pour trouver des prospects (Google Maps, entreprises récemment 
 - Spec : [docs/superpowers/specs/2026-10-24-prospection-v2-design.md](docs/superpowers/specs/2026-10-24-prospection-v2-design.md)
 - Feuille de route : [docs/superpowers/plans/2026-10-24-feuille-de-route.md](docs/superpowers/plans/2026-10-24-feuille-de-route.md)
 
-État : **lot 0 (socle)** — connexion, sécurité, coquille mobile, app installable. Les écrans Prospects, Terrain et Recherche sont encore vides.
+État : **lot 2 (campagne Google Maps)** — connexion, réglages et clés, recherche Google Maps en tâche de fond avec estimation du coût, critères, exclusions et suivi en direct. Recherche possible en France, Belgique, Suisse, Luxembourg et Monaco (villes, départements, provinces, cantons). Les écrans Prospects et Terrain arrivent aux lots suivants.
 
 ## Lancer en local
 
@@ -20,6 +20,7 @@ uv run python -m prospection.cli hash-password    # mot de passe → valeur de A
 set -a; . ./.env; set +a
 uv run alembic upgrade head
 uv run uvicorn prospection.ui.main:app --reload
+uv run python -m prospection.worker               # dans un second terminal : fait les recherches
 ```
 
 Puis ouvrir http://localhost:8000.
@@ -28,14 +29,16 @@ Puis ouvrir http://localhost:8000.
 
 ```bash
 uv run ruff check . && uv run ruff format --check . && uv run lint-imports
-uv run python scripts/check_file_size.py src
+uv run python scripts/check_file_size.py src tests
 uv run mypy
 TZ=America/Los_Angeles uv run pytest --cov --cov-fail-under=80
 ```
 
 Les tests utilisent une base PostgreSQL temporaire sur `TEST_DATABASE_URL` (par défaut `postgresql+psycopg://postgres:postgres@localhost:5432/postgres`), créée puis supprimée à chaque lancement. Aucun appel réseau vers un service externe.
 
-Les tests de bout en bout (`pytest -m e2e`) tournent dans la CI sur l'image Docker construite.
+Les tests de bout en bout (`pytest -m e2e`) tournent dans la CI sur l'image Docker construite : l'app et la tâche de fond, branchée sur un faux Google local (`python -m tests.e2e.fake_google 8099`) grâce au réglage `GOOGLE_PLACES_TEST_URL`. Ce réglage n'accepte qu'une adresse `http://127.0.0.1:…` ou `http://localhost:…`, et l'app refuse de démarrer s'il est défini avec `BEHIND_PROXY=true` : il ne peut pas servir en production. Ne jamais le définir sur Railway.
+
+Données hors de France : `src/prospection/data/villes_etrangeres.yaml` est généré depuis GeoNames (CC-BY 4.0) par `python scripts/build_foreign_cities.py cities1000.json` (fichier du paquet PyPI `geonamescache`) ; provinces et cantons sont écrits à la main dans `zones_etrangeres.yaml`.
 
 ## Déployer sur Railway
 
@@ -52,6 +55,8 @@ Les tests de bout en bout (`pytest -m e2e`) tournent dans la CI sur l'image Dock
 
 Le conteneur applique les migrations au démarrage, puis lance l'app. Railway vérifie `/sante`.
 
+6. **Tâche de fond (recherches)** : dans le même projet, ajouter un **second service** depuis le même dépôt, avec les mêmes variables d'environnement, et comme commande de démarrage personnalisée : `python -m prospection.worker`. Pas de domaine public pour lui. C'est lui qui fait les recherches Google ; s'il redémarre, les campagnes reprennent là où elles s'étaient arrêtées. Ajoutez à ce service la variable `RAILWAY_DEPLOYMENT_DRAINING_SECONDS=20` : lors d'un déploiement, la tâche de fond finit la page Google en cours (10 s au plus) et rend la campagne avant d'être coupée.
+
 **En cas de souci**
 - 5 essais ratés depuis une même adresse bloquent cette adresse 15 minutes ; 50 essais ratés en tout (attaque depuis de nombreuses adresses) bloquent tout le monde 15 minutes. Il suffit d'attendre.
 - Une adresse qui s'est déjà connectée avec succès (dans les 90 jours) n'est jamais bloquée par les essais des autres.
@@ -67,7 +72,7 @@ Chaque clé est chiffrée en base et ne s'affiche plus jamais. Le bouton « Test
 - **Notion** : [notion.so/profile/integrations](https://www.notion.so/profile/integrations) → Nouvelle intégration interne → copier le **secret**. Puis, dans Notion, ouvrir la base **Prospects v2** (page DEV → 11. Prospection v2 (CRM)) → menu ••• → Connexions → ajouter l'intégration.
 - **Sirène (INSEE)** : [portail-api.insee.fr](https://portail-api.insee.fr/) → créer un compte et une application → s'abonner à l'**API Sirene** → copier la clé d'API.
 
-Ensuite : Réglages → **CRM** (Notion et la base « Prospects v2 », ou aucun) et **Budget Google** : 0 € par défaut, l'app reste alors dans le quota gratuit mensuel de Google ; un plafond de 0 à 50 € autorise une dépense au-delà.
+Ensuite : Réglages → **Exclusions** (vos franchises et votre liste noire, un nom par ligne), Réglages → **CRM** (Notion et la base « Prospects v2 », ou aucun) et **Budget Google** : 0 € par défaut, l'app reste alors dans le quota gratuit mensuel de Google ; un plafond de 0 à 50 € autorise une dépense au-delà. Chaque page de résultats Google (20 établissements) compte pour un appel ; Google en offre 1 000 par mois, puis environ 33 € les 1 000 ; Recherche affiche avant le lancement le nombre d'appels prévus et ce qu'ils coûteraient. Quand le plafond est atteint, la campagne s'arrête, garde ce qu'elle a trouvé et dit pourquoi. **L'app ne compte que ses propres appels** : créez un projet Google réservé à cette app (pas partagé avec l'ancien `prospection-bot`) et, pour une garantie ferme, fixez une limite dans Google Cloud (Places API (New) → Quotas, par exemple 30 requêtes Text Search par jour).
 
 ## Installer l'app sur Android
 

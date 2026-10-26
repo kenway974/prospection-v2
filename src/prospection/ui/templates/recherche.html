@@ -1,9 +1,84 @@
 {% extends "base.html" %}
 {% block title %}Recherche · Prospection{% endblock %}
+{% macro error(name) %}{% if errors.get(name) %}<p class="error" role="alert">{{ errors[name] }}</p>{% endif %}{% endmacro %}
 {% block content %}
 <h1 class="large-title">Recherche</h1>
 {% if not readiness.has_google_key %}
 <p class="notice" role="status">Ajoutez votre clé Google dans Réglages pour chercher sur Google Maps. Les entreprises récemment créées restent disponibles. <a href="/reglages/cles">Ajouter la clé</a></p>
 {% endif %}
-<p class="empty">La recherche de prospects arrive bientôt. Elle se lancera depuis cet écran.</p>
+{{ error("google") }}
+{% if campaigns %}
+<h2 class="section-header">Dernières campagnes</h2>
+<ul class="group">{% for c in campaigns %}<li><a class="row link-row" href="/campagnes/{{ c.id }}"><span>{{ c.request.name }}</span><span class="secondary">{{ c.qualified }} / {{ c.request.target }}</span></a></li>{% endfor %}</ul>
+{% endif %}
+{% if templates %}
+<section class="group form" aria-labelledby="titre-modeles">
+  <h2 class="row-title" id="titre-modeles">Modèles</h2>
+  <ul class="chips">{% for t in templates %}<li><a class="chip" href="/recherche?modele={{ t.name | urlencode }}">{{ t.name }}</a></li>{% endfor %}</ul>
+</section>
+{% endif %}
+<form method="post" action="/recherche" class="stack" hx-post="/recherche/estimation" hx-trigger="change, load" hx-target="#estimation" hx-swap="innerHTML">
+  <section class="group form">
+    <fieldset class="choices">
+      <legend>Source</legend>
+      <label class="choice"><input type="radio" name="source" value="google" checked> Google Maps</label>
+      <p class="secondary">Entreprises récemment créées · bientôt</p>
+    </fieldset>
+  </section>
+  <section class="group form">
+    <label for="nom">Nom de la campagne</label>
+    <input id="nom" name="nom" value="{{ values.get('nom', '') }}" maxlength="100" autocomplete="off">
+    {{ error("name") }}
+    <label for="metiers">Métiers</label>
+    <input id="metiers" name="metiers" value="{{ values.get('metiers', '') }}" placeholder="cuisiniste, fleuriste" autocomplete="off"
+           hx-get="/recherche/synonymes" hx-trigger="change" hx-target="#synonymes" hx-swap="innerHTML">
+    <p class="secondary">Plusieurs métiers : séparez-les par des virgules.</p>
+    {{ error("trades") }}
+    <label class="choice"><input type="checkbox" name="synonymes"{% if values.get('synonymes') == 'on' %} checked{% endif %}> Chercher aussi les synonymes</label>
+    <div id="synonymes" class="secondary" aria-live="polite"></div>
+  </section>
+  <section class="group form">
+    <label for="pays">Pays</label>
+    <select id="pays" name="pays" hx-get="/recherche/communes" hx-trigger="change" hx-target="#communes" hx-swap="innerHTML" hx-include="#ville, this">
+      {% for code, name in countries.items() %}<option value="{{ code }}"{% if values.get('pays', 'FR') == code %} selected{% endif %}>{{ name }}</option>{% endfor %}
+    </select>
+    <label for="ville">Ville</label>
+    <input id="ville" name="ville" value="{{ values.get('ville', '') }}" placeholder="Saint-Denis" autocomplete="off"
+           hx-get="/recherche/communes" hx-trigger="change" hx-target="#communes" hx-swap="innerHTML" hx-include="this, #pays">
+    <div id="communes" aria-live="polite">
+      {% if values.get('commune') %}<label class="choice"><input type="radio" name="commune" value="{{ values.commune }}" checked> {{ values.get('ville', '') }}</label>{% endif %}
+    </div>
+    <label for="rayon">Rayon autour (km)</label>
+    <input id="rayon" name="rayon" inputmode="numeric" value="{{ values.get('rayon', '0') }}">
+    <label for="departements">Départements, provinces ou cantons</label>
+    <input id="departements" name="departements" value="{{ values.get('departements', '') }}" placeholder="974, Rhône, Liège, Vaud" autocomplete="off">
+    {{ error("zones") }}
+  </section>
+  <section class="group form">
+    <label for="nombre">Prospects qualifiés voulus</label>
+    <input id="nombre" name="nombre" inputmode="numeric" value="{{ values.get('nombre', '20') }}">
+    {{ error("target") }}
+    <label for="avis_max">Avis au plus</label>
+    <input id="avis_max" name="avis_max" inputmode="numeric" value="{{ values.get('avis_max', '') }}">
+    <label for="avis_min">Avis au moins</label>
+    <input id="avis_min" name="avis_min" inputmode="numeric" value="{{ values.get('avis_min', '') }}">
+    <label for="site">Site web</label>
+    <select id="site" name="site">
+      {% for v, l in [("any", "Peu importe"), ("without", "Sans site"), ("with", "Avec site")] %}<option value="{{ v }}"{% if values.get('site') == v %} selected{% endif %}>{{ l }}</option>{% endfor %}
+    </select>
+    <label for="telephone">Téléphone</label>
+    <select id="telephone" name="telephone">
+      {% for v, l in [("with", "Avec téléphone"), ("mobile", "Mobile seulement"), ("any", "Peu importe")] %}<option value="{{ v }}"{% if values.get('telephone') == v %} selected{% endif %}>{{ l }}</option>{% endfor %}
+    </select>
+    <label class="choice"><input type="checkbox" name="franchises"{% if values.get('franchises') == 'on' %} checked{% endif %}> Exclure franchises et chaînes</label>
+  </section>
+  <section class="group form">
+    <label for="modele">Enregistrer comme modèle (facultatif)</label>
+    <input id="modele" name="modele" value="{{ values.get('modele', '') }}" placeholder="Nom du modèle" autocomplete="off">
+    {{ error("modele") }}
+  </section>
+  <p id="estimation" class="secondary" role="status"></p>
+  <button type="submit" class="button-primary">Lancer</button>
+  <p class="secondary">Vous pouvez fermer l'app : la recherche continue sur le serveur.</p>
+</form>
 {% endblock %}

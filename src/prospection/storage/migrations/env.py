@@ -3,6 +3,7 @@
 from alembic import context
 from sqlalchemy import create_engine
 
+from prospection.storage import schema_campaigns  # noqa: F401 (enregistre les tables)
 from prospection.storage.db import metadata
 
 url = context.config.get_main_option("sqlalchemy.url")

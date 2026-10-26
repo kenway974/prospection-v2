@@ -36,6 +36,7 @@ def encode_request(request: CampaignRequest) -> dict[str, Any]:
         "target": request.target,
         "criteria": asdict(request.criteria),
         "synonyms_on": request.synonyms_on,
+        "sources": list(request.sources),
     }
 
 
@@ -47,6 +48,7 @@ def decode_request(data: dict[str, Any]) -> CampaignRequest:
         data["target"],
         Criteria(**data["criteria"]),
         data["synonyms_on"],
+        tuple(data.get("sources", ["google"])),  # campagnes d'avant le lot 4 : Google seul
     )
 
 

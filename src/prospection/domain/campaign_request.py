@@ -4,6 +4,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 
 from prospection.domain.criteria import Criteria
+from prospection.domain.registry import GOOGLE, SOURCES, source_errors
 from prospection.domain.trades import normalize
 
 MAX_TARGET = 200
@@ -67,6 +68,7 @@ class RawRequest:
     target: int
     criteria: Criteria
     synonyms_on: bool
+    sources: tuple[str, ...] = (GOOGLE,)
 
 
 @dataclass(frozen=True)
@@ -77,6 +79,7 @@ class CampaignRequest:
     target: int
     criteria: Criteria
     synonyms_on: bool
+    sources: tuple[str, ...] = (GOOGLE,)  # C11 : Google Maps, registre, ou les deux
 
 
 class InvalidRequest(ValueError):
@@ -119,6 +122,9 @@ def validate_request(raw: RawRequest) -> CampaignRequest:
         errors["zones"] = "Choisissez la commune dans la liste."
     if not 1 <= raw.target <= MAX_TARGET:
         errors["target"] = "Choisissez entre 1 et 200 prospects."
+    countries = {z.city.country if isinstance(z, RadiusZone) else z.country for z in zones}
+    errors.update(source_errors(raw.sources, countries, raw.criteria.created_within_days))
     if errors:
         raise InvalidRequest(errors)
-    return CampaignRequest(name, trades, zones, raw.target, raw.criteria, raw.synonyms_on)
+    sources = tuple(s for s in SOURCES if s in raw.sources)
+    return CampaignRequest(name, trades, zones, raw.target, raw.criteria, raw.synonyms_on, sources)

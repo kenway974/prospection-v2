@@ -17,6 +17,8 @@ class Criteria:
     website: Literal["any", "with", "without"] = "any"
     phone: Literal["any", "with", "mobile"] = "with"
     exclude_franchises: bool = True
+    created_within_days: int = 90  # source registre : créées depuis au plus N jours (C24)
+    max_workforce: str | None = None  # source registre : tranche d'effectif au plus (C26)
 
 
 @dataclass(frozen=True)

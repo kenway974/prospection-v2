@@ -2,12 +2,23 @@
 
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
-from sqlalchemy import ColumnElement, Connection, func, or_, select
+from sqlalchemy import ColumnElement, Connection, Row, func, or_, select
 from sqlalchemy.dialects.postgresql import insert
 
 from prospection.storage.schema_calls import call_session
 from prospection.storage.schema_campaigns import prospects
+
+
+@dataclass(frozen=True)
+class ProspectRow:
+    id: int
+    data: dict[str, Any]
+    keywords: list[str]
+    status: str
+    to_check: list[str]
+    contact: tuple[str | None, str | None, str | None]
 
 
 @dataclass(frozen=True)
@@ -42,6 +53,32 @@ def prospect_ids(conn: Connection, status: str | None, query: str) -> list[int]:
     p = prospects.c
     rows = conn.execute(select(p.id).where(*_filters(status, query)).order_by(p.created_at, p.id))
     return [int(r.id) for r in rows]
+
+
+def _row(r: Row[Any, Any, Any, Any, Any, Any, Any, Any]) -> ProspectRow:
+    contact = (r.contact_name, r.contact_mobile, r.contact_email)
+    return ProspectRow(r.id, r.data_json, list(r.keywords), r.status, list(r.to_check), contact)
+
+
+_COLUMNS = (
+    prospects.c.id, prospects.c.data_json, prospects.c.keywords, prospects.c.status,
+    prospects.c.to_check, prospects.c.contact_name, prospects.c.contact_mobile,
+    prospects.c.contact_email,
+)  # fmt: skip
+
+
+def prospect_rows(conn: Connection, status: str | None, query: str) -> list[ProspectRow]:
+    p = prospects.c
+    rows = conn.execute(
+        select(*_COLUMNS).where(*_filters(status, query)).order_by(p.created_at, p.id)
+    )
+    return [_row(r) for r in rows]
+
+
+def load_prospect(conn: Connection, prospect_id: int) -> ProspectRow | None:
+    p = prospects.c
+    row = conn.execute(select(*_COLUMNS).where(p.id == prospect_id, p.qualified.is_(True))).first()
+    return _row(row) if row else None
 
 
 def status_counts(conn: Connection) -> dict[str, int]:

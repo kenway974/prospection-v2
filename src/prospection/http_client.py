@@ -14,18 +14,21 @@ TIMEOUT_SECONDS = 10.0
 logger = logging.getLogger(__name__)
 
 
-GOOGLE_HOST = "places.googleapis.com"
+# Services externes remplacés par un faux local en bout en bout (jamais de vrai réseau)
+FAKED_HOSTS = frozenset(
+    {"places.googleapis.com", "recherche-entreprises.api.gouv.fr", "api.insee.fr"}
+)
 
 
-class GoogleToFake(httpx.BaseTransport):
-    """Bout en bout seulement : envoie les appels Google vers un faux Google local."""
+class ServicesToFake(httpx.BaseTransport):
+    """Bout en bout seulement : envoie Google, le registre et Sirène vers un faux local."""
 
     def __init__(self, fake_url: str, inner: httpx.BaseTransport | None = None) -> None:
         self.fake = httpx.URL(fake_url)
         self.inner = inner or httpx.HTTPTransport()
 
     def handle_request(self, request: httpx.Request) -> httpx.Response:
-        if request.url.host == GOOGLE_HOST:
+        if request.url.host in FAKED_HOSTS:
             request.url = request.url.copy_with(
                 scheme=self.fake.scheme, host=self.fake.host, port=self.fake.port
             )
@@ -36,9 +39,9 @@ class GoogleToFake(httpx.BaseTransport):
         self.inner.close()
 
 
-def make_client(google_test_url: str | None = None) -> httpx.Client:
-    """`google_test_url` vient d'un réglage validé (local, hors production) : voir config."""
-    transport = GoogleToFake(google_test_url) if google_test_url else None
+def make_client(test_services_url: str | None = None) -> httpx.Client:
+    """`test_services_url` vient d'un réglage validé (local, hors production) : voir config."""
+    transport = ServicesToFake(test_services_url) if test_services_url else None
     return httpx.Client(timeout=TIMEOUT_SECONDS, follow_redirects=False, transport=transport)
 
 

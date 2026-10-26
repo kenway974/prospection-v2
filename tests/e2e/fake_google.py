@@ -1,6 +1,7 @@
-"""Faux Google Places pour le bout en bout : `python -m tests.e2e.fake_google 8099`.
+"""Faux services externes pour le bout en bout : `python -m tests.e2e.fake_google 8099`.
 
-Sert trois cuisinistes de Lyon, seulement si la clé envoyée est celle saisie dans l'app.
+Google : trois cuisinistes de Lyon, seulement si la clé envoyée est celle saisie dans l'app.
+Registre des entreprises : aucun résultat. Sirène : aucune entreprise (404, comme l'INSEE).
 """
 
 import json
@@ -21,6 +22,13 @@ def _place(n: int, name: str) -> dict[str, object]:
 
 
 class FakeGoogle(BaseHTTPRequestHandler):
+    def do_GET(self) -> None:
+        if self.path.startswith("/search"):
+            self._reply(200, {"results": [], "total_results": 0, "page": 1, "per_page": 5,
+                              "total_pages": 0})  # fmt: skip
+        else:
+            self._reply(404, {"header": {"statut": 404, "message": "Aucun élément trouvé"}})
+
     def do_POST(self) -> None:
         self.rfile.read(int(self.headers.get("Content-Length", "0")))
         if self.headers.get("X-Goog-Api-Key") != FAKE_KEY:

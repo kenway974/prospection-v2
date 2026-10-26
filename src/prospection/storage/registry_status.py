@@ -51,3 +51,13 @@ def set_company(conn: Connection, campaign_id: int, place_id: str, company: Comp
         update(prospects).where(p.campaign_id == campaign_id, p.place_id == place_id)
         .values(company_json=encode_company(company), registry_status=SURE)
     )  # fmt: skip
+
+
+def known_sirens(conn: Connection, campaign_id: int) -> set[str]:
+    """Entreprises déjà enregistrées dans la campagne : jamais recherchées (ni payées) deux fois."""
+    p = prospects.c
+    rows = conn.execute(
+        select(p.company_json["siren"].astext)
+        .where(p.campaign_id == campaign_id, p.company_json.is_not(None))
+    )  # fmt: skip
+    return {str(siren) for (siren,) in rows if siren}

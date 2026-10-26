@@ -27,7 +27,7 @@ def test_redirect_is_an_unexpected_answer() -> None:
 def test_google_calls_go_to_local_fake_only_when_asked() -> None:
     import httpx
 
-    from prospection.http_client import GoogleToFake
+    from prospection.http_client import ServicesToFake
 
     seen: list[str] = []
 
@@ -35,12 +35,16 @@ def test_google_calls_go_to_local_fake_only_when_asked() -> None:
         seen.append(str(request.url))
         return httpx.Response(200, json={})
 
-    transport = GoogleToFake("http://127.0.0.1:8099", httpx.MockTransport(record))
+    transport = ServicesToFake("http://127.0.0.1:8099", httpx.MockTransport(record))
     with httpx.Client(transport=transport) as client:
         client.post("https://places.googleapis.com/v1/places:searchText")
+        client.get("https://recherche-entreprises.api.gouv.fr/search?q=x")
+        client.get("https://api.insee.fr/api-sirene/3.11/siret")
         client.get("https://api.notion.com/v1/users/me")
     assert seen == [
         "http://127.0.0.1:8099/v1/places:searchText",
+        "http://127.0.0.1:8099/search?q=x",
+        "http://127.0.0.1:8099/api-sirene/3.11/siret",
         "https://api.notion.com/v1/users/me",
     ]
-    assert make_client()._transport.__class__ is not GoogleToFake
+    assert make_client()._transport.__class__ is not ServicesToFake

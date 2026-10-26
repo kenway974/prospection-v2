@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     encryption_key: SecretStr
     behind_proxy: bool = True
     timezone: str = "Europe/Paris"
-    google_places_test_url: str | None = None  # bout en bout seulement : faux Google local
+    test_services_url: str | None = None  # bout en bout seulement : faux Google local
 
     @field_validator("app_password_hash")
     @classmethod
@@ -42,7 +42,7 @@ class Settings(BaseSettings):
             raise ValueError("clé Fernet attendue") from None
         return value
 
-    @field_validator("google_places_test_url")
+    @field_validator("test_services_url")
     @classmethod
     def _test_url_stays_local(cls, url: str | None, info: ValidationInfo) -> str | None:
         """La clé Google ne doit partir que vers un faux Google local, jamais en production."""

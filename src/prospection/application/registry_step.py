@@ -5,6 +5,7 @@ numéro ; la fiche n'est retenue que si le rapprochement est sûr. Sinon l'entre
 gardée avec « numéro à chercher », et les critères habituels s'appliquent.
 """
 
+import logging
 from datetime import date, datetime
 
 import httpx
@@ -26,13 +27,18 @@ from prospection.domain.registry import workforce_ok
 from prospection.domain.services import Service
 from prospection.domain.trades import find_trade, load_trades
 from prospection.sources.company_registry import RegistryUnavailable
-from prospection.sources.google_search import GoogleBusy, GoogleRefused, search_page
+from prospection.sources.google_search import (
+    GoogleBusy,
+    GoogleRefused,
+    GoogleRejectedPage,
+    search_page,
+)
 from prospection.sources.sirene_search import RecentQuery, SireneRefused, recent_companies
 from prospection.storage.campaign_steps import Step, record_page
 from prospection.storage.campaigns import add_counts, add_event, load_campaign
 from prospection.storage.exclusions import load_exclusions
 from prospection.storage.prospects import insert_prospect
-from prospection.storage.registry_status import set_company
+from prospection.storage.registry_status import known_sirens, set_company
 from prospection.storage.secret_box import SecretBox
 
 NO_INSEE_KEY = (
@@ -40,6 +46,7 @@ NO_INSEE_KEY = (
 )
 NOT_ON_MAPS = "Pas trouvée sur Google Maps : numéro à chercher"
 BUSY = "Registre des entreprises trop sollicité"
+logger = logging.getLogger(__name__)
 
 
 def _query(step: Step) -> RecentQuery:
@@ -53,6 +60,32 @@ def _bare_place(company: Company) -> Place:
     address = " ".join(p for p in (company.postal_code, company.city) if p)
     return Place(f"siren:{company.siren}", company.name, address, None, None, (), None, None,
                  None, None, None, 0, (), None, 0, "inconnu", "FR")  # fmt: skip
+
+
+def _known(engine: Engine, campaign_id: int) -> set[str]:
+    with engine.connect() as conn:
+        return known_sirens(conn, campaign_id)
+
+
+def _look_up(
+    engine: Engine, client: httpx.Client, pricing: Pricing, campaign_id: int, step: Step,
+    now: datetime, key: str, company: Company,
+) -> Place | StepOutcome | None:  # fmt: skip
+    """Fiche Google de l'entreprise (appel réservé d'abord), ou l'issue de l'étape."""
+    if not reserve_call(engine, pricing, campaign_id, now):
+        return budget_stop(engine, campaign_id, now)
+    try:
+        result = search_page(client, key, f"{company.name} {company.city or ''}", None, None, "FR")
+    except GoogleRejectedPage:
+        return None  # cette requête-là est refusée : on garde l'entreprise, numéro à chercher
+    except GoogleBusy:
+        return retry_later(engine, campaign_id, step, now, "Google trop sollicité")
+    except GoogleRefused as refused:
+        return finish(engine, campaign_id, str(refused), now)
+    except Exception:  # réponse imprévue : nouveaux essais plafonnés, jamais sans fin
+        logger.exception("Réponse Google illisible (registre, campagne %s)", campaign_id)
+        return retry_later(engine, campaign_id, step, now, "Google trop sollicité")
+    return match_place(company, result.places)
 
 
 def run_registry_step(
@@ -73,36 +106,31 @@ def run_registry_step(
         exclusions = load_exclusions(conn)
     criteria, trade = campaign.request.criteria, find_trade(step.keyword, load_trades())
     google_key = read_key(engine, box, Service.GOOGLE)
-    found = excluded = qualified = 0
+    found = qualified = 0
+    known = _known(engine, campaign_id)
     for company in page.companies:
         if campaign.qualified + qualified >= campaign.request.target:
             break
-        if not workforce_ok(company.workforce, criteria.max_workforce):
+        if company.siren in known or not workforce_ok(company.workforce, criteria.max_workforce):
             continue
         place = None
         if google_key:
-            if not reserve_call(engine, pricing, campaign_id, now):
-                return budget_stop(engine, campaign_id, now)
-            try:
-                result = search_page(client, google_key, f"{company.name} {company.city or ''}",
-                                     None, None, "FR")  # fmt: skip
-            except GoogleBusy:
-                return retry_later(engine, campaign_id, step, now, "Google trop sollicité")
-            except GoogleRefused as refused:
-                return finish(engine, campaign_id, str(refused), now)
-            place = match_place(company, result.places)
+            looked = _look_up(engine, client, pricing, campaign_id, step, now, google_key, company)
+            if isinstance(looked, StepOutcome):
+                return looked
+            place = looked
         shown = place or _bare_place(company)
         verdict = evaluate(shown, trade, criteria, exclusions)
         if place is None:
             verdict = Verdict(verdict.qualified, verdict.reasons, (*verdict.to_check, NOT_ON_MAPS))
-        with engine.begin() as conn:
+        with engine.begin() as conn:  # enregistré au fil de l'eau : une reprise ne repaie rien
             if insert_prospect(conn, campaign_id, shown, step.keyword, verdict, now):
                 set_company(conn, campaign_id, shown.place_id, company)
-                found, qualified = found + 1, qualified + verdict.qualified
-                excluded += not verdict.qualified
+                ok = int(verdict.qualified)
+                add_counts(conn, campaign_id, now, 1, 1 - ok, ok, 0)
+                found, qualified = found + 1, qualified + ok
     with engine.begin() as conn:
         record_page(conn, step.id, page.next_cursor)
-        add_counts(conn, campaign_id, now, found, excluded, qualified, 0)
         message = f"{step.query} : {found} entreprises, {qualified} qualifiées"
         add_event(conn, campaign_id, now, "info", message)
     return StepOutcome(done=False)

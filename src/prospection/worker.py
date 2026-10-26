@@ -72,7 +72,7 @@ def main() -> None:  # pragma: no cover (point d'entrée, testé en bout en bout
     stop = threading.Event()
     signal.signal(signal.SIGTERM, lambda *_: stop.set())
     box = SecretBox(settings.encryption_key.get_secret_value())
-    with make_client(settings.google_places_test_url) as client:
+    with make_client(settings.test_services_url) as client:
         worker = Worker(make_engine(settings.database_url), box, client, load_pricing())
         logger.info("Tâche de fond démarrée")
         worker.run_forever(stop)

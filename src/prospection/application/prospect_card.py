@@ -6,6 +6,7 @@ from datetime import datetime
 
 from sqlalchemy import Engine
 
+from prospection.domain.place import web_link
 from prospection.storage.call_tracking import Action, Note, notes, open_action
 from prospection.storage.prospect_list import (
     ProspectRow,
@@ -30,6 +31,8 @@ class ProspectList:
 class Card:
     prospect: ProspectRow
     tel: str | None
+    website: str | None
+    maps_url: str | None
     notes: list[Note]
     action: Action | None
     position: int | None
@@ -64,7 +67,8 @@ def card(
         found_notes, action = notes(conn, prospect_id), open_action(conn, prospect_id)
     index = queue.index(prospect_id) if prospect_id in queue else None
     return Card(
-        prospect, tel_link(prospect.data.get("phone")), found_notes, action,
+        prospect, tel_link(prospect.data.get("phone")), web_link(prospect.data.get("website")),
+        web_link(prospect.data.get("maps_url")), found_notes, action,
         None if index is None else index + 1, len(queue),
         queue[index - 1] if index else None,
         queue[index + 1] if index is not None and index + 1 < len(queue) else None,

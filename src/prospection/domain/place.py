@@ -3,8 +3,10 @@
 import re
 from dataclasses import dataclass
 from typing import Literal
+from urllib.parse import urlsplit
 
 MAX_TEXT = 300
+MAX_URL = 2000
 _CONTROL = re.compile(r"[\x00-\x1f\x7f-\x9f]+")
 
 PhotoOwnership = Literal["probable propriétaire", "clients seulement", "inconnu"]
@@ -42,3 +44,12 @@ class Place:
 def clip(text: str | None, size: int = MAX_TEXT) -> str | None:
     """Texte externe : sans caractères de contrôle (NUL refusé par la base), espaces réduits."""
     return None if text is None else " ".join(_CONTROL.sub(" ", text).split())[:size]
+
+
+def web_link(url: object) -> str | None:
+    """Lien http(s) complet, ou rien : jamais `javascript:` ni lien tronqué (règle 5)."""
+    clean = clip(url, MAX_URL + 1) if isinstance(url, str) else None
+    if not clean or len(clean) > MAX_URL:
+        return None
+    parts = urlsplit(clean)
+    return clean if parts.scheme in ("http", "https") and parts.netloc else None

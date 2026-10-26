@@ -12,8 +12,8 @@
 {% if p.to_check %}<p class="notice">À vérifier : {{ p.to_check | join(" ; ") }}</p>{% endif %}
 <div class="links">
   {% if card.tel %}<a class="button-primary" href="tel:{{ card.tel }}">Appeler</a>{% endif %}
-  {% if p.data.maps_url %}<a class="button-secondary" href="{{ p.data.maps_url }}" target="_blank" rel="noopener noreferrer">Fiche Google</a>{% endif %}
-  {% if p.data.website %}<a class="button-secondary" href="{{ p.data.website }}" target="_blank" rel="noopener noreferrer">Site web</a>{% endif %}
+  {% if card.maps_url %}<a class="button-secondary" href="{{ card.maps_url }}" target="_blank" rel="noopener noreferrer">Fiche Google</a>{% endif %}
+  {% if card.website %}<a class="button-secondary" href="{{ card.website }}" target="_blank" rel="noopener noreferrer">Site web</a>{% endif %}
 </div>
 {% include "_suivi.html" %}
 {% include "_notes.html" %}

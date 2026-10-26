@@ -102,3 +102,13 @@ def test_tel_link_keeps_only_digits_and_plus(campaign_db: Engine) -> None:
 def test_unknown_prospect(campaign_db: Engine) -> None:
     with pytest.raises(UnknownProspect):
         card(campaign_db, 999, None, "", datetime(2026, 1, 1, tzinfo=UTC))
+
+
+def test_links_checked_again_when_shown(campaign_db: Engine) -> None:
+    """Défense en profondeur (règle 5) : un lien déjà en base est revérifié à l'affichage."""
+    evil = dataclasses.replace(
+        PLACE, website="javascript:alert(1)", maps_url="https://maps.google.com/?cid=1"
+    )
+    [pid] = add(campaign_db, evil)
+    shown = card(campaign_db, pid, None, "", NOW)
+    assert (shown.website, shown.maps_url) == (None, "https://maps.google.com/?cid=1")

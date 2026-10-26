@@ -21,8 +21,9 @@ from prospection.storage.call_tracking import (
 from prospection.storage.campaigns import create_campaign
 from prospection.storage.prospect_list import (
     load_session,
+    move_session,
     prospect_ids,
-    save_session,
+    start_session,
     status_counts,
 )
 from prospection.storage.prospects import insert_prospect
@@ -40,16 +41,16 @@ def prospects(conn: Connection, *names: str) -> list[int]:
         )
     insert_prospect(conn, campaign_id, dataclasses.replace(PLACE, place_id="exclu"), "x",
                     Verdict(False, ("Trop d'avis",), ()), NOW)  # fmt: skip
-    return prospect_ids(conn, None, "")
+    return prospect_ids(conn, None, "", "trouves")
 
 
 def test_C120_only_qualified_listed_with_counts_and_search(conn: Connection) -> None:
     first, second, third = prospects(conn, "Cuisines Martin", "Atelier Bois", "Martin Frères")
     set_call_status(conn, second, "intéressé", NOW)
-    assert status_counts(conn) == {"à appeler": 2, "intéressé": 1}
-    assert prospect_ids(conn, "à appeler", "") == [first, third]
-    assert prospect_ids(conn, None, "martin") == [first, third]
-    assert prospect_ids(conn, None, "100%_") == []  # caractères spéciaux sans effet
+    assert status_counts(conn, "") == {"à appeler": 2, "intéressé": 1}
+    assert prospect_ids(conn, "à appeler", "", "trouves") == [first, third]
+    assert prospect_ids(conn, None, "martin", "trouves") == [first, third]
+    assert prospect_ids(conn, None, "100%_", "trouves") == []  # caractères spéciaux sans effet
 
 
 def test_C104_notes_dated_newest_first(conn: Connection) -> None:
@@ -99,8 +100,17 @@ def test_C105_contact_saved(conn: Connection) -> None:
 
 
 def test_C109_session_remembered(conn: Connection) -> None:
-    _, second = prospects(conn, "A", "B")
+    first, second = prospects(conn, "A", "B")
     assert load_session(conn) is None
-    save_session(conn, "à appeler", "", second, NOW)
+    start_session(conn, [first, second], NOW)
+    move_session(conn, second, NOW)
     session = load_session(conn)
-    assert session is not None and (session.status, session.prospect_id) == ("à appeler", second)
+    assert session is not None and (session.queue, session.prospect_id) == ([first, second], second)
+
+
+def test_C103_replanning_twice_quickly_keeps_one_open_action(conn: Connection) -> None:
+    [pid] = prospects(conn, "A")
+    for day in (26, 27):  # double appui : plus d'erreur d'unicité
+        plan_action(conn, pid, "rappeler", date(2026, 10, day), None, NOW)
+    action = open_action(conn, pid)
+    assert action is not None and action.due_date == date(2026, 10, 27)

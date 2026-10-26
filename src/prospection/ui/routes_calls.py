@@ -21,6 +21,7 @@ from prospection.ui.session import require_session
 
 router = APIRouter(dependencies=[Depends(require_session)])
 ENGINE, NOW, SETTINGS = Depends(get_engine), Depends(get_now), Depends(get_settings)
+CAP = 10_000  # garde-fou ; les vraies limites sont vérifiées avec un message au champ
 
 
 def _save(
@@ -34,42 +35,44 @@ def _save(
         errors, status_code = {refused.field: refused.message}, 422
     except UnknownProspect:
         raise HTTPException(status_code=404) from None
-    if "HX-Request" not in request.headers:
+    htmx = "HX-Request" in request.headers
+    if not htmx and not errors:
         return RedirectResponse(f"/prospects/{prospect_id}", status_code=303)
-    shown = card(engine, prospect_id, None, "", now, remember=False)
+    shown = card(engine, prospect_id, now, settings.timezone)
     extra = kept if errors else {"saved": fragment.strip("_").removesuffix(".html")}
-    context = card_context(shown, settings.timezone, "", errors=errors, **extra)
-    return templates.TemplateResponse(request, fragment, context, status_code=status_code)
+    context = card_context(shown, settings.timezone, errors=errors, **extra)
+    page = fragment if htmx else "fiche.html"  # sans HTMX : la fiche entière, saisie gardée
+    return templates.TemplateResponse(request, page, context, status_code=status_code)
 
 
 @router.post("/prospects/{prospect_id}/resultat")
 def result(
-    request: Request, prospect_id: int, statut: str = Form("", max_length=30),
+    request: Request, prospect_id: int, statut: str = Form("", max_length=CAP),
     engine: Engine = ENGINE, now: datetime = NOW, settings: Settings = SETTINGS,
 ) -> Response:  # fmt: skip
     def save() -> None:
-        calls.record_result(engine, prospect_id, statut, now, settings.timezone)
+        calls.record_result(engine, prospect_id, statut, now)
 
     return _save(request, engine, prospect_id, now, settings, "_suivi.html", save, {})
 
 
 @router.post("/prospects/{prospect_id}/action")
 def action(
-    request: Request, prospect_id: int, type: str = Form("", max_length=30),
-    date: str = Form("", max_length=20), heure: str = Form("", max_length=10),
+    request: Request, prospect_id: int, type: str = Form("", max_length=CAP),
+    date: str = Form("", max_length=CAP), heure: str = Form("", max_length=CAP),
     engine: Engine = ENGINE, now: datetime = NOW, settings: Settings = SETTINGS,
 ) -> Response:  # fmt: skip
     kept = {"action": {"type": type, "date": date, "heure": heure}}
 
     def save() -> None:
-        calls.schedule(engine, prospect_id, type, date, heure, now)
+        calls.schedule(engine, prospect_id, type, date, heure, now, settings.timezone)
 
     return _save(request, engine, prospect_id, now, settings, "_suivi.html", save, kept)
 
 
 @router.post("/prospects/{prospect_id}/note")
 def note(
-    request: Request, prospect_id: int, texte: str = Form("", max_length=4000),
+    request: Request, prospect_id: int, texte: str = Form("", max_length=CAP),
     engine: Engine = ENGINE, now: datetime = NOW, settings: Settings = SETTINGS,
 ) -> Response:  # fmt: skip
     def save() -> None:
@@ -82,8 +85,8 @@ def note(
 
 @router.post("/prospects/{prospect_id}/contact")
 def contact(
-    request: Request, prospect_id: int, dirigeant: str = Form("", max_length=200),
-    mobile: str = Form("", max_length=50), email: str = Form("", max_length=300),
+    request: Request, prospect_id: int, dirigeant: str = Form("", max_length=CAP),
+    mobile: str = Form("", max_length=CAP), email: str = Form("", max_length=CAP),
     engine: Engine = ENGINE, now: datetime = NOW, settings: Settings = SETTINGS,
 ) -> Response:  # fmt: skip
     kept = {"contact": {"dirigeant": dirigeant, "mobile": mobile, "email": email}}
@@ -96,5 +99,13 @@ def contact(
 
 @router.post("/actions/{action_id}/terminer")
 def finish(action_id: int, engine: Engine = ENGINE, now: datetime = NOW) -> Response:
-    calls.finish_action(engine, action_id, now)
-    return RedirectResponse("/", status_code=303)
+    if not calls.finish_action(engine, action_id, now):
+        raise HTTPException(status_code=404)
+    return RedirectResponse(f"/?terminee={action_id}", status_code=303)
+
+
+@router.post("/actions/{action_id}/rouvrir")
+def reopen(action_id: int, engine: Engine = ENGINE) -> Response:
+    """Annule « Terminer » (appui raté sur mobile)."""
+    done = calls.reopen_action(engine, action_id)
+    return RedirectResponse("/" if done else "/?rouvrir=impossible", status_code=303)

@@ -9,15 +9,17 @@
   <label for="q">Chercher (nom, ville, métier)</label>
   <input id="q" name="q" type="search" value="{{ query }}" maxlength="100" autocomplete="off">
   {% if status %}<input type="hidden" name="statut" value="{{ status }}">{% endif %}
-  <button type="submit" class="button-secondary">Chercher</button>
+  <label for="tri">Trier par</label>
+  <select id="tri" name="tri">{% for key, label in sorts.items() %}<option value="{{ key }}"{% if sort == key %} selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+  <button type="submit" class="button-secondary">Afficher</button>
 </form>
 <ul class="chips" aria-label="Filtrer par statut">
-  <li><a class="chip" href="/prospects?{{ {'q': query} | urlencode }}"{% if not status %} aria-current="true"{% endif %}>Tous · {{ total }}</a></li>
-  {% for s in statuses %}{% if counts.get(s) %}<li><a class="chip" href="/prospects?{{ {'statut': s, 'q': query} | urlencode }}"{% if status == s %} aria-current="true"{% endif %}>{{ s | capitalize }} · {{ counts[s] }}</a></li>{% endif %}{% endfor %}
+  <li><a class="chip" href="/prospects?{{ {'q': query, 'tri': sort} | urlencode }}"{% if not status %} aria-current="true"{% endif %}>Tous · {{ total }}</a></li>
+  {% for s in statuses %}{% if counts.get(s) %}<li><a class="chip" href="/prospects?{{ {'statut': s, 'q': query, 'tri': sort} | urlencode }}"{% if status == s %} aria-current="true"{% endif %}>{{ s | capitalize }} · {{ counts[s] }}</a></li>{% endif %}{% endfor %}
 </ul>
 {% if rows %}
-<a class="button-primary" href="/prospects/{{ rows[0].id }}?{{ qs }}">Démarrer la session d'appel</a>
-<ul class="group">{% for r in rows %}<li><a class="row link-row" href="/prospects/{{ r.id }}?{{ qs }}"><span>{{ r.data.name }}<br><span class="secondary">{{ r.data.address }}</span></span><span class="secondary">{{ r.status }}</span></a></li>{% endfor %}</ul>
+<a class="button-primary" href="/prospects/session?{{ qs }}">Démarrer la session d'appel</a>
+<ul class="group">{% for r in rows %}<li><a class="row link-row" href="/prospects/{{ r.id }}"><span>{{ r.data.name }}<br><span class="secondary">{{ r.data.address }}</span></span><span class="secondary">{{ r.status }}</span></a></li>{% endfor %}</ul>
 {% else %}
 <p class="empty">Aucun prospect ne correspond. Changez la recherche ou le filtre.</p>
 {% endif %}

@@ -53,13 +53,19 @@ def test_C120_list_searched_and_filtered_with_counts(
     assert 'href="/prospects/' in page and "Démarrer la session d'appel" in page
 
 
-def test_C109_card_shows_position_and_neighbours(client: TestClient, campaign_db: Engine) -> None:
-    first, second, third = names(campaign_db, "A", "B", "C")
-    page = text(client.get(f"/prospects/{second}"))
+def test_C109_session_started_from_the_list_then_resumed(
+    client: TestClient, campaign_db: Engine
+) -> None:
+    first, second, third = names(campaign_db, "Alpha", "Bravo", "Charlie")
+    start = client.get("/prospects/session", params={"statut": "à appeler"}, follow_redirects=False)
+    assert start.headers["location"] == f"/prospects/{first}?session=1"
+    page = text(client.get(f"/prospects/{second}?session=1"))
     assert "2 / 3" in page
-    assert f'href="/prospects/{first}?' in page and f'href="/prospects/{third}?' in page
-    assert 'href="tel:+33612345678"' in page
-    assert "Reprendre la session" in text(client.get("/")) and "B" in text(client.get("/"))
+    assert f'href="/prospects/{first}?session=1"' in page
+    assert f'href="/prospects/{third}?session=1"' in page
+    assert 'href="tel:+33612345678"' in page and "Recherche Google" in page
+    today = text(client.get("/"))
+    assert "Reprendre la session" in today and "Bravo · 2 / 3" in today
 
 
 def test_C102_C103_result_saved_in_one_gesture(client: TestClient, campaign_db: Engine) -> None:
@@ -68,7 +74,8 @@ def test_C102_C103_result_saved_in_one_gesture(client: TestClient, campaign_db: 
     fragment = text(response)
     assert response.status_code == 200 and "<html" not in fragment
     assert 'value="messagerie" aria-pressed="true"' in fragment
-    assert 'value="2026-10-26"' in fragment  # Rappeler demain, préparé
+    assert 'value="2026-10-26"' in fragment  # Rappeler demain, préparé (pas enregistré)
+    assert "Proposée : vérifiez, puis enregistrez." in fragment
 
 
 def test_C106_refused_input_says_why_and_keeps_it(client: TestClient, campaign_db: Engine) -> None:

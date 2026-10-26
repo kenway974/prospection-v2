@@ -52,6 +52,8 @@ def test_C102_C107_C109_call_session_then_today(page: Page, base_url: str) -> No
     page.get_by_role("link", name="Démarrer la session d'appel").click()
     page.get_by_role("button", name="Messagerie").click()
     expect(page.locator('button[value="messagerie"]')).to_have_attribute("aria-pressed", "true")
+    page.get_by_role("button", name="Enregistrer l'action").click()  # « Rappeler demain » proposé
+    expect(page.locator("#suivi")).to_contain_text("Enregistré")
     page.get_by_label("Nouvelle note").fill("Rappeler après 14 h")
     page.get_by_role("button", name="Ajouter la note").click()
     expect(page.locator("#notes")).to_contain_text("Rappeler après 14 h")

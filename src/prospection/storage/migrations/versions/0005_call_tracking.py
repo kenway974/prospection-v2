@@ -2,6 +2,7 @@
 
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy.dialects.postgresql import ARRAY
 
 revision = "0005"
 down_revision = "0004"
@@ -40,8 +41,7 @@ def upgrade() -> None:
     op.create_table(
         "call_session",
         sa.Column("id", sa.Integer, primary_key=True),
-        sa.Column("status_filter", sa.Text),
-        sa.Column("query", sa.Text, nullable=False, server_default=""),
+        sa.Column("queue", ARRAY(sa.BigInteger), nullable=False),  # file figée au démarrage
         sa.Column("prospect_id", sa.BigInteger, sa.ForeignKey("prospects.id", ondelete="SET NULL")),
         sa.Column("updated_at", TS, nullable=False),
         sa.CheckConstraint("id = 1", name="ck_call_session_single"),

@@ -18,8 +18,12 @@
   </div>
   <h1 class="large-title">Aujourd'hui</h1>
 </header>
+{% if finished %}
+<form method="post" action="/actions/{{ finished }}/rouvrir" class="notice row" role="status"><span>Action terminée.</span><button type="submit" class="chip">Annuler</button></form>
+{% endif %}
+{% if reopen_failed %}<p class="notice" role="alert">Impossible d'annuler : une autre action est déjà prévue pour ce prospect.</p>{% endif %}
 {% if resume %}
-<a class="group row link-row" href="/prospects/{{ resume.prospect_id }}?{{ resume_qs }}"><span>Reprendre la session<br><span class="secondary">{{ resume.name }} · {{ resume.position }} / {{ resume.total }}</span></span></a>
+<a class="group row link-row" href="/prospects/{{ resume.prospect_id }}?session=1"><span>Reprendre la session<br><span class="secondary">{{ resume.name }} · {{ resume.position }} / {{ resume.total }}</span></span></a>
 {% endif %}
 {{ actions("En retard", agenda.overdue) }}
 {{ actions("Aujourd'hui", agenda.today) }}

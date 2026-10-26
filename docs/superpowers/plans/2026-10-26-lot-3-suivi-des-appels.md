@@ -21,3 +21,10 @@ Comportements : C61, C102 à C107, C109, C120. C108 (notifications) reste au lot
 ## Décisions
 - File triée par date de qualification tant que le score d'opportunité n'existe pas (lot 6) ; le tri passera au score ensuite.
 - Seuls les prospects qualifiés sont dans la liste ; les exclus restent visibles dans le suivi de campagne.
+
+## Après relecture (18 constats, tous traités)
+- Session : file figée au démarrage (`call_session.queue`), seule une fiche ouverte depuis la session (`?session=1`) la met à jour.
+- « Rappeler demain » est proposé dans le formulaire, plus créé d'office.
+- Action et contact s'enregistrent au changement ; la note au bouton, avec avertissement avant de quitter une saisie non enregistrée ; bandeau collant, message différent pour une coupure réseau et pour une erreur du serveur.
+- Tri (C61) : ordre de la recherche, nom, ville ; le score s'ajoutera au lot 6.
+- Reportés, écrits ici : note courte et activité de fond sur Aujourd'hui (lot 9), recherche du dirigeant (lot 6), ville et distance sur la fiche (lot 8). Une session expirée pendant une saisie renvoie à la connexion (saisie perdue) : accepté, la session dure 30 jours.

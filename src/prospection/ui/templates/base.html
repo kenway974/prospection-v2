@@ -15,7 +15,7 @@
 </head>
 <body>
 <main class="page{% if tab is defined %} with-nav{% endif %}">
-<p id="erreur-reseau" class="notice" role="alert" hidden>Pas de connexion : rien n'a été enregistré. Votre saisie est gardée, réessayez.</p>
+<p id="erreur-reseau" class="notice save-error" role="alert" hidden data-offline="Pas de connexion : rien n'a été enregistré. Votre saisie est gardée, réessayez." data-server="Le serveur n'a pas enregistré votre saisie : elle est gardée, réessayez dans un instant."></p>
 {% block content %}{% endblock %}
 </main>
 {% if tab is defined %}{% include "_nav.html" %}{% endif %}

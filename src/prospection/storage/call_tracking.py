@@ -3,13 +3,12 @@
 from dataclasses import dataclass
 from datetime import date, datetime, time
 
-from sqlalchemy import Connection, insert, select, update
+from sqlalchemy import Connection, select, update
+from sqlalchemy.dialects.postgresql import insert
 
 from prospection.domain.agenda import AgendaItem
 from prospection.storage.schema_calls import prospect_actions, prospect_notes
 from prospection.storage.schema_campaigns import prospects
-
-MAX_NOTE = 2000
 
 
 @dataclass(frozen=True)
@@ -32,9 +31,7 @@ def set_call_status(conn: Connection, prospect_id: int, status: str, now: dateti
 
 
 def add_note(conn: Connection, prospect_id: int, text: str, now: datetime) -> None:
-    conn.execute(
-        insert(prospect_notes).values(prospect_id=prospect_id, text=text[:MAX_NOTE], created_at=now)
-    )
+    conn.execute(insert(prospect_notes).values(prospect_id=prospect_id, text=text, created_at=now))
 
 
 def notes(conn: Connection, prospect_id: int) -> list[Note]:
@@ -58,22 +55,38 @@ def open_action(conn: Connection, prospect_id: int) -> Action | None:
 def plan_action(
     conn: Connection, prospect_id: int, kind: str, due: date, at: time | None, now: datetime
 ) -> None:
-    """Une seule action ouverte : la nouvelle remplace celle qui était prévue."""
+    """Une seule action ouverte : la nouvelle remplace celle qui était prévue (sans course)."""
     values = {"kind": kind, "due_date": due, "due_time": at}
-    current = open_action(conn, prospect_id)
-    if current:
-        conn.execute(update(prospect_actions).where(prospect_actions.c.id == current.id)
-                     .values(**values))  # fmt: skip
-    else:
-        conn.execute(insert(prospect_actions).values(prospect_id=prospect_id, created_at=now,
-                                                     **values))  # fmt: skip
-
-
-def complete_action(conn: Connection, action_id: int, now: datetime) -> None:
-    a = prospect_actions.c
+    statement = insert(prospect_actions).values(prospect_id=prospect_id, created_at=now, **values)
     conn.execute(
-        update(prospect_actions).where(a.id == action_id, a.done_at.is_(None)).values(done_at=now)
-    )
+        statement.on_conflict_do_update(
+            index_elements=["prospect_id"], index_where=prospect_actions.c.done_at.is_(None),
+            set_=values,
+        )
+    )  # fmt: skip
+
+
+def complete_action(conn: Connection, action_id: int, now: datetime) -> bool:
+    a = prospect_actions.c
+    done = conn.execute(
+        update(prospect_actions).where(a.id == action_id, a.done_at.is_(None))
+        .values(done_at=now).returning(a.id)
+    ).first()  # fmt: skip
+    return done is not None
+
+
+def reopen_action(conn: Connection, action_id: int) -> bool:
+    """Seulement si le prospect n'a pas déjà une autre action ouverte."""
+    a = prospect_actions.c
+    other = prospect_actions.alias("other")
+    busy = select(other.c.id).where(
+        other.c.prospect_id == a.prospect_id, other.c.done_at.is_(None)
+    ).exists()  # fmt: skip
+    reopened = conn.execute(
+        update(prospect_actions).where(a.id == action_id, a.done_at.is_not(None), ~busy)
+        .values(done_at=None).returning(a.id)
+    ).first()  # fmt: skip
+    return reopened is not None
 
 
 def agenda_items(conn: Connection) -> list[AgendaItem]:

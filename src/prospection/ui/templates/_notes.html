@@ -1,8 +1,8 @@
 <section id="notes" class="group">
 <form method="post" action="/prospects/{{ p.id }}/note" class="form" hx-post="/prospects/{{ p.id }}/note" hx-target="#notes" hx-swap="outerHTML">
   <label for="texte">Nouvelle note</label>
-  <textarea id="texte" name="texte" maxlength="2000">{{ note_text }}</textarea>
-  {% if errors.get("note") %}<p class="error" role="alert">{{ errors["note"] }}</p>{% endif %}
+  <textarea id="texte" name="texte" maxlength="2000"{% if errors.get("note") %} aria-invalid="true" aria-describedby="erreur-note"{% endif %}>{{ note_text }}</textarea>
+  {% if errors.get("note") %}<p class="error" id="erreur-note" role="alert">{{ errors["note"] }}</p>{% endif %}
   <button type="submit" class="button-secondary">Ajouter la note</button>
 </form>
 {% for when, text in notes %}<p class="note"><span class="secondary">{{ when }}</span><br>{{ text }}</p>{% endfor %}

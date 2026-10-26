@@ -30,14 +30,16 @@ def clean_contact(
 ) -> tuple[str | None, str | None, str | None]:
     """Champs vides = rien ; mobile au format international ; email en minuscules."""
     errors: dict[str, str] = {}
-    clean_name = " ".join(name.split())[:100] or None
+    clean_name = " ".join(name.split()) or None
+    if clean_name and len(clean_name) > 100:
+        errors["name"] = "100 caractères au plus : raccourcissez le nom."
     clean_mobile = None
     if mobile.strip():
-        clean_mobile = _phone(mobile.strip()[:30], country)
+        clean_mobile = _phone(mobile.strip(), country) if len(mobile.strip()) <= 30 else None
         if clean_mobile is None:
             errors["mobile"] = BAD_PHONE
-    clean_email = email.strip().lower()[:254] or None
-    if clean_email and not _EMAIL.fullmatch(clean_email):
+    clean_email = email.strip().lower() or None
+    if clean_email and (len(clean_email) > 254 or not _EMAIL.fullmatch(clean_email)):
         errors["email"] = BAD_EMAIL
     if errors:
         raise InvalidContact(errors)

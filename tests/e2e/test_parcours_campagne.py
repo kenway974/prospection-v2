@@ -43,3 +43,20 @@ def test_campaign_from_key_to_qualified_prospects(page: Page, base_url: str) -> 
     )
     expect(progress).to_contain_text("2 sur 2 qualifiés")
     expect(progress).to_contain_text("Liste noire")
+
+
+def test_C102_C107_C109_call_session_then_today(page: Page, base_url: str) -> None:
+    """Suite du parcours : les prospects trouvés s'appellent et se suivent."""
+    _login(page, base_url)
+    page.goto(f"{base_url}/prospects")
+    page.get_by_role("button", name="Démarrer la session d'appel").click()
+    page.get_by_role("button", name="Messagerie").click()
+    expect(page.locator('button[value="messagerie"]')).to_have_attribute("aria-pressed", "true")
+    page.get_by_role("button", name="Enregistrer l'action").click()  # « Rappeler demain » proposé
+    expect(page.locator("#suivi")).to_contain_text("Enregistré")
+    page.get_by_label("Nouvelle note").fill("Rappeler après 14 h")
+    page.get_by_role("button", name="Ajouter la note").click()
+    expect(page.locator("#notes")).to_contain_text("Rappeler après 14 h")
+    page.goto(f"{base_url}/")
+    expect(page.get_by_text("Reprendre la session")).to_be_visible()
+    expect(page.locator("main")).to_contain_text("Rappeler")

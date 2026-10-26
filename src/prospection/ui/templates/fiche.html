@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{{ p.data.name }} · Prospection{% endblock %}
+{% block content %}
+<a href="/prospects" class="back">Prospects</a>
+<nav class="pager" aria-label="File d'appel">
+  {% if card.previous_id %}<a class="button-secondary" href="/prospects/{{ card.previous_id }}?session=1">Précédent</a>{% else %}<span></span>{% endif %}
+  {% if card.position %}<span class="secondary">{{ card.position }} / {{ card.total }}</span>{% endif %}
+  {% if card.next_id %}<a class="button-secondary" href="/prospects/{{ card.next_id }}?session=1">Suivant</a>{% else %}<span></span>{% endif %}
+</nav>
+<h1 class="large-title">{{ p.data.name }}</h1>
+<p class="secondary">{{ p.keywords | join(", ") }} · {{ p.data.address }}</p>
+{% if p.to_check %}<p class="notice">À vérifier : {{ p.to_check | join(" ; ") }}</p>{% endif %}
+<div class="links">
+  {% if card.tel %}<a class="button-primary" href="tel:{{ card.tel }}">Appeler</a>{% endif %}
+  {% if card.maps_url %}<a class="button-secondary" href="{{ card.maps_url }}" target="_blank" rel="noopener noreferrer">Fiche Google</a>{% endif %}
+  <a class="button-secondary" href="{{ search_url }}" target="_blank" rel="noopener noreferrer">Recherche Google</a>
+  {% if card.website %}<a class="button-secondary" href="{{ card.website }}" target="_blank" rel="noopener noreferrer">Site web</a>{% endif %}
+</div>
+{% include "_suivi.html" %}
+{% include "_notes.html" %}
+{% include "_contact.html" %}
+{% endblock %}

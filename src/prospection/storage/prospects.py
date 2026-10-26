@@ -5,12 +5,11 @@ from datetime import datetime
 from sqlalchemy import Connection, func, select, update
 from sqlalchemy.dialects.postgresql import insert
 
+from prospection.domain.call_status import TO_CALL
 from prospection.domain.criteria import Verdict
 from prospection.domain.place import Place
 from prospection.storage.campaign_codec import encode_place
 from prospection.storage.schema_campaigns import prospects
-
-TO_CALL = "à appeler"
 
 
 def insert_prospect(

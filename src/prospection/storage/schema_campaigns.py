@@ -50,6 +50,8 @@ prospects = Table(
     Column("keywords", ARRAY(Text), nullable=False), Column("qualified", Boolean, nullable=False),
     Column("reasons", ARRAY(Text), nullable=False), Column("to_check", ARRAY(Text), nullable=False),
     Column("status", Text), Column("created_at", TS, nullable=False),
+    Column("contact_name", Text), Column("contact_mobile", Text), Column("contact_email", Text),
+    Column("updated_at", TS),
     UniqueConstraint("campaign_id", "place_id", name="uq_prospect_place"),
 )  # fmt: skip
 

@@ -1,0 +1,13 @@
+{% macro field(name, key, label, kind, size) %}
+  <label for="{{ name }}">{{ label }}</label>
+  <input id="{{ name }}" name="{{ name }}" type="{{ kind }}" value="{{ contact[name] }}" maxlength="{{ size }}" autocomplete="off"{% if errors.get(key) %} aria-invalid="true" aria-describedby="erreur-{{ key }}"{% endif %}>
+  {% if errors.get(key) %}<p class="error" id="erreur-{{ key }}" role="alert">{{ errors[key] }}</p>{% endif %}
+{% endmacro %}
+<form id="contact" method="post" action="/prospects/{{ p.id }}/contact" class="group form" hx-post="/prospects/{{ p.id }}/contact" hx-trigger="change, submit" hx-target="#contact" hx-swap="outerHTML">
+  <h2 class="row-title">Contact</h2>
+  {{ field("dirigeant", "name", "Dirigeant", "text", 100) }}
+  {{ field("mobile", "mobile", "Mobile", "tel", 30) }}
+  {{ field("email", "email", "Email", "email", 254) }}
+  <button type="submit" class="button-secondary">Enregistrer le contact</button>
+  {% if saved == "contact" %}<p class="secondary" role="status">Enregistré</p>{% endif %}
+</form>

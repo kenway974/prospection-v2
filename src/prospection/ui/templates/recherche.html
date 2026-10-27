@@ -77,6 +77,14 @@
     <select id="telephone" name="telephone">
       {% for v, l in [("with", "Avec téléphone"), ("mobile", "Mobile seulement"), ("any", "Peu importe")] %}<option value="{{ v }}"{% if values.get('telephone') == v %} selected{% endif %}>{{ l }}</option>{% endfor %}
     </select>
+    <label for="score_site_max">Score du site au plus (sur 100)</label>
+    <input id="score_site_max" name="score_site_max" inputmode="numeric" value="{{ values.get('score_site_max', '') }}" placeholder="Vide : peu importe">
+    {{ error("max_site_score") }}
+    {% for name, label in [("sans_formulaire", "Site sans formulaire de contact"), ("sans_https", "Site sans HTTPS"), ("non_mobile", "Site pas adapté au mobile")] %}
+    <label for="{{ name }}">{{ label }}</label>
+    <select id="{{ name }}" name="{{ name }}">{% for v, l in [("any", "Peu importe"), ("only", "Seulement ceux-là"), ("exclude", "Les exclure")] %}<option value="{{ v }}"{% if values.get(name, 'any') == v %} selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+    {% endfor %}
+    {{ error("site_problems") }}
     <label class="choice"><input type="checkbox" name="franchises"{% if values.get('franchises') == 'on' %} checked{% endif %}> Exclure franchises et chaînes</label>
   </section>
   <section class="group form">

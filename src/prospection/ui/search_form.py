@@ -2,6 +2,7 @@
 
 import re
 from dataclasses import dataclass, field
+from typing import cast
 
 from prospection.domain.campaign_request import (
     CityZone,
@@ -10,7 +11,7 @@ from prospection.domain.campaign_request import (
     RawRequest,
     Zone,
 )
-from prospection.domain.criteria import Criteria
+from prospection.domain.criteria import Criteria, SiteChoice
 from prospection.domain.departments import find_department
 from prospection.domain.foreign_zones import (
     countries,
@@ -20,6 +21,7 @@ from prospection.domain.foreign_zones import (
 )
 from prospection.domain.place import clip
 from prospection.domain.registry import SOURCES
+from prospection.domain.site_criteria import SITE_CHOICES
 
 _COORD = r"(-?\d{1,3}(?:\.\d+)?)"
 _COMMUNE = re.compile(rf"([A-Z]{{2}})\|([0-9A-Z]{{0,5}})\|{_COORD}\|{_COORD}\|(.{{1,100}})")
@@ -94,6 +96,10 @@ def _zones(form: dict[str, str], errors: dict[str, str]) -> list[Zone]:
     return zones
 
 
+def _site_choice(value: str | None) -> SiteChoice:
+    return cast("SiteChoice", value) if value in SITE_CHOICES else "any"
+
+
 def parse_form(form: dict[str, str]) -> ParsedForm:
     errors: dict[str, str] = {}
     site = form.get("site", "any")
@@ -106,6 +112,10 @@ def parse_form(form: dict[str, str]) -> ParsedForm:
         exclude_franchises=form.get("franchises") == "on",
         created_within_days=_int(form.get("jours", ""), 0) or 0,
         max_workforce=form.get("effectif_max") or None,
+        max_site_score=_int(form.get("score_site_max", ""), None),
+        no_form=_site_choice(form.get("sans_formulaire")),
+        no_https=_site_choice(form.get("sans_https")),
+        not_mobile=_site_choice(form.get("non_mobile")),
     )
     raw = RawRequest(
         name=form.get("nom", "")[:100],

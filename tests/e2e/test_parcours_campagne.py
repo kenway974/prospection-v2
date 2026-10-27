@@ -60,3 +60,14 @@ def test_C102_C107_C109_call_session_then_today(page: Page, base_url: str) -> No
     page.goto(f"{base_url}/")
     expect(page.get_by_text("Reprendre la session")).to_be_visible()
     expect(page.locator("main")).to_contain_text("Rappeler")
+
+
+def test_C46_C52_found_site_shown_on_the_card(page: Page, base_url: str) -> None:
+    """Suite du parcours : le site de Cuisines Martin, absent de sa fiche, est retrouvé."""
+    _login(page, base_url)
+    page.goto(f"{base_url}/prospects")
+    page.get_by_role("link", name="Cuisines Martin").first.click()
+    site = page.locator("section", has=page.get_by_role("heading", name="Le site"))
+    expect(site).to_contain_text("Retrouvé à partir du nom")
+    expect(site).to_contain_text("/100")
+    expect(site.get_by_role("link", name="Facebook")).to_be_visible()

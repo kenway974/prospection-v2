@@ -41,6 +41,7 @@ campaign_steps = Table(
     Column("skipped", Boolean, nullable=False),
     Column("attempts", Integer, nullable=False),
     Column("kind", Text, nullable=False), Column("registry_json", JSONB),
+    Column("pending_page_json", JSONB),  # page payée, gardée jusqu'à son enregistrement (C40)
 )  # fmt: skip
 
 prospects = Table(
@@ -53,6 +54,7 @@ prospects = Table(
     Column("status", Text), Column("created_at", TS, nullable=False),
     Column("contact_name", Text), Column("contact_mobile", Text), Column("contact_email", Text),
     Column("updated_at", TS), Column("company_json", JSONB), Column("registry_status", Text),
+    Column("site_json", JSONB),
     UniqueConstraint("campaign_id", "place_id", name="uq_prospect_place"),
 )  # fmt: skip
 

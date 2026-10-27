@@ -1,5 +1,6 @@
 """Chercher une entreprise du registre sur Google Maps, sans jamais payer deux fois (C24, C40)."""
 
+import dataclasses
 import logging
 from dataclasses import dataclass
 from datetime import datetime
@@ -7,6 +8,7 @@ from datetime import datetime
 import httpx
 from sqlalchemy import Engine
 
+from prospection.application.site_verdict import SiteChecker, read_sites, worth_reading
 from prospection.application.step_flow import (
     StepOutcome,
     budget_stop,
@@ -15,9 +17,11 @@ from prospection.application.step_flow import (
     retry_later,
 )
 from prospection.domain.company import Company, match_place
+from prospection.domain.criteria import Verdict
 from prospection.domain.google_cost import Pricing
 from prospection.domain.place import Place
 from prospection.domain.registry import lookup_name
+from prospection.domain.site_report import SiteReport
 from prospection.sources.google_search import (
     GoogleBusy,
     GoogleRefused,
@@ -27,6 +31,7 @@ from prospection.sources.google_search import (
 from prospection.storage.campaign_steps import Step, mark_looked_up
 
 BUSY = "Google trop sollicité"
+NO_SIGN = "Entrepreneur individuel sans enseigne : site non cherché (nom d'une personne)"
 logger = logging.getLogger(__name__)
 
 
@@ -69,3 +74,17 @@ def look_up(ctx: LookupContext, company: Company) -> Place | StepOutcome | None:
         logger.exception("Réponse Google illisible (registre, campagne %s)", ctx.campaign_id)
         return retry_later(ctx.engine, ctx.campaign_id, ctx.step, ctx.now, BUSY)
     return match_place(company, result.places)
+
+
+def registry_site(
+    sites: SiteChecker, company: Company, shown: Place, bare: bool, keyword: str,
+    verdict: Verdict,
+) -> SiteReport | None:  # fmt: skip
+    """Site cherché à partir de l'enseigne ; jamais à partir du nom d'une personne (C47)."""
+    if not worth_reading(verdict):
+        return None
+    name = lookup_name(company) if bare else shown.name
+    if name is None:
+        return SiteReport("aucun", problem=NO_SIGN)
+    looked = dataclasses.replace(shown, name=name)
+    return read_sites(sites, [looked], keyword)[shown.place_id]

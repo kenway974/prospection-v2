@@ -20,6 +20,8 @@ def criteria_to_form(criteria: Criteria) -> dict[str, str]:
         "site": criteria.website, "telephone": criteria.phone,
         "franchises": "on" if criteria.exclude_franchises else "",
         "jours": str(criteria.created_within_days), "effectif_max": criteria.max_workforce or "",
+        "score_site_max": _text(criteria.max_site_score), "sans_formulaire": criteria.no_form,
+        "sans_https": criteria.no_https, "non_mobile": criteria.not_mobile,
     }  # fmt: skip
 
 

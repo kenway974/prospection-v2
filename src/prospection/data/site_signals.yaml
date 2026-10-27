@@ -1,0 +1,17 @@
+# Signatures repérées dans l'adresse d'un site ou celles des ressources qu'il charge (repris de prospection-bot,
+# services/analyzer.py, version 530ba12). Tout en minuscules.
+technologies:
+  WordPress: ["wp-content/", "wp-includes/"]
+  Wix: ["wixstatic.com", "wixsite.com", "wix.com"]
+  Squarespace: ["squarespace.com", "squarespace-cdn.com"]
+  Shopify: ["cdn.shopify.com", "myshopify.com"]
+  PrestaShop: ["prestashop", "/modules/ps_"]
+  Joomla: ["/components/com_", "/media/jui/"]
+  Drupal: ["sites/default/files", "/core/misc/drupal"]
+  Webflow: ["webflow.io", "webflow.com"]
+  Jimdo: ["jimdo.com", "jimdofree.com", "jimdosite.com"]
+  Weebly: ["weebly.com", "editmysite.com"]
+  Webnode: ["webnode.fr", "webnode.com"]
+  Site123: ["site123.com", "site123.me"]
+tracking: ["googletagmanager.com", "google-analytics.com", "gtag(", "fbq(", "hotjar", "clarity.ms", "matomo", "plausible.io"]
+social: ["facebook.com", "instagram.com", "linkedin.com", "tiktok.com", "youtube.com", "x.com", "twitter.com", "pinterest."]

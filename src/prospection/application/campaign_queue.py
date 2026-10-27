@@ -2,7 +2,7 @@
 
 Une campagne est prise par un seul worker à la fois (`FOR UPDATE SKIP LOCKED`),
 pour une page, puis rendue à la file : les campagnes avancent à tour de rôle.
-Si elle n'est pas rendue dans les 2 minutes (redémarrage, worker figé), un autre
+Si elle n'est pas rendue dans les 10 minutes (redémarrage, worker figé), un autre
 worker la reprend ; l'ancien ne peut plus la rendre, elle n'est plus à lui.
 """
 
@@ -12,7 +12,7 @@ from sqlalchemy import Engine, func, or_, select, update
 
 from prospection.storage.schema_campaigns import campaigns
 
-STALE_AFTER = timedelta(minutes=2)
+STALE_AFTER = timedelta(minutes=10)  # une page lit aussi des sites : jusqu'à ~2 min
 
 
 def claim_next(

@@ -95,7 +95,7 @@ def test_C41_unexpected_error_saving_a_page_retried_then_skipped(
     assert [o.retry_at is not None for o in outcomes[:3]] == [True, True, True]
     assert outcomes[3].retry_at is None and not outcomes[3].done
     assert outcomes[4].done
-    assert len(recorder.requests) == 4  # 4 essais puis la page est ignorée : plus aucun appel
+    assert len(recorder.requests) == 1  # C40 : page payée gardée, jamais redemandée
     events = [e.message for e in progress(campaign_db, campaign_id).recent_events]
     assert "Page de résultats impossible à enregistrer : page ignorée" in events
 

@@ -17,6 +17,7 @@ from sqlalchemy import Engine
 from prospection.application.campaign_queue import claim_next, release_until
 from prospection.application.campaign_step import run_step
 from prospection.application.registry_enrich import enrich_new_prospects
+from prospection.application.site_verdict import SiteChecker, skip_sites
 from prospection.domain.google_cost import Pricing, load_pricing
 from prospection.storage.secret_box import SecretBox
 
@@ -27,9 +28,10 @@ class Worker:
     def __init__(
         self, engine: Engine, box: SecretBox, client: httpx.Client, pricing: Pricing,
         now: Callable[[], datetime] = lambda: datetime.now(UTC),
+        sites: SiteChecker = skip_sites,
     ) -> None:  # fmt: skip
         self.engine, self.box, self.client, self.pricing = engine, box, client, pricing
-        self.now = now
+        self.now, self.sites = now, sites
         self.worker_id = uuid.uuid4().hex
 
     def work_once(self) -> bool:
@@ -42,7 +44,7 @@ class Worker:
         if campaign_id is None:  # rien à chercher : on complète les fiches avec le registre
             return enrich_new_prospects(self.engine, self.client, self.now()) > 0
         outcome = run_step(
-            self.engine, self.box, self.client, self.pricing, campaign_id, self.now()
+            self.engine, self.box, self.client, self.pricing, campaign_id, self.now(), self.sites
         )
         if outcome.done:
             logger.info("Campagne %s terminée", campaign_id)
@@ -62,8 +64,12 @@ class Worker:
 
 
 def main() -> None:  # pragma: no cover (point d'entrée, testé en bout en bout)
+    from prospection.application.site_check import check_site
     from prospection.config import load_settings
+    from prospection.domain.place import Place
+    from prospection.domain.site_report import SiteReport
     from prospection.http_client import make_client
+    from prospection.sources.safe_network import make_web_client
     from prospection.storage.db import make_engine
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -72,8 +78,14 @@ def main() -> None:  # pragma: no cover (point d'entrée, testé en bout en bout
     stop = threading.Event()
     signal.signal(signal.SIGTERM, lambda *_: stop.set())
     box = SecretBox(settings.encryption_key.get_secret_value())
-    with make_client(settings.test_services_url) as client:
-        worker = Worker(make_engine(settings.database_url), box, client, load_pricing())
+    web = make_web_client(settings.test_services_url)  # sites des prospects : garde SSRF
+
+    def sites(place: Place, keywords: tuple[str, ...]) -> SiteReport:
+        return check_site(web, place, keywords, datetime.now(UTC).year)
+
+    with make_client(settings.test_services_url) as client, web:
+        engine = make_engine(settings.database_url)
+        worker = Worker(engine, box, client, load_pricing(), sites=sites)
         logger.info("Tâche de fond démarrée")
         worker.run_forever(stop)
 

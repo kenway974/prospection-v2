@@ -1,7 +1,7 @@
 """Liste des prospects, session d'appel et fiche (C61, C103, C109, C120)."""
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
@@ -10,6 +10,7 @@ from sqlalchemy import Engine
 from prospection.domain.call_status import proposed_action
 from prospection.domain.company_card import registry_lines
 from prospection.domain.place import web_link
+from prospection.domain.site_card import site_lines, site_links
 from prospection.domain.text import without_controls
 from prospection.storage import prospect_list as store
 from prospection.storage.call_tracking import Action, Note, notes, open_action
@@ -40,6 +41,8 @@ class Card:
     total: int
     previous_id: int | None
     next_id: int | None
+    site_lines: list[tuple[str, str]] = field(default_factory=list)  # bloc « Le site »
+    site_links: list[tuple[str, str]] = field(default_factory=list)
 
 
 def clean_query(query: str) -> str:
@@ -91,9 +94,11 @@ def card(
     today = now.astimezone(ZoneInfo(timezone)).date()
     proposal = None if action else proposed_action(prospect.status, today)
     position, previous_id, next_id = _neighbours(queue, prospect_id)
+    site = prospect.site
+    website = web_link(site.url if site and site.url else prospect.data.get("website"))
     return Card(
-        prospect, tel_link(prospect.data.get("phone")), web_link(prospect.data.get("website")),
+        prospect, tel_link(prospect.data.get("phone")), website,
         web_link(prospect.data.get("maps_url")), found_notes, action, proposal,
         registry_lines(prospect.company, prospect.registry_status), position,
-        len(queue), previous_id, next_id,
+        len(queue), previous_id, next_id, site_lines(site), site_links(site),
     )  # fmt: skip

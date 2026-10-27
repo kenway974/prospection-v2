@@ -1,4 +1,4 @@
-"""Critères de qualification d'un établissement (C19 à C23, C30, C31, C33)."""
+"""Critères de qualification d'un établissement (C19 à C23, C28 à C31, C33)."""
 
 from dataclasses import dataclass
 from typing import Literal
@@ -8,6 +8,8 @@ from prospection.domain.franchises import brand_match
 from prospection.domain.phones import is_mobile
 from prospection.domain.place import Place
 from prospection.domain.trades import Trade, normalize
+
+SiteChoice = Literal["any", "only", "exclude"]
 
 
 @dataclass(frozen=True)
@@ -19,6 +21,10 @@ class Criteria:
     exclude_franchises: bool = True
     created_within_days: int = 90  # source registre : créées depuis au plus N jours (C24)
     max_workforce: str | None = None  # source registre : tranche d'effectif au plus (C26)
+    max_site_score: int | None = None  # ne garder que les sites faibles (C28)
+    no_form: SiteChoice = "any"  # sites sans formulaire : peu importe, seulement, exclus (C29)
+    no_https: SiteChoice = "any"
+    not_mobile: SiteChoice = "any"
 
 
 @dataclass(frozen=True)

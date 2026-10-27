@@ -6,17 +6,32 @@ gardée avec « numéro à chercher », et les critères habituels s'appliquent.
 """
 
 import dataclasses
+import time
 from datetime import date, datetime
 
 import httpx
 from sqlalchemy import Engine
 
 from prospection.application.api_keys import read_key
-from prospection.application.registry_lookup import LookupContext, bare_place, look_up
+from prospection.application.registry_lookup import (
+    LookupContext,
+    bare_place,
+    look_up,
+    registry_site,
+)
+from prospection.application.site_verdict import (
+    SiteChecker,
+    skip_sites,
+    with_site,
+)
 from prospection.application.step_flow import StepOutcome, finish, retry_later, skip
 from prospection.domain.criteria import Verdict, evaluate
 from prospection.domain.google_cost import Pricing
-from prospection.domain.registry import LOOKUPS_PER_TARGET, is_candidate, workforce_ok
+from prospection.domain.registry import (
+    LOOKUPS_PER_TARGET,
+    is_candidate,
+    workforce_ok,
+)
 from prospection.domain.services import Service
 from prospection.domain.trades import find_trade, load_trades
 from prospection.sources.company_registry import RegistryUnavailable
@@ -38,6 +53,7 @@ NO_INSEE_KEY = (
 )
 NOT_ON_MAPS = "Pas trouvée sur Google Maps : numéro à chercher"
 BUSY = "Registre des entreprises trop sollicité"
+STEP_SECONDS = 90.0  # au-delà, la page reprend au tour suivant (la campagne reste à jour)
 
 
 def _query(step: Step) -> RecentQuery:
@@ -53,7 +69,7 @@ def _stopping(engine: Engine, campaign_id: int) -> bool:
 
 def run_registry_step(
     engine: Engine, box: SecretBox, client: httpx.Client, pricing: Pricing, campaign_id: int,
-    step: Step, now: datetime,
+    step: Step, now: datetime, sites: SiteChecker = skip_sites,
 ) -> StepOutcome:  # fmt: skip
     insee_key = read_key(engine, box, Service.INSEE)
     if insee_key is None:
@@ -78,11 +94,14 @@ def run_registry_step(
         paid = set(looked_up(conn, campaign_id))  # déjà cherchées (et payées) : jamais deux fois
     cap = campaign.request.target * LOOKUPS_PER_TARGET
     found = qualified = 0
+    started, handled = time.monotonic(), 0
     for company in page.companies:
         if campaign.qualified + qualified >= campaign.request.target or _stopping(
             engine, campaign_id
         ):
             break
+        if handled and time.monotonic() - started > STEP_SECONDS:
+            return StepOutcome(done=False)  # page reprise au tour suivant : rien en double
         if company.siren in known or not is_candidate(company, query.since, query.naf_prefixes):
             continue
         if not workforce_ok(company.workforce, criteria.max_workforce):
@@ -100,12 +119,15 @@ def run_registry_step(
         verdict = evaluate(shown, trade, criteria if place else bare_criteria, exclusions)
         if place is None:
             verdict = Verdict(verdict.qualified, verdict.reasons, (*verdict.to_check, NOT_ON_MAPS))
+        report = registry_site(sites, company, shown, place is None, step.keyword, verdict)
+        verdict = with_site(verdict, report, criteria)
         with engine.begin() as conn:  # enregistré au fil de l'eau : une reprise ne repaie rien
-            if insert_prospect(conn, campaign_id, shown, step.keyword, verdict, now):
+            if insert_prospect(conn, campaign_id, shown, step.keyword, verdict, now, report):
                 set_company(conn, campaign_id, shown.place_id, company)
                 ok = int(verdict.qualified)
                 add_counts(conn, campaign_id, now, 1, 1 - ok, ok, 0)
                 found, qualified = found + 1, qualified + ok
+        handled += 1
     with engine.begin() as conn:
         record_page(conn, step.id, page.next_cursor)
         message = f"{step.query} : {found} entreprises, {qualified} qualifiées"

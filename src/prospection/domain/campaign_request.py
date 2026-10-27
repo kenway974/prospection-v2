@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 from prospection.domain.criteria import Criteria
 from prospection.domain.registry import GOOGLE, SOURCES, source_errors
+from prospection.domain.site_criteria import site_criteria_errors
 from prospection.domain.trades import naf_prefixes, normalize
 
 MAX_TARGET = 200
@@ -124,7 +125,11 @@ def validate_request(raw: RawRequest) -> CampaignRequest:
         errors["target"] = "Choisissez entre 1 et 200 prospects."
     countries = {z.city.country if isinstance(z, RadiusZone) else z.country for z in zones}
     sources_problems = source_errors(raw.sources, countries, raw.criteria, naf_prefixes(trades))
-    errors = {**sources_problems, **errors}  # « indiquez un métier » passe en premier
+    errors = {
+        **sources_problems,
+        **site_criteria_errors(raw.criteria),
+        **errors,
+    }  # « indiquez un métier » passe en premier
     if errors:
         raise InvalidRequest(errors)
     sources = tuple(s for s in SOURCES if s in raw.sources)

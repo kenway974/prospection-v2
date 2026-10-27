@@ -2,14 +2,20 @@
 
 Google : trois cuisinistes de Lyon, seulement si la clé envoyée est celle saisie dans l'app.
 Registre des entreprises : aucun résultat. Sirène : aucune entreprise (404, comme l'INSEE).
+Sites (/site?url=…) : « Cuisines Martin » a un site, retrouvé à partir de son nom ; les autres
+domaines n'existent pas.
 """
 
 import json
 import sys
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from urllib.parse import parse_qs, urlsplit
 
 FAKE_KEY = "AIza-fausse-cle-de-bout-en-bout"
 NAMES = ("Cuisines Martin", "Cuisines Lefèvre", "Cuisines du Rhône")
+MARTIN_SITE = """<html><head><title>Cuisines Martin</title></head><body>
+<h1>Cuisines Martin</h1><p>Appelez le 06 12 34 56 70.</p>
+<a href="https://www.facebook.com/cuisinesmartin">Facebook</a></body></html>"""
 
 
 def _place(n: int, name: str) -> dict[str, object]:
@@ -23,7 +29,10 @@ def _place(n: int, name: str) -> dict[str, object]:
 
 class FakeGoogle(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
-        if self.path.startswith("/search"):
+        if self.path.startswith("/site"):
+            wanted = parse_qs(urlsplit(self.path).query).get("url", [""])[0]
+            self._site(200 if urlsplit(wanted).hostname == "cuisinesmartin.fr" else 404)
+        elif self.path.startswith("/search"):
             self._reply(200, {"results": [], "total_results": 0, "page": 1, "per_page": 5,
                               "total_pages": 0})  # fmt: skip
         else:
@@ -35,6 +44,14 @@ class FakeGoogle(BaseHTTPRequestHandler):
             self._reply(403, {"error": {"status": "PERMISSION_DENIED"}})
         else:
             self._reply(200, {"places": [_place(n, name) for n, name in enumerate(NAMES)]})
+
+    def _site(self, status: int) -> None:
+        data = MARTIN_SITE.encode() if status == 200 else b"introuvable"
+        self.send_response(status)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
 
     def _reply(self, status: int, body: dict[str, object]) -> None:
         data = json.dumps(body).encode()

@@ -4,5 +4,6 @@
     <ul>{% for label, points in seen.score_details %}<li>{{ label }} : {{ "%+d" | format(points) }}</li>{% endfor %}</ul>
   </details>
   {% for label, value, level in seen.confidence %}<p class="row"><span class="secondary">{{ label }}</span><span>{{ value }} · <span class="level">{{ level }}</span></span></p>{% endfor %}
+  {% for number, kind, source in seen.phones %}<p class="row"><span class="secondary">Téléphone ({{ source }})</span><span>{{ number }} · <span class="level">{{ kind }}</span></span></p>{% endfor %}
   {% for email, status, why in seen.emails %}<p class="row"><span class="secondary">Email</span><span>{{ email }} · <span class="level">{{ status }}</span><br><span class="secondary">{{ why }}</span></span></p>{% endfor %}
 </section>

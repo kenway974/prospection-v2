@@ -22,3 +22,5 @@ def test_C57_C58_list_shows_score_and_reason_and_sorts_by_score(
     card = text(client.get(f"/prospects/{pid}"))
     assert "Détail du score (75/100)" in card and "Très peu d'avis Google (4) : +20" in card
     assert "Téléphone" in card and "sûr" in card
+    assert "Téléphone (fiche Google)" in card and "mobile" in card
+    assert 'href="https://www.linkedin.com/search/results/people/?keywords=' in card

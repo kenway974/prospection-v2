@@ -5,6 +5,13 @@ gardées : une règle changée s'applique aussitôt à tous les prospects."""
 from dataclasses import dataclass
 from datetime import date
 
+from prospection.domain.call_links import (
+    leader_name,
+    linkedin_search,
+    national,
+    normalized,
+    phone_kind,
+)
 from prospection.domain.email_check import DOUBTFUL, INVALID, check_email, email_domain
 from prospection.domain.opportunity import opportunity
 from prospection.domain.qualification import confidence, reason
@@ -30,6 +37,8 @@ class Insights:
     confidence: list[tuple[str, str, str]]
     flags: list[str]
     emails: list[tuple[str, str, str]]  # adresse, statut, raison
+    phones: list[tuple[str, str, str]]  # numéro, mobile ou fixe, source (C55)
+    linkedin: str  # recherche du dirigeant (C56)
 
 
 def signals_for(row: ProspectRow, today: date) -> Signals:
@@ -60,4 +69,25 @@ def insights(row: ProspectRow, servers: dict[str, str], today: date) -> Insights
     checks = [check_email(e, servers.get(email_domain(e) or "")) for e in emails_of(row)]
     emails = [(c.email, c.status, c.reason) for c in checks]
     doubts = [f"Email {c.email} : {c.reason}" for c in checks if c.status in (DOUBTFUL, INVALID)]
-    return Insights(score, details, reason(s), confidence(s), [*row.to_check, *doubts], emails)
+    flags = [*row.to_check, *doubts]
+    return Insights(score, details, reason(s), confidence(s), flags, emails, _phones(row, s),
+                    _linkedin(row, s))  # fmt: skip
+
+
+def _phones(row: ProspectRow, s: Signals) -> list[tuple[str, str, str]]:
+    """Chaque numéro une fois, avec sa source : fiche Google, contact saisi, site."""
+    found = [(s.place.phone, "fiche Google"), (row.contact[1], "contact")]
+    found += [
+        (p, "site") for p in (row.site.contacts.phones if row.site and row.site.contacts else ())
+    ]
+    seen: dict[str, tuple[str, str, str]] = {}
+    for number, source in found:
+        if number and (key := normalized(number, s.place.country)) not in seen:
+            seen[key] = (national(number, s.place.country), phone_kind(number, s.place.country),
+                         source)  # fmt: skip
+    return list(seen.values())
+
+
+def _linkedin(row: ProspectRow, s: Signals) -> str:
+    leaders = s.company.leaders if s.company else ()
+    return linkedin_search(row.contact[0] or leader_name(leaders), s.place.name)

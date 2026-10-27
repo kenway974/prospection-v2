@@ -51,3 +51,21 @@ def test_C59_doubtful_email_flagged(campaign_db: Engine) -> None:
     assert seen is not None
     assert "Email contact@atelier.fr : le domaine n'a pas de serveur mail" in seen.flags
     assert ("contact@atelier.fr", "douteux", "le domaine n'a pas de serveur mail") in seen.emails
+
+
+def test_C55_C56_phones_typed_and_leader_search_link(campaign_db: Engine) -> None:
+    from prospection.storage.company_codec import encode_company
+    from tests.domain.test_company import LYON_SAS
+
+    [pid] = add(campaign_db, PLACE)
+    site = SiteReport("fiche Google", "https://atelier.fr",
+                      contacts=Contacts((), ("+33478123456", "+33612345678"), ()))  # fmt: skip
+    with campaign_db.begin() as conn:
+        conn.execute(prospects.update().values(
+            site_json=encode_site(site), company_json=encode_company(LYON_SAS),
+            registry_status="sûr"))  # fmt: skip
+    seen = card(campaign_db, pid, NOW, PARIS).insights
+    assert seen is not None
+    assert seen.phones == [("06 12 34 56 78", "mobile", "fiche Google"),
+                           ("04 78 12 34 56", "fixe", "site")]  # fmt: skip
+    assert "keywords=Marie+DUPONT+Atelier" in seen.linkedin

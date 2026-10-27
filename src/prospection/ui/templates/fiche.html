@@ -17,6 +17,7 @@
   {% if card.maps_url %}<a class="button-secondary" href="{{ card.maps_url }}" target="_blank" rel="noopener noreferrer">Fiche Google</a>{% endif %}
   <a class="button-secondary" href="{{ search_url }}" target="_blank" rel="noopener noreferrer">Recherche Google</a>
   {% if card.website %}<a class="button-secondary" href="{{ card.website }}" target="_blank" rel="noopener noreferrer">Site web</a>{% endif %}
+  {% if seen %}<a class="button-secondary" href="{{ seen.linkedin }}" target="_blank" rel="noopener noreferrer">Dirigeant sur LinkedIn</a>{% endif %}
 </div>
 {% include "_suivi.html" %}
 {% include "_notes.html" %}

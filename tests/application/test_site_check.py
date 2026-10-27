@@ -71,3 +71,16 @@ def test_unreadable_site_said_plainly() -> None:
     report = check(site({}), place)
     assert report.origin == "fiche Google" and report.problem == "Site injoignable"
     assert report.audit is None
+
+
+def test_C46_site_only_in_http_still_found() -> None:
+    """Les sites faibles (la cible) n'ont souvent pas de HTTPS."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.scheme == "https" or request.url.host != "azenergie.fr":
+            raise httpx.ConnectError("pas de https", request=request)
+        return raw(SITE.encode())
+
+    report = check(fake_client(handler)[0])
+    assert report.origin == "retrouvé" and report.url == "http://azenergie.fr"
+    assert report.audit is not None and "Pas de HTTPS" in report.audit.problems

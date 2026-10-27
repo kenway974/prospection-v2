@@ -45,7 +45,8 @@ class Audit:
 
 def technology(page: Page, url: str) -> str | None:
     generator = page.metas.get("generator", "").lower()
-    haystack = " ".join((url, generator, *page.sources, page.raw[:200_000])).lower()
+    # Ressources chargées par la page (et son adresse) : un mot ou un lien ne suffit pas
+    haystack = " ".join((url, generator, *page.sources)).lower()
     for name, marks in signals().technologies.items():
         if name.lower() in generator or any(m in haystack for m in marks):
             return name

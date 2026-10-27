@@ -13,20 +13,22 @@ confirmé par le téléphone seulement.
 import re
 from typing import Literal
 
-from prospection.domain.company import postal_code
+from prospection.domain.company import LEGAL_WORDS, LINK_WORDS, postal_code
 from prospection.domain.trades import find_trade, load_trades, normalize
 
 Confirmation = Literal["fort", "faible"]
 STRONG: Confirmation = "fort"
 WEAK: Confirmation = "faible"
-_LEGAL = {"sarl", "sas", "sasu", "eurl", "sa", "sci", "ets", "etablissements", "entreprise",
-          "ste", "societe", "ei", "eirl", "snc"}  # fmt: skip
-_LINK = {"le", "la", "les", "l", "de", "des", "du", "d", "et", "a", "au", "aux", "en", "chez"}
 _COUNTRY_TLD = {"BE": "be", "CH": "ch", "LU": "lu", "MC": "mc"}
 
 
 def _tokens(name: str) -> list[str]:
-    return [t for t in normalize(name).split() if t not in _LEGAL | _LINK]
+    return [t for t in normalize(name).split() if t not in LEGAL_WORDS | LINK_WORDS]
+
+
+def _full(name: str) -> list[str]:
+    """Le nom sans la forme juridique, mots de liaison gardés (« boulangerie de la gare »)."""
+    return [t for t in normalize(name).split() if t not in LEGAL_WORDS]
 
 
 def _generic(keywords: tuple[str, ...], city: str | None) -> set[str]:
@@ -61,7 +63,7 @@ def candidate_domains(
     joined, dashed = "".join(tokens), "-".join(tokens)
     if not 3 <= len(joined) <= 40:
         return []
-    slugs = list(dict.fromkeys((joined, dashed)))
+    slugs = list(dict.fromkeys((joined, dashed, "".join(_full(name)))))
     tlds = [_COUNTRY_TLD.get(country or "FR", "fr"), "com"]
     return [f"{slug}.{tld}" for tld in dict.fromkeys(tlds) for slug in slugs]
 
@@ -80,7 +82,8 @@ def confirmation(
         return STRONG
     tokens = _tokens(name)
     page = f" {normalize(text)} "
-    if not tokens or f" {' '.join(tokens)} " not in page:
+    phrases = {" ".join(tokens), " ".join(_full(name))}
+    if not tokens or not any(f" {phrase} " in page for phrase in phrases):
         return None
     postal, city = postal_code(address), normalize(address_city(address) or "")
     local = (postal and f" {postal} " in page) or (city and f" {city} " in page)

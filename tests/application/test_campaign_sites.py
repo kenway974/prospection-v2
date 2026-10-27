@@ -86,13 +86,13 @@ def test_C46_registry_company_site_found_and_audited(campaign_db: Engine) -> Non
 
     with_insee_key(campaign_db)
     found = SiteReport("retrouvé", "https://atelier-bois.fr", audit=GOOD)
-    sites = FakeSites({"ATELIER BOIS": found})
+    sites = FakeSites({"BOIS & CO": found})
     campaign_id = create_campaign(campaign_db, default_request(max_site_score=50), NOW)
     client = services([etab()], [])
     for _ in range(10):
         if run_step(campaign_db, BOX, client, PRICING, campaign_id, NOW, sites).done:
             break
-    assert sites.checked == ["ATELIER BOIS"]
+    assert sites.checked == ["BOIS & CO"]
     with campaign_db.connect() as conn:
         reasons = conn.exec_driver_sql("SELECT reasons FROM prospects")
         assert [r for (r,) in reasons] == [["Site correct (90/100)"]]
@@ -108,3 +108,42 @@ def test_C52_card_shows_the_site_and_its_link(campaign_db: Engine) -> None:
     shown = card(campaign_db, row.id, NOW, PARIS)
     assert ("Score", "90/100") in shown.site_lines
     assert shown.website == "https://cuisines-martin-1.fr"  # site retrouvé : bouton « Site web »
+
+
+def test_C47_individual_without_sign_never_guessed(campaign_db: Engine) -> None:
+    """Entrepreneur individuel sans enseigne : son nom est celui d'une personne (RGPD)."""
+    from tests.application.test_registry_campaign import with_insee_key
+    from tests.application.test_registry_rules import default_request, services
+    from tests.sources.test_sirene_search import etab
+
+    with_insee_key(campaign_db)
+    person = etab(
+        uniteLegale={"nomUniteLegale": "DUPONT", "prenom1UniteLegale": "JEAN",
+                     "categorieJuridiqueUniteLegale": "1000"},
+        periodesEtablissement=[{"dateFin": None, "etatAdministratifEtablissement": "A",
+                                "activitePrincipaleEtablissement": "43.32A"}],
+    )  # fmt: skip
+    sites = FakeSites({})
+    campaign_id = create_campaign(campaign_db, default_request(), NOW)
+    client = services([person], [])
+    for _ in range(10):
+        if run_step(campaign_db, BOX, client, PRICING, campaign_id, NOW, sites).done:
+            break
+    assert sites.checked == []
+    [row] = prospect_list(campaign_db, None, "", "trouves").rows
+    assert row.site is not None and "sans enseigne" in (row.site.problem or "")
+
+
+def test_C46_registry_site_guessed_from_the_shop_sign(campaign_db: Engine) -> None:
+    from tests.application.test_registry_campaign import with_insee_key
+    from tests.application.test_registry_rules import default_request, services
+    from tests.sources.test_sirene_search import etab
+
+    with_insee_key(campaign_db)
+    sites = FakeSites({})
+    campaign_id = create_campaign(campaign_db, default_request(), NOW)
+    client = services([etab()], [])
+    for _ in range(10):
+        if run_step(campaign_db, BOX, client, PRICING, campaign_id, NOW, sites).done:
+            break
+    assert sites.checked == ["BOIS & CO"]  # l'enseigne, pas la raison sociale

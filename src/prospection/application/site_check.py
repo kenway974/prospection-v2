@@ -15,7 +15,7 @@ from prospection.domain.site_contacts import find_contacts
 from prospection.domain.site_guess import STRONG, address_city, candidate_domains, confirmation
 from prospection.domain.site_report import Origin, SiteReport
 from prospection.domain.site_seo import local_seo
-from prospection.sources.web_reader import ReadResult, read_page
+from prospection.sources.web_reader import UNREACHABLE, ReadResult, read_page
 
 
 def _report(
@@ -32,12 +32,20 @@ def _report(
     )  # fmt: skip
 
 
+def _read_domain(client: httpx.Client, domain: str) -> ReadResult:
+    """https d'abord ; sinon http (les sites faibles, la cible, n'ont souvent pas de HTTPS)."""
+    result = read_page(client, f"https://{domain}")
+    if result.page is None and result.problem == UNREACHABLE:
+        return read_page(client, f"http://{domain}")
+    return result
+
+
 def _guess(client: httpx.Client, place: Place, keywords: tuple[str, ...], year: int) -> SiteReport:
     domains = candidate_domains(place.name, place.country, keywords, address_city(place.address))
     if not domains:
         return SiteReport("aucun")
     with ThreadPoolExecutor(max_workers=len(domains)) as pool:
-        results = list(pool.map(lambda d: read_page(client, f"https://{d}"), domains))
+        results = list(pool.map(lambda d: _read_domain(client, d), domains))
     probable = None
     for result in results:
         if result.page is None:

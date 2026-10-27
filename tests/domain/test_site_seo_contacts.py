@@ -55,3 +55,16 @@ def test_C88_long_text_without_email_read_quickly() -> None:
     start = time.perf_counter()
     assert find_contacts(page, "FR").emails == ()
     assert time.perf_counter() - start < 1
+
+
+def test_C48_personal_facebook_pages_and_groups_refused() -> None:
+    links = "".join(
+        f'<a href="https://www.facebook.com/{p}">x</a>'
+        for p in ("profile.php?id=123", "groups/voisins", "events/42", "people/Jean-Martin/1")
+    )
+    assert find_contacts(parse_page(links), "FR").social == ()
+
+
+def test_tel_links_capped() -> None:
+    links = "".join(f'<a href="tel:+3361234{n:04d}">x</a>' for n in range(300))
+    assert len(find_contacts(parse_page(links), "FR").phones) == 5

@@ -39,3 +39,11 @@ def test_C47_name_alone_or_single_word_name_is_only_probable() -> None:
     assert confirmation("AZ Énergie à Lille", "AZ Énergie", None, ADDRESS) == WEAK
     assert confirmation("Martin, artisan à Reims 51100", "Martin", None, ADDRESS) == WEAK
     assert confirmation("Autre chose", "AZ Énergie", "+33326123456", ADDRESS, ()) is None
+
+
+def test_C46_link_words_kept_on_both_sides() -> None:
+    """« Boulangerie de la Gare » : la page n'enlève pas « de la », le domaine non plus."""
+    name = "Boulangerie de la Gare"
+    page = "Boulangerie de la Gare, 3 place de la Gare, 51100 Reims"
+    assert confirmation(page, name, None, ADDRESS) == STRONG
+    assert "boulangeriedelagare.fr" in candidate_domains(name, "FR", (), "Reims")

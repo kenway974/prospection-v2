@@ -21,10 +21,18 @@ from prospection.application.site_verdict import (
     worth_reading,
 )
 from prospection.application.step_flow import StepOutcome, finish, retry_later, skip
+from prospection.domain.company import Company
 from prospection.domain.criteria import Verdict, evaluate
 from prospection.domain.google_cost import Pricing
-from prospection.domain.registry import LOOKUPS_PER_TARGET, is_candidate, workforce_ok
+from prospection.domain.place import Place
+from prospection.domain.registry import (
+    LOOKUPS_PER_TARGET,
+    is_candidate,
+    lookup_name,
+    workforce_ok,
+)
 from prospection.domain.services import Service
+from prospection.domain.site_report import SiteReport
 from prospection.domain.trades import find_trade, load_trades
 from prospection.sources.company_registry import RegistryUnavailable
 from prospection.sources.sirene_search import (
@@ -45,6 +53,7 @@ NO_INSEE_KEY = (
 )
 NOT_ON_MAPS = "Pas trouvée sur Google Maps : numéro à chercher"
 BUSY = "Registre des entreprises trop sollicité"
+NO_SIGN = "Entrepreneur individuel sans enseigne : site non cherché (nom d'une personne)"
 
 
 def _query(step: Step) -> RecentQuery:
@@ -56,6 +65,20 @@ def _query(step: Step) -> RecentQuery:
 def _stopping(engine: Engine, campaign_id: int) -> bool:
     with engine.connect() as conn:
         return load_campaign(conn, campaign_id).status == "stopping"
+
+
+def _site(
+    sites: SiteChecker, company: Company, shown: Place, bare: bool, keyword: str,
+    verdict: Verdict,
+) -> SiteReport | None:  # fmt: skip
+    """Site cherché à partir de l'enseigne ; jamais à partir du nom d'une personne (C47)."""
+    if not worth_reading(verdict):
+        return None
+    name = lookup_name(company) if bare else shown.name
+    if name is None:
+        return SiteReport("aucun", problem=NO_SIGN)
+    looked = dataclasses.replace(shown, name=name)
+    return read_sites(sites, [looked], keyword)[shown.place_id]
 
 
 def run_registry_step(
@@ -107,9 +130,7 @@ def run_registry_step(
         verdict = evaluate(shown, trade, criteria if place else bare_criteria, exclusions)
         if place is None:
             verdict = Verdict(verdict.qualified, verdict.reasons, (*verdict.to_check, NOT_ON_MAPS))
-        report = read_sites(sites, [shown], step.keyword)[shown.place_id] if worth_reading(
-            verdict
-        ) else None  # fmt: skip
+        report = _site(sites, company, shown, place is None, step.keyword, verdict)
         verdict = with_site(verdict, report, criteria)
         with engine.begin() as conn:  # enregistré au fil de l'eau : une reprise ne repaie rien
             if insert_prospect(conn, campaign_id, shown, step.keyword, verdict, now, report):

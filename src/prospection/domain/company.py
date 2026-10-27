@@ -10,8 +10,13 @@ from prospection.domain.place import Place
 from prospection.domain.trades import normalize
 
 _POSTAL = re.compile(r"\b(\d{5})\b")
-_LEGAL_WORDS = {"sarl", "sas", "sasu", "eurl", "sa", "sci", "ei", "eirl", "snc", "selarl"}
-_LINK_WORDS = {"de", "du", "des", "la", "le", "les", "l", "d", "et", "a", "au", "aux"}
+# Mots d'un nom qui ne le distinguent pas (forme juridique, mots de liaison) : une seule liste
+LEGAL_WORDS = frozenset({
+    "sarl", "sas", "sasu", "eurl", "sa", "sci", "ei", "eirl", "snc", "selarl", "ets",
+    "etablissements", "entreprise", "ste", "societe",
+})  # fmt: skip
+LINK_WORDS = frozenset({"de", "du", "des", "la", "le", "les", "l", "d", "et", "a", "au", "aux",
+                        "en", "chez"})  # fmt: skip
 
 
 @dataclass(frozen=True)
@@ -45,14 +50,14 @@ def postal_code(address: str) -> str | None:
 
 
 def _words(name: str) -> frozenset[str]:
-    return frozenset(w for w in normalize(name).split() if w not in _LEGAL_WORDS)
+    return frozenset(w for w in normalize(name).split() if w not in LEGAL_WORDS)
 
 
 def same_name(a: str, b: str, city: str | None = None) -> bool:
     """Mêmes mots (hors forme juridique) ; l'un peut en avoir en plus (2 mots communs au
     moins) seulement si ce sont le nom de la ville ou des mots de liaison (C45)."""
     small, big = sorted((_words(a), _words(b)), key=len)
-    allowed = _LINK_WORDS | _words(city or "")
+    allowed = LINK_WORDS | _words(city or "")
     return bool(small) and (small == big or (len(small) >= 2 and small <= big
                                              and big - small <= allowed))  # fmt: skip
 

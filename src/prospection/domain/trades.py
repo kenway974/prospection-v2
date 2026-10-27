@@ -46,7 +46,8 @@ def _singular(text: str) -> str:
     return " ".join(w[:-1] if len(w) > 3 and w.endswith("s") else w for w in text.split())
 
 
-def _key(text: str) -> str:
+def comparable(text: str) -> str:
+    """Sans accents ni ponctuation, au singulier : pour comparer des mots."""
     return _singular(normalize(text))
 
 
@@ -69,10 +70,10 @@ def load_trades(path: Traversable | None = None) -> tuple[Trade, ...]:
 
 def find_trade(keyword: str, trades: Sequence[Trade]) -> Trade | None:
     """Métier correspondant à un mot-clé saisi (pluriel et accents tolérés), ou None."""
-    wanted = _key(keyword)
+    wanted = comparable(keyword)
     if not wanted:
         return None
-    return next((t for t in trades if any(wanted == _key(a) for a in t.aliases)), None)
+    return next((t for t in trades if any(wanted == comparable(a) for a in t.aliases)), None)
 
 
 def expand_queries(
@@ -85,8 +86,8 @@ def expand_queries(
         trade = find_trade(keyword, trades) if synonyms_on else None
         candidates = [keyword, *(trade.queries if trade else ())][:MAX_QUERIES_PER_KEYWORD]
         for query in candidates:
-            if _key(query) not in seen:
-                seen.add(_key(query))
+            if comparable(query) not in seen:
+                seen.add(comparable(query))
                 queries.append(query)
     return queries
 

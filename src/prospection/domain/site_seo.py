@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 
 from prospection.domain.html_page import Page
-from prospection.domain.trades import find_trade, load_trades, normalize
+from prospection.domain.trades import comparable, find_trade, load_trades
 
 PLACES = ("titre", "h1", "texte", "images")
 
@@ -16,11 +16,8 @@ class LocalSeo:
 
 
 def _words(text: str) -> str:
-    """Texte comparable : sans accents, pluriels ramenés au singulier, bordé d'espaces."""
-    plain = " ".join(
-        w[:-1] if len(w) > 3 and w.endswith("s") else w for w in normalize(text).split()
-    )
-    return f" {plain} "
+    """Texte comparable (sans accents, au singulier), bordé d'espaces."""
+    return f" {comparable(text)} "
 
 
 def _terms(keywords: tuple[str, ...]) -> set[str]:

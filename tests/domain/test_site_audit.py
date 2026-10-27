@@ -73,3 +73,14 @@ def test_C88_trap_page_parsed_quickly() -> None:
     page = parse_page(trap)
     assert time.perf_counter() - start < 2
     assert len(page.text) <= 100_000 and len(page.title) <= 300
+
+
+def test_C49_technology_from_resources_not_from_words() -> None:
+    """Un mot ou un lien ne suffit pas : on regarde les ressources chargées par la page."""
+    talk = parse_page('<p>Nous aimons Drupal et Joomla</p><a href="https://www.wix.com">Wix</a>')
+    assert audit(talk, "https://a.fr", 1, 2026).technology is None
+    for src, name in (("https://static.wixstatic.com/a.js", "Wix"),
+                      ("/sites/default/files/logo.png", "Drupal"),
+                      ("https://cdn.shopify.com/s/a.js", "Shopify")):  # fmt: skip
+        page = parse_page(f'<script src="{src}"></script>')
+        assert audit(page, "https://a.fr", 1, 2026).technology == name

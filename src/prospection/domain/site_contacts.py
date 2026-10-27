@@ -19,11 +19,27 @@ _EMAIL = re.compile(r"[a-z0-9._%+-]{1,64}@[a-z0-9.-]{1,200}\.[a-z]{2,24}", re.IG
 _LOCAL = re.compile(r"[a-z0-9._%+-]{1,64}$", re.IGNORECASE)
 _DOMAIN = re.compile(r"[a-z0-9.-]{1,200}\.[a-z]{2,24}", re.IGNORECASE)
 MAX_AT = 50
+MAX_TEL_LINKS = 20
 _IGNORED = ("example.", "sentry", "wixpress", "wix.com", "domain.", "email.com", "votre")
 _IMAGE = (".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp")
 # Pages d'entreprise : (domaine, début de chemin exigé, débuts de chemin refusés)
 _SOCIAL = (
-    ("facebook.com", "/", ("/sharer", "/share", "/plugins", "/dialog", "/tr", "/login")),
+    (
+        "facebook.com",
+        "/",
+        (
+            "/sharer",
+            "/share",
+            "/plugins",
+            "/dialog",
+            "/tr",
+            "/login",
+            "/profile.php",
+            "/groups",
+            "/events",
+            "/people",
+        ),
+    ),
     ("instagram.com", "/", ("/p/", "/reel", "/explore", "/accounts")),
     ("linkedin.com", "/company/", ()),
 )
@@ -64,7 +80,8 @@ def _emails(page: Page) -> tuple[str, ...]:
 
 
 def _phones(page: Page, country: str) -> tuple[str, ...]:
-    tels = " ".join(link[4:] for link in page.links if link.lower().startswith("tel:"))
+    tel_links = [link[4:] for link in page.links if link.lower().startswith("tel:")]
+    tels = " ".join(tel_links[:MAX_TEL_LINKS])
     numbers = []
     for match in phonenumbers.PhoneNumberMatcher(f"{page.text[:20_000]} {tels}", country):
         if phonenumbers.is_valid_number(match.number):

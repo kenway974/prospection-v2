@@ -15,8 +15,8 @@ WORKFORCE_ORDER = (
     "53",
 )  # fmt: skip
 UNAVAILABLE = {  # C125 : pourquoi il n'y a pas de registre ouvert hors de France
-    "BE": "Belgique : pas de registre officiel ouvert gratuitement (le service en ligne de la "
-    "BCE est payant).",
+    "BE": "Belgique : la Banque-Carrefour des Entreprises n'a pas de recherche en ligne gratuite ; "
+    "ses données ouvertes sont un fichier complet à télécharger, pas encore pris en charge.",
     "CH": "Suisse : le registre Zefix demande des identifiants à demander à l'Office fédéral "
     "de la justice ; dites-le si vous voulez l'ajouter.",
     "LU": "Luxembourg : pas d'accès ouvert connu au registre des entreprises.",

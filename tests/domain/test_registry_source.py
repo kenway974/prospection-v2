@@ -33,7 +33,7 @@ def test_C11_a_source_is_required() -> None:
 
 @pytest.mark.parametrize(
     ("zone", "start"),
-    [(DepartmentZone("WLG", "Province de Liège", "BE"), "Belgique : pas de registre"),
+    [(DepartmentZone("WLG", "Province de Liège", "BE"), "Belgique : la Banque-Carrefour"),
      (DepartmentZone("VD", "Canton de Vaud", "CH"), "Suisse : le registre Zefix"),
      (CityZone("Monaco", "", 43.73, 7.42, "MC"), "Monaco : pas d'accès ouvert")],
 )  # fmt: skip

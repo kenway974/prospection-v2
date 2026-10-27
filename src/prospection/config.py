@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     encryption_key: SecretStr
     behind_proxy: bool = True
     timezone: str = "Europe/Paris"
-    test_services_url: str | None = None  # bout en bout seulement : faux Google local
+    test_services_url: str | None = None  # bout en bout seulement : faux services locaux
 
     @field_validator("app_password_hash")
     @classmethod
@@ -45,7 +45,7 @@ class Settings(BaseSettings):
     @field_validator("test_services_url")
     @classmethod
     def _test_url_stays_local(cls, url: str | None, info: ValidationInfo) -> str | None:
-        """La clé Google ne doit partir que vers un faux Google local, jamais en production."""
+        """Les clés (Google, INSEE) ne partent que vers de faux services locaux, jamais en prod."""
         if url is None:
             return None
         parts = urlsplit(url)

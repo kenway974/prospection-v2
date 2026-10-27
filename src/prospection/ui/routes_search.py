@@ -22,7 +22,7 @@ from prospection.domain.campaign_request import InvalidRequest, validate_request
 from prospection.domain.criteria import Criteria
 from prospection.domain.foreign_zones import countries
 from prospection.domain.google_cost import Pricing
-from prospection.domain.registry import WORKFORCE_CHOICES
+from prospection.domain.registry import LOOKUPS_PER_TARGET, REGISTRY, WORKFORCE_CHOICES
 from prospection.storage.secret_box import SecretBox
 from prospection.ui.deps import (
     get_box,
@@ -103,8 +103,10 @@ async def estimation(
     pricing: Pricing = Depends(get_pricing), now: datetime = Depends(get_now),  # noqa: B008
 ) -> Response:  # fmt: skip
     form = await _read_form(request)
-    result = estimate_raw(engine, pricing, parse_form(form).raw, now)
-    context = {"estimate": result, "paid": euros(result.paid_cents)}
+    raw = parse_form(form).raw
+    result = estimate_raw(engine, pricing, raw, now)
+    lookups = LOOKUPS_PER_TARGET if REGISTRY in raw.sources else 0
+    context = {"estimate": result, "paid": euros(result.paid_cents), "lookups": lookups}
     return tpl.TemplateResponse(request, "_estimate.html", context)
 
 

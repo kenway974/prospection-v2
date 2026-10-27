@@ -58,10 +58,12 @@ def test_C125_registry_refused_abroad_with_reason(client: TestClient) -> None:
     form.pop("source_google", None)
     response = post_form(client, form)
     assert response.status_code == 400
-    assert "Belgique : pas de registre officiel ouvert gratuitement" in text(response)
+    assert "Belgique : la Banque-Carrefour des Entreprises" in text(response)
 
 
-def test_C16_registry_adds_one_google_lookup_per_company(client: TestClient) -> None:
+def test_C16_registry_counts_the_lookup_cap(client: TestClient) -> None:
+    """Chaque entreprise examinée coûte une recherche, qualifiée ou non : on annonce le plafond."""
     form = {**FORM, "source_registre": "on", "nombre": "10"}
     estimate = text(client.post("/recherche/estimation", data=form, headers=ORIGIN))
-    assert "19 pages au plus" in estimate  # 9 pages Google + 10 recherches d'entreprises
+    assert "59 pages au plus" in estimate  # 9 pages Google + 5 recherches par prospect voulu
+    assert "5 par prospect voulu" in estimate

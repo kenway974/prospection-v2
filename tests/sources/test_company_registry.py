@@ -94,3 +94,10 @@ def test_refused_search_is_not_a_breakdown() -> None:
     client, _ = fake_client(json_reply(400, {"erreur": "trop court"}))
     with pytest.raises(RegistryRejected):
         search_companies(client, "xy", "69002")
+
+
+def test_leaders_text_neutralized() -> None:
+    leader = {"nom": "DUPONT\x1b[31m", "prenoms": "Marie\x00", "qualite": "Gérante\n<b>"}
+    client, _ = fake_client(json_reply(200, page(result(dirigeants=[leader]))))
+    [company] = search_companies(client, "Cuisines Martin", "69002")
+    assert company.leaders == ("Marie DUPONT [31m (Gérante <b>)",)  # <b> échappé à l'affichage

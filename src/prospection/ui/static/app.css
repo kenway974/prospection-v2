@@ -106,3 +106,7 @@ button.chip { border: 0; font: inherit; cursor: pointer; }
 .row > .link-row { flex: 1; }
 .save-error { position: sticky; top: 8px; z-index: 20; }
 .note { white-space: pre-line; }
+.score { color: var(--ocean); font-variant-numeric: tabular-nums; }
+.level { font-weight: 600; }
+details.row { display: block; }
+details.row summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; }

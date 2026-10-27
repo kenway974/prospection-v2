@@ -2,18 +2,29 @@
 
 import re
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import Engine
+from sqlalchemy import Connection, Engine
 
+from prospection.application.prospect_view import (
+    SCORE,
+    Insights,
+    Summary,
+    by_score,
+    emails_of,
+    insights,
+    summarize,
+)
 from prospection.domain.call_status import proposed_action
 from prospection.domain.company_card import registry_lines
+from prospection.domain.email_check import email_domain
 from prospection.domain.place import web_link
 from prospection.domain.site_card import site_lines, site_links
 from prospection.domain.text import without_controls
 from prospection.storage import prospect_list as store
 from prospection.storage.call_tracking import Action, Note, notes, open_action
+from prospection.storage.mail_domains import mail_servers
 from prospection.storage.prospect_list import ProspectRow
 
 
@@ -25,6 +36,7 @@ class UnknownProspect(LookupError):
 class ProspectList:
     rows: list[ProspectRow]
     counts: dict[str, int]
+    summaries: dict[int, Summary] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -43,16 +55,30 @@ class Card:
     next_id: int | None
     site_lines: list[tuple[str, str]] = field(default_factory=list)  # bloc « Le site »
     site_links: list[tuple[str, str]] = field(default_factory=list)
+    insights: Insights | None = None  # score, raison, drapeaux, confiance, emails
 
 
 def clean_query(query: str) -> str:
     return without_controls(query)[:100]
 
 
-def prospect_list(engine: Engine, status: str | None, query: str, sort: str) -> ProspectList:
+def _rows(
+    conn: Connection, status: str | None, query: str, sort: str, today: date
+) -> list[ProspectRow]:
+    """Tri « score » calculé ici (le score se recalcule à l'affichage, C57)."""
+    if sort == SCORE:
+        return by_score(store.prospect_rows(conn, status, query, "trouves"), today)
+    return store.prospect_rows(conn, status, query, sort)
+
+
+def prospect_list(
+    engine: Engine, status: str | None, query: str, sort: str, now: datetime | None = None
+) -> ProspectList:
+    today = (now or datetime.now(UTC)).date()
     with engine.connect() as conn:
-        rows = store.prospect_rows(conn, status, clean_query(query), sort)
-        return ProspectList(rows, store.status_counts(conn, clean_query(query)))
+        rows = _rows(conn, status, clean_query(query), sort, today)
+        counts = store.status_counts(conn, clean_query(query))
+    return ProspectList(rows, counts, {r.id: summarize(r, today) for r in rows})
 
 
 def start_session(
@@ -60,7 +86,10 @@ def start_session(
 ) -> int | None:
     """Fige la file affichée et renvoie le premier prospect à appeler (C109)."""
     with engine.begin() as conn:
-        queue = store.prospect_ids(conn, status, clean_query(query), sort)
+        if sort == SCORE:
+            queue = [r.id for r in _rows(conn, status, clean_query(query), sort, now.date())]
+        else:
+            queue = store.prospect_ids(conn, status, clean_query(query), sort)
         store.start_session(conn, queue, now)
     return queue[0] if queue else None
 
@@ -91,6 +120,8 @@ def card(
         if queue:
             store.move_session(conn, prospect_id, now)
         found_notes, action = notes(conn, prospect_id), open_action(conn, prospect_id)
+        domains = [d for e in emails_of(prospect) if (d := email_domain(e))]
+        servers = mail_servers(conn, domains)
     today = now.astimezone(ZoneInfo(timezone)).date()
     proposal = None if action else proposed_action(prospect.status, today)
     position, previous_id, next_id = _neighbours(queue, prospect_id)
@@ -101,4 +132,5 @@ def card(
         web_link(prospect.data.get("maps_url")), found_notes, action, proposal,
         registry_lines(prospect.company, prospect.registry_status), position,
         len(queue), previous_id, next_id, site_lines(site), site_links(site),
+        insights(prospect, servers, today),
     )  # fmt: skip

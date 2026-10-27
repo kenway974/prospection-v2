@@ -9,7 +9,9 @@
 </nav>
 <h1 class="large-title">{{ p.data.name }}</h1>
 <p class="secondary">{{ p.keywords | join(", ") }} · {{ p.data.address }}</p>
-{% if p.to_check %}<p class="notice">À vérifier : {{ p.to_check | join(" ; ") }}</p>{% endif %}
+{% set seen = card.insights %}
+{% if seen %}<p><strong class="score">{{ seen.score }}/100</strong> <span class="secondary">{{ seen.reason }}</span></p>{% endif %}
+{% if seen and seen.flags %}<p class="notice">À vérifier : {{ seen.flags | join(" ; ") }}</p>{% endif %}
 <div class="links">
   {% if card.tel %}<a class="button-primary" href="tel:{{ card.tel }}">Appeler</a>{% endif %}
   {% if card.maps_url %}<a class="button-secondary" href="{{ card.maps_url }}" target="_blank" rel="noopener noreferrer">Fiche Google</a>{% endif %}
@@ -19,6 +21,7 @@
 {% include "_suivi.html" %}
 {% include "_notes.html" %}
 {% include "_contact.html" %}
+{% if seen %}{% include "_confiance.html" %}{% endif %}
 <section class="group" aria-labelledby="titre-site">
   <h2 class="row-title form" id="titre-site">Le site</h2>
   {% for label, value in card.site_lines %}<p class="row"><span class="secondary">{{ label }}</span><span>{{ value }}</span></p>{% endfor %}

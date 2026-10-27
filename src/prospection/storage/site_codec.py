@@ -1,5 +1,6 @@
 """Rapport du site <-> JSON (stockage)."""
 
+import logging
 from dataclasses import asdict
 from typing import Any
 
@@ -8,12 +9,23 @@ from prospection.domain.site_contacts import Contacts
 from prospection.domain.site_report import SiteReport
 from prospection.domain.site_seo import LocalSeo
 
+logger = logging.getLogger(__name__)
+
 
 def encode_site(report: SiteReport) -> dict[str, Any]:
     return asdict(report)
 
 
-def decode_site(data: dict[str, Any]) -> SiteReport:
+def decode_site(data: dict[str, Any]) -> SiteReport | None:
+    """Rapport relu ; ancien ou incomplet : None (« pas encore analysé »), jamais d'erreur."""
+    try:
+        return _decode(data)
+    except (KeyError, TypeError, ValueError):
+        logger.warning("Rapport de site illisible : ignoré")
+        return None
+
+
+def _decode(data: dict[str, Any]) -> SiteReport:
     audit, seo, contacts = data.get("audit"), data.get("seo"), data.get("contacts")
     return SiteReport(
         data["origin"], data.get("url"), data.get("probable"), data.get("problem"),

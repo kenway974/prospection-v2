@@ -47,3 +47,13 @@ def site_criteria_errors(criteria: Criteria) -> dict[str, str]:
     if any(getattr(criteria, field) not in SITE_CHOICES for field, *_ in _PROBLEMS):
         errors["site_problems"] = "Choisissez une option dans la liste pour chaque défaut du site."
     return errors
+
+
+def needs_site(criteria: Criteria) -> bool:
+    """Un critère dépend-il du site ? Sinon, la lecture n'est qu'un enrichissement."""
+    flags = (criteria.no_form, criteria.no_https, criteria.not_mobile)
+    return (
+        criteria.max_site_score is not None
+        or criteria.website != "any"
+        or any(f != "any" for f in flags)
+    )

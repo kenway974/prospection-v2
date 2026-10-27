@@ -127,3 +127,14 @@ def looked_up(conn: Connection, campaign_id: int) -> list[str]:
         .where(s.campaign_id == campaign_id, s.registry_json["looked_up"].is_not(None))
     )  # fmt: skip
     return [str(r[0]) for r in rows]
+
+
+def claim_page(conn: Connection, step_id: int, page_number: int) -> bool:
+    """Verrouille l'étape si cette page n'a pas déjà été enregistrée (par un autre worker
+    qui aurait repris la campagne) : une page n'est jamais comptée deux fois (C40)."""
+    s = campaign_steps.c
+    row = conn.execute(
+        select(s.id).where(s.id == step_id, s.page_number == page_number, s.done.is_(False))
+        .with_for_update()
+    ).first()  # fmt: skip
+    return row is not None

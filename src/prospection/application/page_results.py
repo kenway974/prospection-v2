@@ -17,10 +17,11 @@ from prospection.domain.departments import postal_department
 from prospection.domain.foreign_zones import known_region, postal_region
 from prospection.domain.geo import distance_m
 from prospection.domain.place import Place
+from prospection.domain.site_criteria import needs_site
 from prospection.domain.territories import same_country
 from prospection.domain.trades import Trade, find_trade, load_trades
 from prospection.sources.google_search import SearchPage
-from prospection.storage.campaign_steps import Step, record_page
+from prospection.storage.campaign_steps import Step, claim_page, record_page
 from prospection.storage.campaigns import add_counts, add_event, load_campaign
 from prospection.storage.exclusions import load_exclusions
 from prospection.storage.prospects import insert_prospect, known_places
@@ -75,15 +76,20 @@ def save_page(
     lent), puis enregistre tout ; une erreur sur l'un n'arrête pas la campagne (C41)."""
     trade = find_trade(step.keyword, load_trades())
     with engine.connect() as conn:
-        criteria = load_campaign(conn, campaign_id).request.criteria
+        campaign = load_campaign(conn, campaign_id)
+        criteria = campaign.request.criteria
         exclusions = load_exclusions(conn)
         known = known_places(conn, campaign_id, [p.place_id for p in page.places])
     verdicts = _free_verdicts(page, step, trade, criteria, exclusions)
     to_read = [p for p in page.places if p.place_id not in known
                and p.place_id in verdicts and worth_reading(verdicts[p.place_id])]  # fmt: skip
+    if not needs_site(criteria):  # simple enrichissement : pas plus que ce qui manque (M8)
+        to_read = to_read[: max(0, campaign.request.target - campaign.qualified)]
     reports = read_sites(sites, to_read, step.keyword)
     found = excluded = qualified = 0
     with engine.begin() as conn:
+        if not claim_page(conn, step.id, step.page_number):
+            return  # déjà enregistrée par un autre worker : rien en double (C40)
         for place in page.places:
             try:
                 report = reports.get(place.place_id)

@@ -29,8 +29,8 @@ def test_two_workers_never_claim_the_same_campaign(campaign_db: Engine) -> None:
 def test_C40_stale_running_campaign_is_reclaimed(campaign_db: Engine) -> None:
     campaign_id = create_campaign(campaign_db, request(), NOW)
     claim_next(campaign_db, NOW, "w1")
-    assert claim_next(campaign_db, NOW + timedelta(minutes=1), "w2") is None
-    assert claim_next(campaign_db, NOW + timedelta(minutes=3), "w2") == campaign_id
+    assert claim_next(campaign_db, NOW + timedelta(minutes=9), "w2") is None  # sites en lecture
+    assert claim_next(campaign_db, NOW + timedelta(minutes=11), "w2") == campaign_id
 
 
 def test_campaign_waiting_for_retry_is_not_claimed_before_time(campaign_db: Engine) -> None:
@@ -53,7 +53,7 @@ def test_done_campaign_is_never_claimed(campaign_db: Engine) -> None:
 def test_C40_old_worker_cannot_release_a_campaign_taken_over(campaign_db: Engine) -> None:
     campaign_id = create_campaign(campaign_db, request(), NOW)
     claim_next(campaign_db, NOW, "w1")
-    later = NOW + timedelta(minutes=3)
+    later = NOW + timedelta(minutes=11)
     assert claim_next(campaign_db, later, "w2") == campaign_id
     release_until(campaign_db, campaign_id, later, "w1")  # w1 se réveille et croit la tenir
     assert claim_next(campaign_db, later, "w3") is None  # toujours à w2

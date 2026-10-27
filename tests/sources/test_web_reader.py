@@ -139,3 +139,12 @@ def test_C88_timeout_said_too_slow() -> None:
 
     client, _ = fake_client(slow)
     assert read_page(client, "https://site.fr").problem == "Site trop lent : lecture abandonnée"
+
+
+@pytest.mark.parametrize("charset", ["utf-7", "punycode", "idna", "rot13", "nimporte"])
+def test_C88_only_web_encodings_used(charset: str) -> None:
+    """La page ne choisit pas un décodeur exotique (lent ou détourné) : utf-8 par défaut."""
+    body = f'<meta charset="{charset}"><p>+AGEAYgBj-</p>'.encode()
+    client, _ = fake_client(lambda r: raw(body))
+    result = read_page(client, "https://site.fr")
+    assert result.page is not None and "+AGEAYgBj-" in result.page.html

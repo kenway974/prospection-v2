@@ -21,11 +21,14 @@ MAX_BYTES = 500_000
 MAX_SECONDS = 8.0
 MAX_REDIRECTS = 3
 SLOW = "Site trop lent : lecture abandonnée"
+UNREACHABLE = "Site injoignable"
 _LOCAL_SUFFIXES = (".local", ".localhost", ".internal", ".lan", ".home", ".arpa")
 # Règle 2 (CGU) : jamais une page Google, même par redirection (anciens sites Google Business)
 _GOOGLE = re.compile(
     r"(^|\.)(google\.[a-z.]+|g\.page|goo\.gl|business\.site|googleusercontent\.com)$"
 )
+_WEB_ENCODINGS = {"utf-8", "ascii", "latin-1", "cp1250", "cp1251", "cp1252", "cp1253",
+                  "cp1254", "cp1257", "mac-roman"}  # fmt: skip
 _CHARSET = re.compile(rb"""<meta[^>]{0,200}charset=["']?([a-zA-Z0-9_-]{1,40})""", re.IGNORECASE)
 
 
@@ -63,16 +66,21 @@ def allowed_url(url: str) -> bool:
     return False
 
 
+def _web_encoding(name: str | None) -> str | None:
+    """Encodage du web courant seulement : la page ne choisit pas un décodeur exotique."""
+    try:
+        codec = codecs.lookup(name).name if name else None
+    except LookupError:
+        return None
+    return codec if codec in _WEB_ENCODINGS or (codec or "").startswith("iso8859-") else None
+
+
 def _decode(body: bytes, header_charset: str | None) -> str:
     """Encodage de l'en-tête, sinon celui annoncé dans la page (vieux sites en latin-1)."""
     found = _CHARSET.search(body[:2048])
-    for name in (header_charset, found.group(1).decode() if found else None, "utf-8"):
-        try:
-            if name and codecs.lookup(name):
-                return body.decode(name, errors="replace")
-        except LookupError:
-            continue
-    return body.decode("utf-8", errors="replace")
+    announced = found.group(1).decode() if found else None
+    name = _web_encoding(header_charset) or _web_encoding(announced) or "utf-8"
+    return body.decode(name, errors="replace")
 
 
 def read_page(
@@ -115,5 +123,5 @@ def _read(client: httpx.Client, url: str, clock: Callable[[], float]) -> ReadRes
         except (httpx.TimeoutException, httpcore.TimeoutException):
             return ReadResult(None, SLOW)
         except (httpx.HTTPError, UnicodeError, LookupError):
-            return ReadResult(None, "Site injoignable")
+            return ReadResult(None, UNREACHABLE)
     return ReadResult(None, "Trop de redirections")

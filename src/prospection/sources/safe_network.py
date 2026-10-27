@@ -8,10 +8,9 @@ Le certificat reste vérifié sur le nom du site. Amélioration de `prospection-
 
 import ipaddress
 import socket
+import threading
 import time
 from collections.abc import Callable, Iterable
-from concurrent.futures import ThreadPoolExecutor
-from concurrent.futures import TimeoutError as ResolveTimeout
 
 import httpcore
 import httpx
@@ -26,7 +25,6 @@ _TRANSITION = tuple(
     for n in ("64:ff9b::/96", "64:ff9b:1::/48", "2002::/16", "2001::/32", "::/96",
               "::ffff:0:0:0/96", "fec0::/10")
 )  # fmt: skip
-_DNS = ThreadPoolExecutor(max_workers=8, thread_name_prefix="dns")
 
 
 class BlockedAddress(httpcore.ConnectError):
@@ -68,10 +66,12 @@ class PublicOnly(httpcore.NetworkBackend):
     def _addresses(self, host: str) -> list[str]:
         """Résolution bornée dans le temps : un DNS muet ne bloque pas la lecture."""
         limit = remaining(current_deadline(), time.monotonic, self.resolve_seconds)
-        try:
-            return _DNS.submit(self.resolve, host).result(timeout=limit)
-        except ResolveTimeout:
-            return []
+        found: list[list[str]] = []
+        # Un fil par résolution : abandonnée, elle ne bloque la place d'aucune autre
+        lookup = threading.Thread(target=lambda: found.append(self.resolve(host)), daemon=True)
+        lookup.start()
+        lookup.join(limit)
+        return found[0] if found else []
 
     def connect_tcp(
         self, host: str, port: int, timeout: float | None = None,

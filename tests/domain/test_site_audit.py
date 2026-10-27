@@ -62,3 +62,14 @@ def test_parse_ignores_scripts_and_styles_in_text() -> None:
 def test_C50_copyright_range_uses_the_last_year() -> None:
     page = parse_page("<footer>© 2015\u20132026 Martin</footer>")
     assert not any("mis à jour" in p for p in audit(page, "https://a.fr", 1, 2026).problems)
+
+
+def test_C88_trap_page_parsed_quickly() -> None:
+    """Balises jamais fermées et texte entre chacune : la lecture reste linéaire."""
+    import time
+
+    trap = "<div>x" * 80_000 + "<title>" + "t" * 10_000
+    start = time.perf_counter()
+    page = parse_page(trap)
+    assert time.perf_counter() - start < 2
+    assert len(page.text) <= 100_000 and len(page.title) <= 300

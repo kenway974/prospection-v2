@@ -8,16 +8,25 @@ Le certificat reste vérifié sur le nom du site. Amélioration de `prospection-
 
 import ipaddress
 import socket
+import time
 from collections.abc import Callable, Iterable
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as ResolveTimeout
 
 import httpcore
 import httpx
 
+from prospection.sources.read_deadline import DeadlineStream, current_deadline, remaining
+
 Resolver = Callable[[str], list[str]]
-# NAT64, 6to4 et Teredo transportent une adresse IPv4 : refusés d'office
+# NAT64, 6to4, Teredo, IPv4-compatible et SIIT transportent une adresse IPv4 ; site-local
+# est interne : tous refusés d'office
 _TRANSITION = tuple(
-    ipaddress.IPv6Network(n) for n in ("64:ff9b::/96", "64:ff9b:1::/48", "2002::/16", "2001::/32")
-)
+    ipaddress.IPv6Network(n)
+    for n in ("64:ff9b::/96", "64:ff9b:1::/48", "2002::/16", "2001::/32", "::/96",
+              "::ffff:0:0:0/96", "fec0::/10")
+)  # fmt: skip
+_DNS = ThreadPoolExecutor(max_workers=8, thread_name_prefix="dns")
 
 
 class BlockedAddress(httpcore.ConnectError):
@@ -50,20 +59,38 @@ class PublicOnly(httpcore.NetworkBackend):
     à l'adresse vérifiée."""
 
     def __init__(
-        self, resolve: Resolver = _system_resolve, inner: httpcore.NetworkBackend | None = None
-    ) -> None:
-        self.resolve = resolve
+        self, resolve: Resolver = _system_resolve, inner: httpcore.NetworkBackend | None = None,
+        resolve_seconds: float = 5.0,
+    ) -> None:  # fmt: skip
+        self.resolve, self.resolve_seconds = resolve, resolve_seconds
         self.inner = inner or httpcore.SyncBackend()
+
+    def _addresses(self, host: str) -> list[str]:
+        """Résolution bornée dans le temps : un DNS muet ne bloque pas la lecture."""
+        limit = remaining(current_deadline(), time.monotonic, self.resolve_seconds)
+        try:
+            return _DNS.submit(self.resolve, host).result(timeout=limit)
+        except ResolveTimeout:
+            return []
 
     def connect_tcp(
         self, host: str, port: int, timeout: float | None = None,
         local_address: str | None = None,
         socket_options: Iterable[httpcore.SOCKET_OPTION] | None = None,
     ) -> httpcore.NetworkStream:  # fmt: skip
-        addresses = self.resolve(host)
+        addresses = self._addresses(host)
         if not addresses or not all(is_public(a) for a in addresses):
             raise BlockedAddress("adresse interne ou inconnue")
-        return self.inner.connect_tcp(addresses[0], port, timeout, local_address, socket_options)
+        error: httpcore.ConnectError | httpcore.ConnectTimeout | None = None
+        for address in dict.fromkeys(addresses):  # IPv6 sans sortie : l'IPv4 ensuite
+            left = remaining(current_deadline(), time.monotonic, timeout)
+            try:
+                stream = self.inner.connect_tcp(address, port, left, local_address, socket_options)
+            except (httpcore.ConnectError, httpcore.ConnectTimeout) as failed:
+                error = failed
+                continue
+            return DeadlineStream(stream)
+        raise error or BlockedAddress("connexion impossible")
 
     def connect_unix_socket(
         self, path: str, timeout: float | None = None,
@@ -80,8 +107,9 @@ class _SafeTransport(httpx.HTTPTransport):
         super().__init__()
         # Même réserve de connexions que httpx, avec la garde ci-dessus pour se connecter
         self._pool = httpcore.ConnectionPool(
-            ssl_context=httpx.create_ssl_context(), network_backend=PublicOnly()
-        )
+            ssl_context=httpx.create_ssl_context(), network_backend=PublicOnly(),
+            max_connections=100, max_keepalive_connections=20, keepalive_expiry=5.0,
+        )  # fmt: skip
 
 
 class _AllToFake(httpx.BaseTransport):

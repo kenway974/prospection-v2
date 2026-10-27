@@ -8,6 +8,7 @@ from prospection.application.site_check import check_site
 from prospection.domain.place import Place
 from prospection.domain.site_report import SiteReport
 from tests.fake_http import fake_client
+from tests.sources.test_web_reader import raw
 from tests.storage.test_campaigns import PLACE
 
 AZ = dataclasses.replace(
@@ -24,7 +25,7 @@ def site(pages: dict[str, str]) -> httpx.Client:
         body = pages.get(request.url.host)
         if body is None:
             raise httpx.ConnectError("inconnu", request=request)
-        return httpx.Response(200, text=body, headers={"Content-Type": "text/html"})
+        return raw(body.encode())
 
     return fake_client(handler)[0]
 

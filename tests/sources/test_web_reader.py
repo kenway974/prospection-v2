@@ -9,8 +9,14 @@ from tests.fake_http import fake_client
 PAGE = "<html><head><title>Boulangerie Martin</title></head><body>Bonjour</body></html>"
 
 
+def raw(body: bytes, status: int = 200, **headers: str) -> httpx.Response:
+    """Réponse lue au fil du réseau, comme un vrai site (corps pas encore chargé)."""
+    return httpx.Response(status, stream=httpx.ByteStream(body),
+                          headers={"Content-Type": "text/html", **headers})  # fmt: skip
+
+
 def html(text: str = PAGE, status: int = 200, **headers: str) -> httpx.Response:
-    return httpx.Response(status, text=text, headers={"Content-Type": "text/html", **headers})
+    return raw(text.encode(), status, **headers)
 
 
 def test_C88_page_read_with_final_address_and_time() -> None:
@@ -86,3 +92,50 @@ def test_unreachable_site_said_plainly() -> None:
 
     client, _ = fake_client(down)
     assert read_page(client, "https://site.fr").problem == "Site injoignable"
+
+
+def test_C88_compressed_page_refused_never_unpacked() -> None:
+    """Bombe de compression : on demande une page non compressée, et on refuse les autres."""
+    import gzip
+
+    bomb = gzip.compress(gzip.compress(b"\0" * 5_000_000))
+    reply = httpx.Response(200, content=bomb, headers={
+        "Content-Type": "text/html", "Content-Encoding": "gzip, gzip"})  # fmt: skip
+    client, recorder = fake_client(lambda r: reply)
+    result = read_page(client, "https://site.fr")
+    assert result.page is None and result.problem == "Page compressée : non lue"
+    assert recorder.requests[0].headers["Accept-Encoding"] == "identity"
+
+
+@pytest.mark.parametrize(
+    "url",
+    ["https://boutique.business.site/", "https://g.page/martin", "https://sites.google.com/x",
+     "https://www.google.com/maps/place/x", "https://goo.gl/maps/x", "https://maps.app.goo.gl/x",
+     "https://google.fr/", "https://www.google.co.uk/"],
+)  # fmt: skip
+def test_rule_2_google_pages_never_read(url: str) -> None:
+    client, recorder = fake_client(lambda r: html())
+    assert read_page(client, url).page is None and recorder.requests == []
+
+
+def test_rule_2_redirection_to_google_not_followed() -> None:
+    client, recorder = fake_client(
+        lambda r: html("", 301, Location="https://www.google.com/maps/place/martin")
+    )
+    assert read_page(client, "https://martin.business.fr").page is None
+    assert len(recorder.requests) == 1
+
+
+def test_old_site_charset_read_from_the_page() -> None:
+    body = '<meta charset="iso-8859-1"><title>Crêperie</title>'.encode("latin-1")
+    client, _ = fake_client(lambda r: raw(body))
+    result = read_page(client, "https://creperie.fr")
+    assert result.page is not None and "Crêperie" in result.page.html
+
+
+def test_C88_timeout_said_too_slow() -> None:
+    def slow(request: httpx.Request) -> httpx.Response:
+        raise httpx.ReadTimeout("lent", request=request)
+
+    client, _ = fake_client(slow)
+    assert read_page(client, "https://site.fr").problem == "Site trop lent : lecture abandonnée"

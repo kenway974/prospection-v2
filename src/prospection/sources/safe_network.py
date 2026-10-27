@@ -1,0 +1,100 @@
+"""Connexions vers les sites des prospects : jamais vers une adresse interne (C87, règle 4).
+
+Le nom est résolu une seule fois ; l'adresse vérifiée est celle à laquelle on se connecte
+(pas de seconde résolution qui pourrait renvoyer une adresse interne : « DNS rebinding »).
+Le certificat reste vérifié sur le nom du site. Amélioration de `prospection-bot`
+(`services/site_finder.py::_safe_host`, version 530ba12), qui résolvait deux fois.
+"""
+
+import ipaddress
+import socket
+from collections.abc import Callable, Iterable
+
+import httpcore
+import httpx
+
+Resolver = Callable[[str], list[str]]
+
+
+class BlockedAddress(httpcore.ConnectError):
+    """Le site pointe vers une adresse interne, ou son nom est inconnu."""
+
+
+def _system_resolve(host: str) -> list[str]:
+    try:
+        infos = socket.getaddrinfo(host, None, type=socket.SOCK_STREAM)
+    except (OSError, UnicodeError):
+        return []
+    return [str(info[4][0]) for info in infos]
+
+
+def is_public(address: str) -> bool:
+    try:
+        ip = ipaddress.ip_address(address.split("%")[0])
+    except ValueError:
+        return False
+    if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped:
+        ip = ip.ipv4_mapped
+    return ip.is_global and not ip.is_multicast
+
+
+class PublicOnly(httpcore.NetworkBackend):
+    """Résout le nom, refuse s'il mène à une seule adresse non publique, puis se connecte
+    à l'adresse vérifiée."""
+
+    def __init__(
+        self, resolve: Resolver = _system_resolve, inner: httpcore.NetworkBackend | None = None
+    ) -> None:
+        self.resolve = resolve
+        self.inner = inner or httpcore.SyncBackend()
+
+    def connect_tcp(
+        self, host: str, port: int, timeout: float | None = None,
+        local_address: str | None = None,
+        socket_options: Iterable[httpcore.SOCKET_OPTION] | None = None,
+    ) -> httpcore.NetworkStream:  # fmt: skip
+        addresses = self.resolve(host)
+        if not addresses or not all(is_public(a) for a in addresses):
+            raise BlockedAddress("adresse interne ou inconnue")
+        return self.inner.connect_tcp(addresses[0], port, timeout, local_address, socket_options)
+
+    def connect_unix_socket(
+        self, path: str, timeout: float | None = None,
+        socket_options: Iterable[httpcore.SOCKET_OPTION] | None = None,
+    ) -> httpcore.NetworkStream:  # fmt: skip
+        raise BlockedAddress("connexion locale refusée")
+
+    def sleep(self, seconds: float) -> None:
+        self.inner.sleep(seconds)
+
+
+class _SafeTransport(httpx.HTTPTransport):
+    def __init__(self) -> None:
+        super().__init__()
+        # Même réserve de connexions que httpx, avec la garde ci-dessus pour se connecter
+        self._pool = httpcore.ConnectionPool(
+            ssl_context=httpx.create_ssl_context(), network_backend=PublicOnly()
+        )
+
+
+class _AllToFake(httpx.BaseTransport):
+    """Bout en bout seulement : chaque site est demandé au faux local (aucune vraie visite)."""
+
+    def __init__(self, fake_url: str, inner: httpx.BaseTransport | None = None) -> None:
+        self.fake, self.inner = httpx.URL(fake_url), inner or httpx.HTTPTransport()
+
+    def handle_request(self, request: httpx.Request) -> httpx.Response:
+        request.url = httpx.URL(str(self.fake.join("/site")), params={"url": str(request.url)})
+        request.headers["Host"] = self.fake.netloc.decode()
+        return self.inner.handle_request(request)
+
+
+def make_web_client(
+    test_services_url: str | None = None, inner: httpx.BaseTransport | None = None
+) -> httpx.Client:
+    """Client des sites : aucune variable de proxy suivie, aucune redirection automatique."""
+    transport = _AllToFake(test_services_url, inner) if test_services_url else _SafeTransport()
+    return httpx.Client(
+        transport=transport, trust_env=False, follow_redirects=False, timeout=5.0,
+        headers={"User-Agent": "Mozilla/5.0 (compatible; Prospection/2.0)"},
+    )  # fmt: skip

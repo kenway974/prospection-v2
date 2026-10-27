@@ -82,3 +82,23 @@ def test_C40_worker_never_releases_a_campaign_taken_over(campaign_db: Engine) ->
     with campaign_db.connect() as conn:
         owner = conn.execute(text("SELECT claimed_by FROM campaigns")).scalar_one()
     assert (len(recorder.requests), owner) == (1, "autre worker")
+
+
+def test_C53_idle_worker_checks_mail_servers(campaign_db: Engine) -> None:
+    """Rien à chercher, registre à jour : la tâche de fond vérifie les serveurs mail."""
+    from tests.application.test_mail_check import with_emails
+
+    with_emails(campaign_db)
+    with campaign_db.begin() as conn:
+        conn.exec_driver_sql("UPDATE prospects SET registry_status = 'sûr'")
+        conn.exec_driver_sql("UPDATE campaigns SET status = 'done'")
+    asked: list[str] = []
+
+    def lookup(domain: str) -> str:
+        asked.append(domain)
+        return "mx"
+
+    client, _ = fake_client(pages())
+    worker = Worker(campaign_db, BOX, client, PRICING, now=lambda: NOW, mail_lookup=lookup)
+    assert worker.work_once() is True and len(asked) == 3
+    assert worker.work_once() is False

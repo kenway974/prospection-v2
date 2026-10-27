@@ -16,7 +16,9 @@ NOW = datetime(2026, 10, 25, 8, 0, tzinfo=UTC)
 BOX = SecretBox(Fernet.generate_key().decode())
 PRICING = Pricing(free_per_month=1000, usd_per_1000=Decimal("35"), eur_per_usd=Decimal("0.93"))
 LYON = CityZone("Lyon", "69123", 45.76, 4.83)
-TABLES = "campaigns, campaign_steps, prospects, google_usage, campaign_events, api_keys"
+TABLES = (
+    "campaigns, campaign_steps, prospects, google_usage, campaign_events, api_keys, mail_domains"
+)
 
 
 def request(target: int = 3, trades: tuple[str, ...] = ("cuisiniste",)) -> CampaignRequest:

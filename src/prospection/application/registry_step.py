@@ -5,36 +5,23 @@ numéro ; la fiche n'est retenue que si le rapprochement est sûr. Sinon l'entre
 gardée avec « numéro à chercher », et les critères habituels s'appliquent.
 """
 
-import logging
+import dataclasses
 from datetime import date, datetime
 
 import httpx
 from sqlalchemy import Engine
 
 from prospection.application.api_keys import read_key
-from prospection.application.step_flow import (
-    StepOutcome,
-    budget_stop,
-    finish,
-    reserve_call,
-    retry_later,
-)
-from prospection.domain.company import Company, match_place
+from prospection.application.registry_lookup import LookupContext, bare_place, look_up
+from prospection.application.step_flow import StepOutcome, finish, retry_later
 from prospection.domain.criteria import Verdict, evaluate
 from prospection.domain.google_cost import Pricing
-from prospection.domain.place import Place
-from prospection.domain.registry import workforce_ok
+from prospection.domain.registry import LOOKUPS_PER_TARGET, is_candidate, workforce_ok
 from prospection.domain.services import Service
 from prospection.domain.trades import find_trade, load_trades
 from prospection.sources.company_registry import RegistryUnavailable
-from prospection.sources.google_search import (
-    GoogleBusy,
-    GoogleRefused,
-    GoogleRejectedPage,
-    search_page,
-)
 from prospection.sources.sirene_search import RecentQuery, SireneRefused, recent_companies
-from prospection.storage.campaign_steps import Step, record_page
+from prospection.storage.campaign_steps import Step, looked_up, record_page
 from prospection.storage.campaigns import add_counts, add_event, load_campaign
 from prospection.storage.exclusions import load_exclusions
 from prospection.storage.prospects import insert_prospect
@@ -46,7 +33,6 @@ NO_INSEE_KEY = (
 )
 NOT_ON_MAPS = "Pas trouvée sur Google Maps : numéro à chercher"
 BUSY = "Registre des entreprises trop sollicité"
-logger = logging.getLogger(__name__)
 
 
 def _query(step: Step) -> RecentQuery:
@@ -55,37 +41,9 @@ def _query(step: Step) -> RecentQuery:
                        r["area"], r["code"], tuple(r["naf_prefixes"]))  # fmt: skip
 
 
-def _bare_place(company: Company) -> Place:
-    """Entreprise absente de Google Maps : seulement ce que dit le registre."""
-    address = " ".join(p for p in (company.postal_code, company.city) if p)
-    return Place(f"siren:{company.siren}", company.name, address, None, None, (), None, None,
-                 None, None, None, 0, (), None, 0, "inconnu", "FR")  # fmt: skip
-
-
-def _known(engine: Engine, campaign_id: int) -> set[str]:
+def _stopping(engine: Engine, campaign_id: int) -> bool:
     with engine.connect() as conn:
-        return known_sirens(conn, campaign_id)
-
-
-def _look_up(
-    engine: Engine, client: httpx.Client, pricing: Pricing, campaign_id: int, step: Step,
-    now: datetime, key: str, company: Company,
-) -> Place | StepOutcome | None:  # fmt: skip
-    """Fiche Google de l'entreprise (appel réservé d'abord), ou l'issue de l'étape."""
-    if not reserve_call(engine, pricing, campaign_id, now):
-        return budget_stop(engine, campaign_id, now)
-    try:
-        result = search_page(client, key, f"{company.name} {company.city or ''}", None, None, "FR")
-    except GoogleRejectedPage:
-        return None  # cette requête-là est refusée : on garde l'entreprise, numéro à chercher
-    except GoogleBusy:
-        return retry_later(engine, campaign_id, step, now, "Google trop sollicité")
-    except GoogleRefused as refused:
-        return finish(engine, campaign_id, str(refused), now)
-    except Exception:  # réponse imprévue : nouveaux essais plafonnés, jamais sans fin
-        logger.exception("Réponse Google illisible (registre, campagne %s)", campaign_id)
-        return retry_later(engine, campaign_id, step, now, "Google trop sollicité")
-    return match_place(company, result.places)
+        return load_campaign(conn, campaign_id).status == "stopping"
 
 
 def run_registry_step(
@@ -105,22 +63,34 @@ def run_registry_step(
         campaign = load_campaign(conn, campaign_id)
         exclusions = load_exclusions(conn)
     criteria, trade = campaign.request.criteria, find_trade(step.keyword, load_trades())
+    bare_criteria = dataclasses.replace(criteria, phone="any")  # le numéro reste à chercher
     google_key = read_key(engine, box, Service.GOOGLE)
+    query = _query(step)
+    with engine.connect() as conn:
+        known = known_sirens(conn, campaign_id)
+        paid = set(looked_up(conn, campaign_id))  # déjà cherchées (et payées) : jamais deux fois
+    cap = campaign.request.target * LOOKUPS_PER_TARGET
     found = qualified = 0
-    known = _known(engine, campaign_id)
     for company in page.companies:
-        if campaign.qualified + qualified >= campaign.request.target:
+        if campaign.qualified + qualified >= campaign.request.target or _stopping(
+            engine, campaign_id
+        ):
             break
-        if company.siren in known or not workforce_ok(company.workforce, criteria.max_workforce):
+        if company.siren in known or not is_candidate(company, query.since, query.naf_prefixes):
             continue
+        if not workforce_ok(company.workforce, criteria.max_workforce):
+            continue
+        known.add(company.siren)
         place = None
-        if google_key:
-            looked = _look_up(engine, client, pricing, campaign_id, step, now, google_key, company)
+        if google_key and company.siren not in paid and len(paid) < cap:
+            paid.add(company.siren)
+            ctx = LookupContext(engine, client, pricing, campaign_id, step, now, google_key)
+            looked = look_up(ctx, company)
             if isinstance(looked, StepOutcome):
                 return looked
             place = looked
-        shown = place or _bare_place(company)
-        verdict = evaluate(shown, trade, criteria, exclusions)
+        shown = place or bare_place(company)
+        verdict = evaluate(shown, trade, criteria if place else bare_criteria, exclusions)
         if place is None:
             verdict = Verdict(verdict.qualified, verdict.reasons, (*verdict.to_check, NOT_ON_MAPS))
         with engine.begin() as conn:  # enregistré au fil de l'eau : une reprise ne repaie rien

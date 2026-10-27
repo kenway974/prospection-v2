@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from typing import Any
 
-from sqlalchemy import Connection, func, select, update
+from sqlalchemy import Connection, func, literal_column, select, update
 
 from prospection.domain.google_cost import MAX_PAGES_PER_QUERY
 from prospection.domain.place import Circle
@@ -91,3 +91,27 @@ def count_attempt(conn: Connection, step_id: int) -> int:
             .values(attempts=s.attempts + 1).returning(s.attempts)
         ).scalar_one()
     )  # fmt: skip
+
+
+def mark_looked_up(conn: Connection, step_id: int, siren: str) -> None:
+    """Entreprise déjà cherchée sur Google (appel payé) : jamais cherchée une seconde fois."""
+    s = campaign_steps.c
+    conn.execute(
+        update(campaign_steps).where(s.id == step_id).values(
+            registry_json=func.jsonb_set(
+                s.registry_json, literal_column("ARRAY['looked_up']"),
+                func.coalesce(s.registry_json["looked_up"], func.jsonb_build_array())
+                .op("||")(func.jsonb_build_array(siren)),
+            )
+        )
+    )  # fmt: skip
+
+
+def looked_up(conn: Connection, campaign_id: int) -> list[str]:
+    """Toutes les entreprises déjà cherchées sur Google pour cette campagne."""
+    s = campaign_steps.c
+    rows = conn.execute(
+        select(func.jsonb_array_elements_text(s.registry_json["looked_up"]))
+        .where(s.campaign_id == campaign_id, s.registry_json["looked_up"].is_not(None))
+    )  # fmt: skip
+    return [str(r[0]) for r in rows]

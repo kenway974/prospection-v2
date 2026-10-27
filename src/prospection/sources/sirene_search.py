@@ -64,6 +64,7 @@ class _Legal(BaseModel):
     nomUniteLegale: str | None = None
     prenom1UniteLegale: str | None = None
     categorieJuridiqueUniteLegale: str | None = None
+    dateCreationUniteLegale: date | None = None
 
 
 class _Address(BaseModel):
@@ -100,7 +101,8 @@ def _company(e: _Etab) -> Company:
         siren=e.siren[:9], name=clip(legal.denominationUniteLegale or person, 200) or "",
         other_names=tuple(clip(s, 200) or "" for s in signs),
         postal_code=address.codePostalEtablissement,
-        city=clip(address.libelleCommuneEtablissement, 100), created=e.dateCreationEtablissement,
+        city=clip(address.libelleCommuneEtablissement, 100),
+        created=legal.dateCreationUniteLegale or e.dateCreationEtablissement,
         active=current.etatAdministratifEtablissement != "F",
         legal_form=legal.categorieJuridiqueUniteLegale,
         naf=current.activitePrincipaleEtablissement, workforce=e.trancheEffectifsEtablissement,

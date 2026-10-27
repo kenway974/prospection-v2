@@ -60,7 +60,7 @@ def test_C24_C44_recent_company_found_on_google_with_its_phone(campaign_db: Engi
         **api_place(1, name="Atelier Bois"), "formattedAddress": "3 rue Paul Bert, 69003 Lyon",
         "nationalPhoneNumber": "06 12 34 56 78",
     }  # fmt: skip
-    client, recorder = fake_services([etab()], {"ATELIER BOIS LYON": [on_maps]})
+    client, recorder = fake_services([etab()], {"BOIS & CO LYON": [on_maps]})
     campaign_id = create_campaign(campaign_db, registry_request(), NOW)
     run_all(campaign_db, campaign_id, client)
     sirene = next(r for r in recorder.requests if r.url.host == "api.insee.fr")

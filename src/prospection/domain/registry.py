@@ -1,6 +1,11 @@
 """Source « entreprises récemment créées » : règles (C11, C24, C26, C125)."""
 
+from datetime import date
+
+from prospection.domain.company import Company
+
 GOOGLE, REGISTRY = "google", "registre"
+LOOKUPS_PER_TARGET = 5  # recherches Google au plus par prospect voulu (budget prévisible)
 SOURCES = (GOOGLE, REGISTRY)
 MAX_DAYS = 365
 # Tranches d'effectif INSEE, de la plus petite à la plus grande (NN et 00 : aucun salarié)
@@ -45,3 +50,20 @@ def source_errors(sources: tuple[str, ...], countries: set[str], days: int) -> d
         if not 1 <= days <= MAX_DAYS:
             errors["days"] = "Choisissez entre 1 et 365 jours."
     return errors
+
+
+def is_candidate(company: Company, since: date, naf_prefixes: tuple[str, ...]) -> bool:
+    """Active aujourd'hui, entreprise (pas seulement l'établissement) créée depuis `since`,
+    activité du métier sur la période en cours (C24, C25, C27). Inconnu = gardé."""
+    recent = company.created is None or company.created >= since
+    trade = not company.naf or any(company.naf.startswith(p) for p in naf_prefixes)
+    return company.active and recent and trade
+
+
+def lookup_name(company: Company) -> str | None:
+    """Nom à chercher sur Google : l'enseigne d'abord ; jamais le nom d'une personne
+    (entrepreneur individuel sans enseigne : pas de recherche, numéro à chercher)."""
+    if company.other_names:
+        return company.other_names[0]
+    person = (company.legal_form or "").startswith("1")
+    return None if person else company.name

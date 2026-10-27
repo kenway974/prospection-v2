@@ -28,9 +28,12 @@ def test_C40_replayed_page_never_pays_twice_for_the_same_company(campaign_db: En
     client, _ = fake_client(handler)
     campaign_id = create_campaign(campaign_db, registry_request(), NOW)
     run_all(campaign_db, campaign_id, client)
-    assert calls["google"] == 3  # 1re entreprise une fois, 2e deux fois (après le 503)
+    assert calls["google"] == 2  # chaque entreprise cherchée une fois, même après le 503
     with campaign_db.connect() as conn:
-        assert month_usage(conn, "2026-10")[0] == 3
+        assert month_usage(conn, "2026-10")[0] == 2
+    rows = prospect_list(campaign_db, None, "", "trouves").rows
+    assert len(rows) == 2  # la 2e est gardée, numéro à chercher
+    assert any("numéro à chercher" in " ".join(r.to_check) for r in rows)
 
 
 def test_C41_google_refusing_one_company_keeps_it_to_look_up(campaign_db: Engine) -> None:

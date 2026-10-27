@@ -14,6 +14,10 @@ import httpcore
 import httpx
 
 Resolver = Callable[[str], list[str]]
+# NAT64, 6to4 et Teredo transportent une adresse IPv4 : refusés d'office
+_TRANSITION = tuple(
+    ipaddress.IPv6Network(n) for n in ("64:ff9b::/96", "64:ff9b:1::/48", "2002::/16", "2001::/32")
+)
 
 
 class BlockedAddress(httpcore.ConnectError):
@@ -33,8 +37,11 @@ def is_public(address: str) -> bool:
         ip = ipaddress.ip_address(address.split("%")[0])
     except ValueError:
         return False
-    if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped:
-        ip = ip.ipv4_mapped
+    if isinstance(ip, ipaddress.IPv6Address):
+        if ip.ipv4_mapped:
+            ip = ip.ipv4_mapped
+        elif any(ip in net for net in _TRANSITION):  # peut cacher une adresse IPv4 interne
+            return False
     return ip.is_global and not ip.is_multicast
 
 

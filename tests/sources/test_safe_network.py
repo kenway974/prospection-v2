@@ -27,7 +27,9 @@ def backend(*addresses: str) -> tuple[PublicOnly, FakeBackend]:
 @pytest.mark.parametrize(
     "address",
     ["127.0.0.1", "10.0.0.5", "192.168.1.1", "169.254.169.254", "::1", "::ffff:127.0.0.1",
-     "100.64.0.1", "0.0.0.0", "fd00::1"],  # noqa: S104
+     "100.64.0.1", "0.0.0.0", "fd00::1",  # noqa: S104
+     "64:ff9b::7f00:1", "64:ff9b:1::a00:5", "2002:7f00:1::1",
+     "2001:0:4136:e378:8000:63bf:80ff:fffe"],
 )  # fmt: skip
 def test_C87_internal_address_never_connected(address: str) -> None:
     safe, inner = backend(address)

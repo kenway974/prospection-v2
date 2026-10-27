@@ -12,7 +12,11 @@ from sqlalchemy import Engine
 
 from prospection.domain.company import match_company, postal_code
 from prospection.domain.territories import FRENCH_TERRITORIES
-from prospection.sources.company_registry import RegistryUnavailable, search_companies
+from prospection.sources.company_registry import (
+    RegistryRejected,
+    RegistryUnavailable,
+    search_companies,
+)
 from prospection.storage.registry_status import (
     NOT_FRENCH,
     SURE,
@@ -23,6 +27,7 @@ from prospection.storage.registry_status import (
 
 BATCH = 20
 PAUSE_SECONDS = 0.15  # le service accepte 7 appels par seconde
+MIN_NAME = 3  # le service refuse une recherche plus courte
 
 
 def enrich_new_prospects(
@@ -40,9 +45,12 @@ def enrich_new_prospects(
             continue
         postal = postal_code(prospect.address)
         try:
-            candidates = search_companies(client, prospect.name, postal)
+            too_short = len(prospect.name.strip()) < MIN_NAME
+            candidates = [] if too_short else search_companies(client, prospect.name, postal)
         except RegistryUnavailable:
             break  # on réessaiera au prochain passage
+        except RegistryRejected:  # cette recherche-là ne passera jamais : à confirmer à la main
+            candidates = []
         match = match_company(prospect.name, postal, candidates)
         with engine.begin() as conn:
             save_match(conn, prospect.id, match.company, SURE if match.sure else TO_CONFIRM)

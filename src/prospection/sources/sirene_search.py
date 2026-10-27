@@ -30,6 +30,10 @@ class SireneRefused(Exception):
     """La clé est refusée ; le message dit quoi faire."""
 
 
+class SireneRejected(Exception):
+    """Sirène refuse cette requête-là (400) : la refaire ne servirait à rien."""
+
+
 @dataclass(frozen=True)
 class RecentQuery:
     since: date
@@ -83,6 +87,7 @@ class _Period(BaseModel):
 
 class _Etab(BaseModel):
     siren: str
+    siret: str | None = None
     statutDiffusionEtablissement: str | None = None
     dateCreationEtablissement: date | None = None
     trancheEffectifsEtablissement: str | None = None
@@ -107,7 +112,7 @@ def _company(e: _Etab) -> Company:
         active=current.etatAdministratifEtablissement != "F",
         legal_form=legal.categorieJuridiqueUniteLegale,
         naf=current.activitePrincipaleEtablissement, workforce=e.trancheEffectifsEtablissement,
-        leaders=(), finances=None, diffusible=True,
+        leaders=(), finances=None, diffusible=True, siret=e.siret[:14] if e.siret else None,
     )  # fmt: skip
 
 
@@ -115,14 +120,12 @@ def recent_companies(client: httpx.Client, key: str, query: RecentQuery, cursor:
     headers = {"X-INSEE-Api-Key-Integration": key, "Accept": "application/json"}
     params = {"q": sirene_q(query), "nombre": str(PAGE_SIZE), "curseur": cursor}
     response = send(client, "GET", f"{BASE_URL}/siret", LABEL, headers=headers, params=params)
-    if (
-        isinstance(response, KeyCheck)
-        or response.status_code in (429,)
-        or response.status_code >= 500
-    ):
-        raise RegistryUnavailable
+    if isinstance(response, KeyCheck) or response.status_code == 429:
+        raise RegistryUnavailable  # 5xx : plus bas, comme toute réponse autre que 200
     if response.status_code in (401, 403):
         raise SireneRefused(KEY_REFUSED)
+    if response.status_code == 400:
+        raise SireneRejected
     if response.status_code == 404:  # Sirene répond 404 quand rien ne correspond
         return SirenePage([], None)
     body = json_object(response)

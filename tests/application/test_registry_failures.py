@@ -3,7 +3,7 @@
 import httpx
 from sqlalchemy import Engine
 
-from prospection.application.campaigns import create_campaign
+from prospection.application.campaigns import create_campaign, progress
 from prospection.application.prospect_card import prospect_list
 from prospection.storage.google_usage import month_usage
 from tests.application.campaign_helpers import NOW
@@ -49,3 +49,19 @@ def test_C41_google_refusing_one_company_keeps_it_to_look_up(campaign_db: Engine
     run_all(campaign_db, campaign_id, client)
     [row] = prospect_list(campaign_db, None, "", "trouves").rows
     assert "Pas trouvée sur Google Maps : numéro à chercher" in row.to_check
+
+
+def test_sirene_refusing_the_query_skips_the_page_at_once(campaign_db: Engine) -> None:
+    with_insee_key(campaign_db)
+    calls = {"insee": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls["insee"] += 1
+        return httpx.Response(400, json={"header": {"message": "Erreur de syntaxe"}})
+
+    client, _ = fake_client(handler)
+    campaign_id = create_campaign(campaign_db, registry_request(), NOW)
+    run_all(campaign_db, campaign_id, client)
+    assert calls["insee"] == 1  # pas de nouvel essai : la même requête serait refusée
+    messages = [e.message for e in progress(campaign_db, campaign_id).recent_events]
+    assert any("refusée par le registre" in m for m in messages)

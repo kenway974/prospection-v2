@@ -112,3 +112,16 @@ def test_refused_key_says_what_to_do() -> None:
     client, _ = fake_client(json_reply(401, {}))
     with pytest.raises(SireneRefused, match="Réglages → Clés API"):
         recent_companies(client, "cle", QUERY, "*")
+
+
+def test_C44_siret_kept() -> None:
+    client, _ = fake_client(json_reply(200, {"header": {}, "etablissements": [etab()]}))
+    assert recent_companies(client, "cle", QUERY, "*").companies[0].siret == "92345678900015"
+
+
+def test_refused_query_is_not_a_breakdown() -> None:
+    from prospection.sources.sirene_search import SireneRejected
+
+    client, _ = fake_client(json_reply(400, {"header": {"message": "Erreur de syntaxe"}}))
+    with pytest.raises(SireneRejected):
+        recent_companies(client, "cle", QUERY, "*")

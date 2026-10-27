@@ -8,7 +8,7 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import Engine
 
 from prospection.domain.call_status import proposed_action
-from prospection.domain.company import describe
+from prospection.domain.company_card import registry_lines
 from prospection.domain.place import web_link
 from prospection.domain.text import without_controls
 from prospection.storage import prospect_list as store
@@ -94,6 +94,6 @@ def card(
     return Card(
         prospect, tel_link(prospect.data.get("phone")), web_link(prospect.data.get("website")),
         web_link(prospect.data.get("maps_url")), found_notes, action, proposal,
-        describe(prospect.company) if prospect.company else [], position,
+        registry_lines(prospect.company, prospect.registry_status), position,
         len(queue), previous_id, next_id,
     )  # fmt: skip

@@ -13,14 +13,19 @@ from sqlalchemy import Engine
 
 from prospection.application.api_keys import read_key
 from prospection.application.registry_lookup import LookupContext, bare_place, look_up
-from prospection.application.step_flow import StepOutcome, finish, retry_later
+from prospection.application.step_flow import StepOutcome, finish, retry_later, skip
 from prospection.domain.criteria import Verdict, evaluate
 from prospection.domain.google_cost import Pricing
 from prospection.domain.registry import LOOKUPS_PER_TARGET, is_candidate, workforce_ok
 from prospection.domain.services import Service
 from prospection.domain.trades import find_trade, load_trades
 from prospection.sources.company_registry import RegistryUnavailable
-from prospection.sources.sirene_search import RecentQuery, SireneRefused, recent_companies
+from prospection.sources.sirene_search import (
+    RecentQuery,
+    SireneRefused,
+    SireneRejected,
+    recent_companies,
+)
 from prospection.storage.campaign_steps import Step, looked_up, record_page
 from prospection.storage.campaigns import add_counts, add_event, load_campaign
 from prospection.storage.exclusions import load_exclusions
@@ -59,6 +64,8 @@ def run_registry_step(
         return retry_later(engine, campaign_id, step, now, BUSY)
     except SireneRefused as refused:
         return finish(engine, campaign_id, str(refused), now)
+    except SireneRejected:
+        return skip(engine, campaign_id, step, now, "Requête refusée par le registre")
     with engine.connect() as conn:
         campaign = load_campaign(conn, campaign_id)
         exclusions = load_exclusions(conn)

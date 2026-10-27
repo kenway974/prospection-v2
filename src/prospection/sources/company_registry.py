@@ -23,7 +23,17 @@ class RegistryUnavailable(Exception):
     """Le registre ne répond pas ou demande de ralentir : réessayer plus tard."""
 
 
+class RegistryRejected(Exception):
+    """Le registre refuse cette recherche-là (4xx) : inutile de la refaire."""
+
+
+class _Site(BaseModel):
+    siret: str
+    code_postal: str
+
+
 class _Siege(BaseModel):
+    siret: str | None = None
     code_postal: str | None = None
     libelle_commune: str | None = None
     liste_enseignes: list[str] | None = None
@@ -56,6 +66,19 @@ class _Result(BaseModel):
     siege: _Siege | None = None
     dirigeants: list[_Leader] | None = None
     finances: dict[str, _Bilan] | None = None
+    matching_etablissements: list[Any] | None = None
+
+
+def _sites(raw: list[Any] | None) -> tuple[tuple[str, str], ...]:
+    """Établissements correspondant à la recherche ; un établissement illisible est ignoré."""
+    sites = []
+    for item in (raw or [])[:10]:
+        try:
+            site = _Site.model_validate(item)
+        except ValidationError:
+            continue
+        sites.append((site.siret[:14], site.code_postal[:5]))
+    return tuple(sites)
 
 
 def _leader(leader: _Leader) -> str:
@@ -87,18 +110,23 @@ def to_company(r: _Result) -> Company:
         naf=r.activite_principale, workforce=r.tranche_effectif_salarie,
         leaders=tuple(_leader(d) for d in (r.dirigeants or [])[:5]) if diffusible else (),
         finances=_finances(r.finances) if diffusible else None, diffusible=diffusible,
+        siret=siege.siret[:14] if siege.siret else None, branches=_sites(r.matching_etablissements),
     )  # fmt: skip
 
 
 def search_companies(client: httpx.Client, name: str, postal: str | None) -> list[Company]:
-    """Entreprises portant ce nom (et ce code postal s'il est connu), 5 au plus."""
+    """Entreprises actives portant ce nom (et ce code postal s'il est connu), 5 au plus."""
     if not name.strip():
         return []
-    params: dict[str, Any] = {"q": name.strip()[:100], "per_page": 5}
+    params: dict[str, Any] = {"q": name.strip()[:100], "per_page": 5, "etat_administratif": "A"}
     if postal:
         params["code_postal"] = postal
     response = send(client, "GET", SEARCH_URL, "Registre des entreprises", params=params)
-    if isinstance(response, KeyCheck) or response.status_code != 200:
+    if isinstance(response, KeyCheck) or response.status_code == 429:
+        raise RegistryUnavailable
+    if 400 <= response.status_code < 500:
+        raise RegistryRejected
+    if response.status_code != 200:
         raise RegistryUnavailable
     body = json_object(response)
     if body is None:

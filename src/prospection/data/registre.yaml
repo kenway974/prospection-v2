@@ -10,7 +10,7 @@ formes:
   "6540": SCI
   "9220": Association
 effectifs:
-  NN: aucun salarié
+  NN: non employeuse ou effectif non déclaré
   "00": aucun salarié
   "01": 1 ou 2 salariés
   "02": 3 à 5 salariés

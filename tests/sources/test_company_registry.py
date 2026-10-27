@@ -5,7 +5,11 @@ from datetime import date
 import httpx
 import pytest
 
-from prospection.sources.company_registry import RegistryUnavailable, search_companies
+from prospection.sources.company_registry import (
+    RegistryRejected,
+    RegistryUnavailable,
+    search_companies,
+)
 from tests.fake_http import fake_client, json_reply, timeout
 
 
@@ -41,6 +45,7 @@ def test_C44_company_read_with_leaders_and_latest_finances() -> None:
     [company] = search_companies(client, "Cuisines Martin", "69002")
     params = recorder.requests[0].url.params
     assert (params["q"], params["code_postal"]) == ("Cuisines Martin", "69002")
+    assert params["etat_administratif"] == "A"  # une entreprise cessée n'est jamais proposée
     assert (company.siren, company.postal_code, company.created) == (
         "912345678",
         "69002",
@@ -75,3 +80,17 @@ def test_service_down_raises(handler: object) -> None:
 def test_empty_name_asks_nothing() -> None:
     client, recorder = fake_client(lambda r: httpx.Response(200, json=page()))
     assert search_companies(client, "  ", "69002") == [] and recorder.requests == []
+
+
+def test_C45_matching_shops_kept_with_their_siret() -> None:
+    shops = [{"siret": "91234567800020", "code_postal": "69002"}, {"siret": 5}]
+    client, _ = fake_client(json_reply(200, page(result(matching_etablissements=shops))))
+    [company] = search_companies(client, "Cuisines Martin", "69002")
+    assert company.siret == "91234567800012"
+    assert company.branches == (("91234567800020", "69002"),)
+
+
+def test_refused_search_is_not_a_breakdown() -> None:
+    client, _ = fake_client(json_reply(400, {"erreur": "trop court"}))
+    with pytest.raises(RegistryRejected):
+        search_companies(client, "xy", "69002")

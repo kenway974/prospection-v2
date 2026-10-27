@@ -29,6 +29,7 @@ class ProspectRow:
     to_check: list[str]
     contact: tuple[str | None, str | None, str | None]
     company: Company | None = None
+    registry_status: str | None = None
 
 
 @dataclass(frozen=True)
@@ -58,15 +59,22 @@ def _filters(status: str | None, query: str) -> list[ColumnElement[bool]]:
 
 _COLUMNS = (
     _P.id, _P.data_json, _P.keywords, _P.status, _P.to_check, _P.contact_name,
-    _P.contact_mobile, _P.contact_email, _P.company_json,
+    _P.contact_mobile, _P.contact_email, _P.company_json, _P.registry_status,
 )  # fmt: skip
 
 
-def _row(r: Row[Any, Any, Any, Any, Any, Any, Any, Any, Any]) -> ProspectRow:
+def _row(r: Row[Any, Any, Any, Any, Any, Any, Any, Any, Any, Any]) -> ProspectRow:
     contact = (r.contact_name, r.contact_mobile, r.contact_email)
     company = decode_company(r.company_json) if r.company_json else None
     return ProspectRow(
-        r.id, r.data_json, list(r.keywords), r.status, list(r.to_check), contact, company
+        r.id,
+        r.data_json,
+        list(r.keywords),
+        r.status,
+        list(r.to_check),
+        contact,
+        company,
+        r.registry_status,
     )
 
 

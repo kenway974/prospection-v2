@@ -19,6 +19,8 @@ from prospection.sources.company_registry import RegistryUnavailable
 from prospection.sources.insee import BASE_URL, LABEL
 
 PAGE_SIZE = 20
+# Paris, Lyon et Marseille : Sirène range les établissements par arrondissement
+ARRONDISSEMENTS = {"75056": "751*", "69123": "6938*", "13055": "132*"}
 KEY_REFUSED = (
     "Clé Sirène refusée : vérifiez-la dans Réglages → Clés API (abonnement à l'API Sirene)."
 )
@@ -46,10 +48,9 @@ class SirenePage:
 def sirene_q(query: RecentQuery) -> str:
     parts = [f"dateCreationEtablissement:[{query.since.isoformat()} TO {query.until.isoformat()}]"]
     if query.area == "commune":
-        parts.append(f"codeCommuneEtablissement:{query.code}")
-    else:
-        prefix = "20" if query.code in ("2A", "2B") else query.code
-        parts.append(f"codePostalEtablissement:{prefix}*")
+        parts.append(f"codeCommuneEtablissement:{ARRONDISSEMENTS.get(query.code, query.code)}")
+    else:  # code commune et non postal : la Corse (2A, 2B) et les DOM sont bien séparés
+        parts.append(f"codeCommuneEtablissement:{query.code}*")
     parts += ["statutDiffusionEtablissement:O", "periode(etatAdministratifEtablissement:A)"]
     if query.naf_prefixes:
         nafs = " OR ".join(

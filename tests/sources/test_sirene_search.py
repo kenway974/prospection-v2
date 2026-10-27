@@ -30,7 +30,7 @@ def etab(**changes: object) -> dict[str, object]:
 
 def test_C24_C25_C27_query_built_for_the_official_syntax() -> None:
     assert sirene_q(QUERY) == (
-        "dateCreationEtablissement:[2026-07-28 TO 2026-10-26] AND codePostalEtablissement:69* "
+        "dateCreationEtablissement:[2026-07-28 TO 2026-10-26] AND codeCommuneEtablissement:69* "
         "AND statutDiffusionEtablissement:O AND periode(etatAdministratifEtablissement:A) "
         "AND (periode(activitePrincipaleEtablissement:43.32*) "
         "OR periode(activitePrincipaleEtablissement:47.59*))"
@@ -38,7 +38,17 @@ def test_C24_C25_C27_query_built_for_the_official_syntax() -> None:
     commune = RecentQuery(date(2026, 7, 28), date(2026, 10, 26), "commune", "97411", ())
     assert "codeCommuneEtablissement:97411" in sirene_q(commune)
     corse = RecentQuery(date(2026, 7, 28), date(2026, 10, 26), "departement", "2A", ())
-    assert "codePostalEtablissement:20*" in sirene_q(corse)
+    assert "codeCommuneEtablissement:2A*" in sirene_q(corse)  # pas la Haute-Corse (20…)
+
+
+@pytest.mark.parametrize(
+    ("commune", "expected"),
+    [("75056", "751*"), ("69123", "6938*"), ("13055", "132*"), ("69003", "69003")],
+)
+def test_C25_big_cities_cover_their_arrondissements(commune: str, expected: str) -> None:
+    """Sirène range les établissements de Paris, Lyon et Marseille par arrondissement."""
+    query = RecentQuery(date(2026, 7, 28), date(2026, 10, 26), "commune", commune, ())
+    assert f"codeCommuneEtablissement:{expected} " in sirene_q(query)
 
 
 def test_C24_companies_read_with_cursor() -> None:

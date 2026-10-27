@@ -22,6 +22,7 @@ from prospection.domain.campaign_request import InvalidRequest, validate_request
 from prospection.domain.criteria import Criteria
 from prospection.domain.foreign_zones import countries
 from prospection.domain.google_cost import Pricing
+from prospection.domain.registry import WORKFORCE_CHOICES
 from prospection.storage.secret_box import SecretBox
 from prospection.ui.deps import (
     get_box,
@@ -48,8 +49,6 @@ DEFAULTS = {
     "pays": "FR",
     "source_google": "on",
 }
-WORKFORCE_CHOICES = {"": "Peu importe", "00": "Aucun salarié", "01": "1 ou 2 salariés",
-                     "02": "5 au plus", "03": "9 au plus", "11": "19 au plus"}  # fmt: skip
 
 
 async def _read_form(request: Request) -> dict[str, str]:

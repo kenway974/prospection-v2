@@ -64,7 +64,7 @@ def test_C24_C44_recent_company_found_on_google_with_its_phone(campaign_db: Engi
     campaign_id = create_campaign(campaign_db, registry_request(), NOW)
     run_all(campaign_db, campaign_id, client)
     sirene = next(r for r in recorder.requests if r.url.host == "api.insee.fr")
-    assert "dateCreationEtablissement:[2026-07-27 TO 2026-10-25]" in sirene.url.params["q"]
+    assert "dateCreationEtablissement:[2026-07-28 TO 2026-10-25]" in sirene.url.params["q"]
     assert "43.32*" in sirene.url.params["q"]
     [row] = prospect_list(campaign_db, None, "", "trouves").rows
     shown = card(campaign_db, row.id, NOW, PARIS)

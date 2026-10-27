@@ -54,3 +54,19 @@ def test_C26_workforce_at_most() -> None:
     assert workforce_ok("NN", "01") and workforce_ok("01", "01") and workforce_ok(None, "01")
     assert not workforce_ok("03", "01")
     assert workforce_ok("53", None)
+
+
+def test_C24_registry_needs_a_trade_with_an_activity_code() -> None:
+    request = RawRequest("Test", ["magicien de soirée"], [LYON], 10, Criteria(), True,
+                         ("registre",))  # fmt: skip
+    with pytest.raises(InvalidRequest) as error:
+        validate_request(request)
+    assert "Google Maps" in error.value.errors["trades"]
+
+
+def test_C26_workforce_must_come_from_the_list() -> None:
+    request = RawRequest("Test", ["cuisiniste"], [LYON], 10, Criteria(max_workforce="99"),
+                         True, ("registre",))  # fmt: skip
+    with pytest.raises(InvalidRequest) as error:
+        validate_request(request)
+    assert error.value.errors["max_workforce"] == "Choisissez un effectif dans la liste."

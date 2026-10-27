@@ -3,6 +3,7 @@
 from datetime import date
 
 from prospection.domain.company import Company
+from prospection.domain.criteria import Criteria
 
 GOOGLE, REGISTRY = "google", "registre"
 LOOKUPS_PER_TARGET = 5  # recherches Google au plus par prospect voulu (budget prévisible)
@@ -21,6 +22,12 @@ UNAVAILABLE = {  # C125 : pourquoi il n'y a pas de registre ouvert hors de Franc
     "LU": "Luxembourg : pas d'accès ouvert connu au registre des entreprises.",
     "MC": "Monaco : pas d'accès ouvert connu au registre des entreprises.",
 }
+WORKFORCE_CHOICES = {"": "Peu importe", "00": "Aucun salarié", "01": "1 ou 2 salariés",
+                     "02": "5 au plus", "03": "9 au plus", "11": "19 au plus"}  # fmt: skip
+NO_ACTIVITY_CODE = (
+    "Aucun de ces métiers n'a de code d'activité connu du registre : choisissez un métier de "
+    "la liste ou la source Google Maps."
+)
 ONLY_GOOGLE = " Choisissez la source Google Maps pour ce pays."
 
 
@@ -38,8 +45,10 @@ def workforce_ok(tranche: str | None, at_most: str | None) -> bool:
     return WORKFORCE_ORDER.index(tranche) <= WORKFORCE_ORDER.index(at_most)
 
 
-def source_errors(sources: tuple[str, ...], countries: set[str], days: int) -> dict[str, str]:
-    """Erreurs du choix des sources (C11, C24, C125), champ par champ."""
+def source_errors(
+    sources: tuple[str, ...], countries: set[str], criteria: Criteria, nafs: tuple[str, ...]
+) -> dict[str, str]:
+    """Erreurs du choix des sources (C11, C24, C26, C125), champ par champ."""
     errors: dict[str, str] = {}
     if not any(s in SOURCES for s in sources):
         errors["sources"] = "Choisissez au moins une source."
@@ -47,8 +56,12 @@ def source_errors(sources: tuple[str, ...], countries: set[str], days: int) -> d
         refused = [m for c in sorted(countries) if (m := registry_unavailable(c))]
         if refused:
             errors["sources"] = refused[0]
-        if not 1 <= days <= MAX_DAYS:
+        if not 1 <= criteria.created_within_days <= MAX_DAYS:
             errors["days"] = "Choisissez entre 1 et 365 jours."
+        if not nafs:
+            errors["trades"] = NO_ACTIVITY_CODE
+    if (criteria.max_workforce or "") not in WORKFORCE_CHOICES:
+        errors["max_workforce"] = "Choisissez un effectif dans la liste."
     return errors
 
 

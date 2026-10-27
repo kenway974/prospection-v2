@@ -5,13 +5,13 @@ from dataclasses import dataclass
 
 from prospection.domain.criteria import Criteria
 from prospection.domain.registry import GOOGLE, SOURCES, source_errors
-from prospection.domain.trades import normalize
+from prospection.domain.trades import naf_prefixes, normalize
 
 MAX_TARGET = 200
 MAX_RADIUS_KM = 50
 
 
-def _department(insee_code: str) -> str:
+def department_of(insee_code: str) -> str:
     return insee_code[:3] if insee_code.startswith("97") else insee_code[:2]
 
 
@@ -26,7 +26,7 @@ class CityZone:
     @property
     def label(self) -> str:
         if self.country == "FR":
-            return f"{self.name} ({_department(self.code)})"
+            return f"{self.name} ({department_of(self.code)})"
         return (
             f"{self.name} ({self.country}-{self.code})"
             if self.code
@@ -123,7 +123,8 @@ def validate_request(raw: RawRequest) -> CampaignRequest:
     if not 1 <= raw.target <= MAX_TARGET:
         errors["target"] = "Choisissez entre 1 et 200 prospects."
     countries = {z.city.country if isinstance(z, RadiusZone) else z.country for z in zones}
-    errors.update(source_errors(raw.sources, countries, raw.criteria.created_within_days))
+    sources_problems = source_errors(raw.sources, countries, raw.criteria, naf_prefixes(trades))
+    errors = {**sources_problems, **errors}  # « indiquez un métier » passe en premier
     if errors:
         raise InvalidRequest(errors)
     sources = tuple(s for s in SOURCES if s in raw.sources)

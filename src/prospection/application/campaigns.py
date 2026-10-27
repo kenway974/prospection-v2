@@ -74,7 +74,7 @@ def plan_steps(keywords: Sequence[str], zones: Sequence[Zone], synonyms_on: bool
 
 def build_steps(request: CampaignRequest, now: datetime | None = None) -> list[StepSpec]:
     """Étapes « registre » d'abord (C11), puis les recherches Google Maps."""
-    registry = registry_steps(request, now.date()) if now else []
+    registry = registry_steps(request, now) if now else []
     google = plan_steps(request.trades, request.zones, request.synonyms_on)
     return registry + (google if GOOGLE in request.sources else [])
 

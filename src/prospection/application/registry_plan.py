@@ -1,42 +1,46 @@
 """Étapes « registre » d'une campagne : une par zone (C11, C24, C25, C27)."""
 
-from datetime import date, timedelta
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
-from prospection.domain.campaign_request import CampaignRequest, CityZone, RadiusZone, Zone
+from prospection.domain.campaign_request import (
+    CampaignRequest,
+    CityZone,
+    RadiusZone,
+    Zone,
+    department_of,
+)
 from prospection.domain.registry import REGISTRY
-from prospection.domain.trades import find_trade, load_trades
+from prospection.domain.trades import naf_prefixes
 from prospection.storage.campaign_steps import StepSpec
 
+PARIS = ZoneInfo("Europe/Paris")  # les dates de création du registre sont des dates françaises
 
-def _area(zone: Zone) -> tuple[str, str]:
-    """Commune (code INSEE) ; pour un rayon ou un département, le département."""
+
+def _area(zone: Zone) -> tuple[str, str, str]:
+    """Commune (code INSEE) ; un rayon ou un département : tout le département."""
     if isinstance(zone, CityZone):
-        return "commune", zone.code
-    code = zone.city.code if isinstance(zone, RadiusZone) else zone.code
+        return "commune", zone.code, zone.label
     if isinstance(zone, RadiusZone):
-        code = code[:3] if code.startswith("97") else code[:2]
-    return "departement", code
+        code = department_of(zone.city.code)
+        return "departement", code, f"département {code} (le registre ne connaît pas le rayon)"
+    return "departement", zone.code, zone.label
 
 
-def naf_prefixes(trades: tuple[str, ...]) -> tuple[str, ...]:
-    known = load_trades()
-    found = [p for t in trades if (trade := find_trade(t, known)) for p in trade.naf_prefixes]
-    return tuple(dict.fromkeys(found))
-
-
-def registry_steps(request: CampaignRequest, today: date) -> list[StepSpec]:
+def registry_steps(request: CampaignRequest, now: datetime) -> list[StepSpec]:
     """Aucune étape si aucun métier n'a de code d'activité connu (on ne cherche pas au hasard)."""
     nafs = naf_prefixes(request.trades)
     if REGISTRY not in request.sources or not nafs:
         return []
-    since = today - timedelta(days=request.criteria.created_within_days)
+    today = now.astimezone(PARIS).date()
+    since = today - timedelta(days=request.criteria.created_within_days - 1)  # aujourd'hui compris
     steps = []
     for zone in request.zones:
-        area, code = _area(zone)
+        area, code, label = _area(zone)
         query = {"since": since.isoformat(), "until": today.isoformat(), "area": area,
                  "code": code, "naf_prefixes": list(nafs)}  # fmt: skip
         steps.append(StepSpec(
-            f"créées récemment · {zone.label}", request.trades[0], zone.label, None,
+            f"créées récemment · {label}", request.trades[0], zone.label, None,
             kind=REGISTRY, registry=query,
         ))  # fmt: skip
     return steps

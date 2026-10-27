@@ -27,7 +27,7 @@ def test_busy_retried_then_skipped(campaign_db: Engine) -> None:
     ]
     assert outcomes[4].done
     assert progress(campaign_db, campaign_id).stop_reason == (
-        "Recherche finie avec 1 page ignorée (Google trop sollicité ou requête refusée) : "
+        "Recherche finie avec 1 page ignorée (service trop sollicité ou requête refusée) : "
         "0 qualifié sur 9 voulus. Relancez la même recherche plus tard, depuis un modèle."
     )
 

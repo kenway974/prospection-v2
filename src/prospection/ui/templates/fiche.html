@@ -19,4 +19,8 @@
 {% include "_suivi.html" %}
 {% include "_notes.html" %}
 {% include "_contact.html" %}
+<section class="group" aria-labelledby="titre-entreprise">
+  <h2 class="row-title form" id="titre-entreprise">L'entreprise</h2>
+  {% for label, value in card.company_lines %}<p class="row"><span class="secondary">{{ label }}</span><span>{{ value }}</span></p>{% endfor %}
+</section>
 {% endblock %}

@@ -16,6 +16,7 @@ from sqlalchemy import Engine
 
 from prospection.application.campaign_queue import claim_next, release_until
 from prospection.application.campaign_step import run_step
+from prospection.application.registry_enrich import enrich_new_prospects
 from prospection.domain.google_cost import Pricing, load_pricing
 from prospection.storage.secret_box import SecretBox
 
@@ -38,8 +39,8 @@ class Worker:
         (SIGTERM d'un déploiement) n'attend jamais plus d'une page.
         """
         campaign_id = claim_next(self.engine, self.now(), self.worker_id)
-        if campaign_id is None:
-            return False
+        if campaign_id is None:  # rien à chercher : on complète les fiches avec le registre
+            return enrich_new_prospects(self.engine, self.client, self.now()) > 0
         outcome = run_step(
             self.engine, self.box, self.client, self.pricing, campaign_id, self.now()
         )
@@ -71,7 +72,7 @@ def main() -> None:  # pragma: no cover (point d'entrée, testé en bout en bout
     stop = threading.Event()
     signal.signal(signal.SIGTERM, lambda *_: stop.set())
     box = SecretBox(settings.encryption_key.get_secret_value())
-    with make_client(settings.google_places_test_url) as client:
+    with make_client(settings.test_services_url) as client:
         worker = Worker(make_engine(settings.database_url), box, client, load_pricing())
         logger.info("Tâche de fond démarrée")
         worker.run_forever(stop)

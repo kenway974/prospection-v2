@@ -32,6 +32,6 @@ def test_C37_skipped_pages_are_not_called_exhausted() -> None:
     from prospection.domain.stop_reasons import finished_with_skips
 
     assert finished_with_skips(3, 4, 20) == (
-        "Recherche finie avec 3 pages ignorées (Google trop sollicité ou requête refusée) : "
+        "Recherche finie avec 3 pages ignorées (service trop sollicité ou requête refusée) : "
         "4 qualifiés sur 20 voulus. Relancez la même recherche plus tard, depuis un modèle."
     )

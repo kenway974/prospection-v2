@@ -2,6 +2,7 @@
 
 from sqlalchemy import Engine
 
+from prospection.domain.registry import REGISTRY
 from prospection.domain.stop_reasons import exhausted, finished_with_skips, goal_reached
 from prospection.storage.campaign_steps import next_step, skipped_steps
 from prospection.storage.campaigns import load_campaign
@@ -22,4 +23,4 @@ def stop_reason(engine: Engine, campaign_id: int) -> str | None:
         return None
     if skipped:
         return finished_with_skips(skipped, c.qualified, c.request.target)
-    return exhausted(c.qualified, c.request.target)
+    return exhausted(c.qualified, c.request.target, c.request.sources == (REGISTRY,))

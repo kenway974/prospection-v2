@@ -11,6 +11,7 @@ from prospection.application.campaigns import create_campaign, plan_steps
 from prospection.domain.campaign_request import CampaignRequest, CityZone, RawRequest
 from prospection.domain.foreign_zones import city_choice_label, find_foreign_cities
 from prospection.domain.google_cost import Estimate, Pricing, billing_month, estimate, pages_needed
+from prospection.domain.registry import GOOGLE, LOOKUPS_PER_TARGET, REGISTRY
 from prospection.domain.trades import expand_queries, load_trades
 from prospection.sources.geo_communes import GeoUnavailable, find_communes
 from prospection.storage.google_usage import month_usage
@@ -25,7 +26,9 @@ from prospection.storage.templates import (
 def estimate_raw(engine: Engine, pricing: Pricing, raw: RawRequest, now: datetime) -> Estimate:
     """Coût au pire de la demande telle que saisie (même incomplète)."""
     keywords = [t.strip() for t in raw.trades if t.strip()]
-    pages = pages_needed(len(plan_steps(keywords, raw.zones, raw.synonyms_on)))
+    google = pages_needed(len(plan_steps(keywords, raw.zones, raw.synonyms_on)))
+    lookups = raw.target * LOOKUPS_PER_TARGET  # chaque entreprise examinée coûte une recherche
+    pages = (google if GOOGLE in raw.sources else 0) + (lookups if REGISTRY in raw.sources else 0)
     month = billing_month(now)
     with engine.connect() as conn:
         calls, spent = month_usage(conn, month)

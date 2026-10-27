@@ -22,6 +22,7 @@ from prospection.domain.campaign_request import InvalidRequest, validate_request
 from prospection.domain.criteria import Criteria
 from prospection.domain.foreign_zones import countries
 from prospection.domain.google_cost import Pricing
+from prospection.domain.registry import LOOKUPS_PER_TARGET, REGISTRY, WORKFORCE_CHOICES
 from prospection.storage.secret_box import SecretBox
 from prospection.ui.deps import (
     get_box,
@@ -34,13 +35,8 @@ from prospection.ui.deps import (
     templates as tpl,
 )
 from prospection.ui.formatting import euros
-from prospection.ui.search_form import (
-    MAX_FIELD,
-    commune_value,
-    criteria_to_form,
-    parse_form,
-    request_to_form,
-)
+from prospection.ui.search_form import MAX_FIELD, commune_value, parse_form
+from prospection.ui.search_form_fill import criteria_to_form, request_to_form
 from prospection.ui.session import require_session
 
 router = APIRouter(prefix="/recherche", dependencies=[Depends(require_session)])
@@ -51,6 +47,7 @@ DEFAULTS = {
     "synonymes": "on",
     "rayon": "0",
     "pays": "FR",
+    "source_google": "on",
 }
 
 
@@ -67,6 +64,7 @@ def _page(
         "tab": "search", "values": values, "errors": errors or {},
         "readiness": search_readiness(engine, box), "templates": templates(engine),
         "campaigns": latest_campaigns(engine), "countries": countries(),
+        "workforce": WORKFORCE_CHOICES,
     }  # fmt: skip
     return tpl.TemplateResponse(request, "recherche.html", context, status_code=status_code)
 
@@ -105,8 +103,10 @@ async def estimation(
     pricing: Pricing = Depends(get_pricing), now: datetime = Depends(get_now),  # noqa: B008
 ) -> Response:  # fmt: skip
     form = await _read_form(request)
-    result = estimate_raw(engine, pricing, parse_form(form).raw, now)
-    context = {"estimate": result, "paid": euros(result.paid_cents)}
+    raw = parse_form(form).raw
+    result = estimate_raw(engine, pricing, raw, now)
+    lookups = LOOKUPS_PER_TARGET if REGISTRY in raw.sources else 0
+    context = {"estimate": result, "paid": euros(result.paid_cents), "lookups": lookups}
     return tpl.TemplateResponse(request, "_estimate.html", context)
 
 

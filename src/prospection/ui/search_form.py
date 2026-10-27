@@ -4,7 +4,6 @@ import re
 from dataclasses import dataclass, field
 
 from prospection.domain.campaign_request import (
-    CampaignRequest,
     CityZone,
     DepartmentZone,
     RadiusZone,
@@ -20,6 +19,7 @@ from prospection.domain.foreign_zones import (
     unknown_region_message,
 )
 from prospection.domain.place import clip
+from prospection.domain.registry import SOURCES
 
 _COORD = r"(-?\d{1,3}(?:\.\d+)?)"
 _COMMUNE = re.compile(rf"([A-Z]{{2}})\|([0-9A-Z]{{0,5}})\|{_COORD}\|{_COORD}\|(.{{1,100}})")
@@ -104,6 +104,8 @@ def parse_form(form: dict[str, str]) -> ParsedForm:
         website=site if site in ("any", "with", "without") else "any",  # type: ignore[arg-type]
         phone=phone if phone in ("any", "with", "mobile") else "with",  # type: ignore[arg-type]
         exclude_franchises=form.get("franchises") == "on",
+        created_within_days=_int(form.get("jours", ""), 0) or 0,
+        max_workforce=form.get("effectif_max") or None,
     )
     raw = RawRequest(
         name=form.get("nom", "")[:100],
@@ -112,35 +114,6 @@ def parse_form(form: dict[str, str]) -> ParsedForm:
         target=_int(form.get("nombre", ""), 0) or 0,
         criteria=criteria,
         synonyms_on=form.get("synonymes") == "on",
+        sources=tuple(s for s in SOURCES if form.get(f"source_{s}") == "on"),
     )
     return ParsedForm(raw, errors)
-
-
-def _text(number: int | None) -> str:
-    return "" if number is None else str(number)
-
-
-def criteria_to_form(criteria: Criteria) -> dict[str, str]:
-    return {
-        "avis_max": _text(criteria.max_reviews), "avis_min": _text(criteria.min_reviews),
-        "site": criteria.website, "telephone": criteria.phone,
-        "franchises": "on" if criteria.exclude_franchises else "",
-    }  # fmt: skip
-
-
-def request_to_form(request: CampaignRequest) -> dict[str, str]:
-    """Pour pré-remplir le formulaire depuis un modèle (C18)."""
-    values = {
-        "nom": request.name, "metiers": ", ".join(request.trades), "nombre": str(request.target),
-        "synonymes": "on" if request.synonyms_on else "", **criteria_to_form(request.criteria),
-        "departements": ", ".join(z.code for z in request.zones if isinstance(z, DepartmentZone)),
-        "commune": "", "ville": "", "rayon": "0",
-        "pays": request.zones[0].city.country if isinstance(request.zones[0], RadiusZone)
-        else request.zones[0].country,
-    }  # fmt: skip
-    for zone in request.zones:
-        if isinstance(zone, (CityZone, RadiusZone)):
-            city = zone if isinstance(zone, CityZone) else zone.city
-            values.update(commune=commune_value(city), ville=city.label)
-            values["rayon"] = str(zone.radius_km) if isinstance(zone, RadiusZone) else "0"
-    return values

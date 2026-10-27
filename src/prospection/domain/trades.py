@@ -89,3 +89,10 @@ def expand_queries(
                 seen.add(_key(query))
                 queries.append(query)
     return queries
+
+
+def naf_prefixes(keywords: Iterable[str]) -> tuple[str, ...]:
+    """Codes d'activité (NAF) des métiers connus, sans doublon ; vide si aucun n'est connu."""
+    known = load_trades()
+    found = [p for k in keywords if (trade := find_trade(k, known)) for p in trade.naf_prefixes]
+    return tuple(dict.fromkeys(found))

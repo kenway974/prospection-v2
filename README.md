@@ -36,7 +36,7 @@ TZ=America/Los_Angeles uv run pytest --cov --cov-fail-under=80
 
 Les tests utilisent une base PostgreSQL temporaire sur `TEST_DATABASE_URL` (par défaut `postgresql+psycopg://postgres:postgres@localhost:5432/postgres`), créée puis supprimée à chaque lancement. Aucun appel réseau vers un service externe.
 
-Les tests de bout en bout (`pytest -m e2e`) tournent dans la CI sur l'image Docker construite : l'app et la tâche de fond, branchée sur un faux Google local (`python -m tests.e2e.fake_google 8099`) grâce au réglage `GOOGLE_PLACES_TEST_URL`. Ce réglage n'accepte qu'une adresse `http://127.0.0.1:…` ou `http://localhost:…`, et l'app refuse de démarrer s'il est défini avec `BEHIND_PROXY=true` : il ne peut pas servir en production. Ne jamais le définir sur Railway.
+Les tests de bout en bout (`pytest -m e2e`) tournent dans la CI sur l'image Docker construite : l'app et la tâche de fond, branchée sur de faux services locaux, Google, registre des entreprises et Sirène (`python -m tests.e2e.fake_google 8099`) grâce au réglage `TEST_SERVICES_URL`. Ce réglage n'accepte qu'une adresse `http://127.0.0.1:…` ou `http://localhost:…`, et l'app refuse de démarrer s'il est défini avec `BEHIND_PROXY=true` : il ne peut pas servir en production. Ne jamais le définir sur Railway.
 
 Données hors de France : `src/prospection/data/villes_etrangeres.yaml` est généré depuis GeoNames (CC-BY 4.0) par `python scripts/build_foreign_cities.py cities1000.json` (fichier du paquet PyPI `geonamescache`) ; provinces et cantons sont écrits à la main dans `zones_etrangeres.yaml`.
 

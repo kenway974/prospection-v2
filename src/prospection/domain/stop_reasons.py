@@ -17,17 +17,17 @@ def goal_reached(qualified: int) -> str:
     return f"Objectif atteint : {qualified} {words}."
 
 
-def exhausted(qualified: int, target: int) -> str:
-    return (
-        "Plus de résultats sur Google Maps pour ces métiers et cette zone "
-        f"({_count(qualified, target)})."
-    )
+def exhausted(qualified: int, target: int, registry_only: bool = False) -> str:
+    what = "Plus d'entreprises récemment créées" if registry_only else (
+        "Plus de résultats sur Google Maps"
+    )  # fmt: skip
+    return f"{what} pour ces métiers et cette zone ({_count(qualified, target)})."
 
 
 def finished_with_skips(skipped: int, qualified: int, target: int) -> str:
     pages = "page ignorée" if skipped == 1 else "pages ignorées"
     return (
-        f"Recherche finie avec {skipped} {pages} (Google trop sollicité ou requête refusée) : "
+        f"Recherche finie avec {skipped} {pages} (service trop sollicité ou requête refusée) : "
         f"{_count(qualified, target)}. Relancez la même recherche plus tard, depuis un modèle."
     )
 

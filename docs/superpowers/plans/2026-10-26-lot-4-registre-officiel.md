@@ -1,0 +1,14 @@
+# Lot 4 · Registre officiel — plan court
+
+Comportements : C11, C24 à C27, C44, C45, C93, C125.
+
+## Sources (vérifiées)
+- **API Recherche d'entreprises** (gratuite, sans clé, `GET https://recherche-entreprises.api.gouv.fr/search`) : `results[]` avec `siren`, `nom_complet`, `nom_raison_sociale`, `date_creation`, `etat_administratif`, `nature_juridique`, `activite_principale`, `tranche_effectif_salarie`, `statut_diffusion` (« P » = opposition), `siege{siret, code_postal, libelle_commune, liste_enseignes, nom_commercial, statut_diffusion_etablissement}`, `dirigeants[]` (`nom`, `prenoms`, `qualite`, `type_dirigeant`, ou `denomination` pour une personne morale), `finances{AAAA: {ca, resultat_net}}`. Filtres : `q`, `code_postal`, `activite_principale`, `etat_administratif`. Source : spécification OpenAPI du dépôt officiel `annuaire-entreprises-data-gouv-fr/search-api`.
+- **API Sirene 3.11** (clé INSEE du propriétaire, `GET /siret?q=…&nombre=…&curseur=…`) : intervalle `dateCreationEtablissement:[AAAA-MM-JJ TO AAAA-MM-JJ]`, variables historisées dans `periode(...)` (`activitePrincipaleEtablissement`, `etatAdministratifEtablissement`), joker `*` (`codePostalEtablissement:69*`). Réponse : `header{total, curseurSuivant}`, `etablissements[]` avec `siret`, `statutDiffusionEtablissement`, `dateCreationEtablissement`, `trancheEffectifsEtablissement`, `uniteLegale{…}`, `adresseEtablissement{…}`, `periodesEtablissement[]`. Source : client officiel `InseeFrLab/pynsee`.
+- Réponses validées (modèles tolérants : champ manquant = inconnu, jamais inventé). Vérification sur les vraies API hors CI (lot 10, C99).
+
+## Comportements
+- **C44, C45** : chaque prospect qualifié par Google est rapproché du registre (gratuit). Rapprochement **sûr** seulement si le nom (raison sociale, nom commercial ou enseigne) correspond et que le code postal est le même, avec un seul candidat ; sinon « Entreprise à confirmer » (à vérifier). Fiche : bloc « L'entreprise » (SIREN, création, forme, effectif, dirigeants, CA et résultat si publiés, sinon « non publié »).
+- **C93** : statut de diffusion « P » = aucune donnée du registre gardée (ni nom de dirigeant, ni finances) ; une création récente non diffusible n'est jamais proposée.
+- **C11, C24 à C27** : source au choix (Google Maps, entreprises récemment créées, les deux). Registre : créées depuis N jours (90 par défaut), codes NAF du métier (`trades.yaml`), tranche d'effectif au plus, actives seulement. Chaque entreprise est cherchée sur Google Maps (un appel compté dans le budget) pour son numéro ; rapprochement sûr, sinon prospect gardé « numéro à chercher ».
+- **C125** : hors de France, l'option « entreprises récemment créées » dit pourquoi elle n'existe pas : Belgique sans API officielle gratuite ; Suisse (Zefix) accessible seulement avec des identifiants à demander à l'Office fédéral de la justice (ajout possible ensuite) ; Luxembourg et Monaco sans accès ouvert connu.

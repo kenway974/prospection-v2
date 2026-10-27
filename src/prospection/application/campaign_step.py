@@ -17,6 +17,7 @@ from prospection.application.campaign_stop import stop_reason
 from prospection.application.page_results import save_page
 from prospection.application.pending_page import decode_page, encode_page
 from prospection.application.registry_step import run_registry_step
+from prospection.application.site_verdict import SiteChecker, skip_sites
 from prospection.application.step_flow import (
     StepOutcome,
     budget_stop,
@@ -73,7 +74,7 @@ def _fetch_page(
 
 def run_step(
     engine: Engine, box: SecretBox, client: httpx.Client, pricing: Pricing, campaign_id: int,
-    now: datetime,
+    now: datetime, sites: SiteChecker = skip_sites,
 ) -> StepOutcome:  # fmt: skip
     with engine.connect() as conn:
         if load_campaign(conn, campaign_id).status == "done":
@@ -84,9 +85,9 @@ def run_step(
     with engine.connect() as conn:
         step = next_step(conn, campaign_id)
     if step is None:  # toutes les pages lues entre-temps
-        return run_step(engine, box, client, pricing, campaign_id, now)
+        return run_step(engine, box, client, pricing, campaign_id, now, sites)
     if step.kind == REGISTRY:
-        return run_registry_step(engine, box, client, pricing, campaign_id, step, now)
+        return run_registry_step(engine, box, client, pricing, campaign_id, step, now, sites)
     if step.pending_page is not None:  # déjà payée : relue, jamais redemandée (C40)
         page = decode_page(step.pending_page)
     else:
@@ -95,7 +96,7 @@ def run_step(
             return fetched
         page = fetched
     try:
-        save_page(engine, campaign_id, step, page, now)
+        save_page(engine, campaign_id, step, page, now, sites)
     except Exception:  # sans plafond d'essais, la même page serait rappelée (et payée) sans fin
         logger.exception("Page de la campagne %s non enregistrée", campaign_id)
         return retry_later(engine, campaign_id, step, now, UNSAVED)

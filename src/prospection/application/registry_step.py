@@ -13,6 +13,13 @@ from sqlalchemy import Engine
 
 from prospection.application.api_keys import read_key
 from prospection.application.registry_lookup import LookupContext, bare_place, look_up
+from prospection.application.site_verdict import (
+    SiteChecker,
+    read_sites,
+    skip_sites,
+    with_site,
+    worth_reading,
+)
 from prospection.application.step_flow import StepOutcome, finish, retry_later, skip
 from prospection.domain.criteria import Verdict, evaluate
 from prospection.domain.google_cost import Pricing
@@ -53,7 +60,7 @@ def _stopping(engine: Engine, campaign_id: int) -> bool:
 
 def run_registry_step(
     engine: Engine, box: SecretBox, client: httpx.Client, pricing: Pricing, campaign_id: int,
-    step: Step, now: datetime,
+    step: Step, now: datetime, sites: SiteChecker = skip_sites,
 ) -> StepOutcome:  # fmt: skip
     insee_key = read_key(engine, box, Service.INSEE)
     if insee_key is None:
@@ -100,8 +107,12 @@ def run_registry_step(
         verdict = evaluate(shown, trade, criteria if place else bare_criteria, exclusions)
         if place is None:
             verdict = Verdict(verdict.qualified, verdict.reasons, (*verdict.to_check, NOT_ON_MAPS))
+        report = read_sites(sites, [shown], step.keyword)[shown.place_id] if worth_reading(
+            verdict
+        ) else None  # fmt: skip
+        verdict = with_site(verdict, report, criteria)
         with engine.begin() as conn:  # enregistré au fil de l'eau : une reprise ne repaie rien
-            if insert_prospect(conn, campaign_id, shown, step.keyword, verdict, now):
+            if insert_prospect(conn, campaign_id, shown, step.keyword, verdict, now, report):
                 set_company(conn, campaign_id, shown.place_id, company)
                 ok = int(verdict.qualified)
                 add_counts(conn, campaign_id, now, 1, 1 - ok, ok, 0)

@@ -5,18 +5,25 @@ from datetime import datetime
 
 from sqlalchemy import Engine
 
-from prospection.domain.criteria import Verdict, evaluate
+from prospection.application.site_verdict import (
+    SiteChecker,
+    read_sites,
+    skip_sites,
+    with_site,
+    worth_reading,
+)
+from prospection.domain.criteria import Criteria, Exclusions, Verdict, evaluate
 from prospection.domain.departments import postal_department
 from prospection.domain.foreign_zones import known_region, postal_region
 from prospection.domain.geo import distance_m
 from prospection.domain.place import Place
 from prospection.domain.territories import same_country
-from prospection.domain.trades import find_trade, load_trades
+from prospection.domain.trades import Trade, find_trade, load_trades
 from prospection.sources.google_search import SearchPage
 from prospection.storage.campaign_steps import Step, record_page
 from prospection.storage.campaigns import add_counts, add_event, load_campaign
 from prospection.storage.exclusions import load_exclusions
-from prospection.storage.prospects import insert_prospect
+from prospection.storage.prospects import insert_prospect, known_places
 
 logger = logging.getLogger(__name__)
 
@@ -43,23 +50,48 @@ def _region_of(place: Place, country: str) -> str | None:
     return known_region(place.admin_area or "", country)
 
 
+def _free_verdicts(
+    page: SearchPage, step: Step, trade: Trade | None, criteria: Criteria, exclusions: Exclusions
+) -> dict[str, Verdict]:
+    """Critères gratuits sur la fiche déjà payée (C39) ; un établissement fautif est sauté."""
+    verdicts = {}
+    for place in page.places:
+        try:
+            verdict = evaluate(place, trade, criteria, exclusions)
+            outside = _outside_zone(place, step)
+            if outside:
+                verdict = Verdict(False, (*verdict.reasons, outside), verdict.to_check)
+            verdicts[place.place_id] = verdict
+        except Exception:  # un établissement fautif ne doit pas tout arrêter (C41)
+            logger.exception("Établissement ignoré")
+    return verdicts
+
+
 def save_page(
-    engine: Engine, campaign_id: int, step: Step, page: SearchPage, now: datetime
-) -> None:
-    """Évalue chaque établissement ; une erreur sur l'un n'arrête pas la campagne (C41)."""
+    engine: Engine, campaign_id: int, step: Step, page: SearchPage, now: datetime,
+    sites: SiteChecker = skip_sites,
+) -> None:  # fmt: skip
+    """Évalue chaque établissement, lit le site de ceux qui restent (hors transaction : c'est
+    lent), puis enregistre tout ; une erreur sur l'un n'arrête pas la campagne (C41)."""
     trade = find_trade(step.keyword, load_trades())
-    found = excluded = qualified = 0
-    with engine.begin() as conn:
+    with engine.connect() as conn:
         criteria = load_campaign(conn, campaign_id).request.criteria
         exclusions = load_exclusions(conn)
+        known = known_places(conn, campaign_id, [p.place_id for p in page.places])
+    verdicts = _free_verdicts(page, step, trade, criteria, exclusions)
+    to_read = [p for p in page.places if p.place_id not in known
+               and p.place_id in verdicts and worth_reading(verdicts[p.place_id])]  # fmt: skip
+    reports = read_sites(sites, to_read, step.keyword)
+    found = excluded = qualified = 0
+    with engine.begin() as conn:
         for place in page.places:
             try:
-                verdict = evaluate(place, trade, criteria, exclusions)
-                outside = _outside_zone(place, step)
-                if outside:
-                    verdict = Verdict(False, (*verdict.reasons, outside), verdict.to_check)
+                report = reports.get(place.place_id)
+                verdict = with_site(verdicts[place.place_id], report, criteria)
                 with conn.begin_nested():  # une erreur de base n'annule que cet établissement
-                    new = insert_prospect(conn, campaign_id, place, step.keyword, verdict, now)
+                    new = insert_prospect(
+                        conn, campaign_id, place, step.keyword, verdict, now, report
+                    )
                 if new:
                     found += 1
                     qualified += verdict.qualified

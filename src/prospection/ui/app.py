@@ -5,6 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import Engine
 
 from prospection.config import Settings
+from prospection.domain.call_sheet import load_rules
 from prospection.storage.secret_box import SecretBox
 from prospection.ui import (
     routes_auth,
@@ -30,6 +31,7 @@ from prospection.ui.security import (
 
 
 def create_app(settings: Settings, engine: Engine) -> FastAPI:
+    load_rules()  # C110 : une règle « Pour l'appel » invalide empêche le démarrage
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
     app.state.settings = settings
     app.state.engine = engine

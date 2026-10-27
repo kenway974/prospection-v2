@@ -69,3 +69,11 @@ def test_C55_C56_phones_typed_and_leader_search_link(campaign_db: Engine) -> Non
     assert seen.phones == [("06 12 34 56 78", "mobile", "fiche Google"),
                            ("04 78 12 34 56", "fixe", "site")]  # fmt: skip
     assert "keywords=Marie+DUPONT+Atelier" in seen.linkedin
+
+
+def test_C110_C112_card_prepares_the_call(campaign_db: Engine) -> None:
+    [pid] = add(campaign_db, dataclasses.replace(PLACE, review_count=4))
+    seen = card(campaign_db, pid, NOW, PARIS).insights
+    assert seen is not None and seen.sheet.hook is not None and "Atelier" in seen.sheet.hook
+    assert seen.sheet.notice.startswith("Indices à confirmer")
+    assert ("Avis", "4 avis (rythme non disponible)") in seen.health

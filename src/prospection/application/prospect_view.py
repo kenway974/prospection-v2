@@ -12,7 +12,9 @@ from prospection.domain.call_links import (
     normalized,
     phone_kind,
 )
+from prospection.domain.call_sheet import CallSheet, call_sheet
 from prospection.domain.email_check import DOUBTFUL, INVALID, check_email, email_domain
+from prospection.domain.health import health_lines
 from prospection.domain.opportunity import opportunity
 from prospection.domain.qualification import confidence, reason
 from prospection.domain.signals import Signals, signals_of
@@ -39,6 +41,8 @@ class Insights:
     emails: list[tuple[str, str, str]]  # adresse, statut, raison
     phones: list[tuple[str, str, str]]  # numéro, mobile ou fixe, source (C55)
     linkedin: str  # recherche du dirigeant (C56)
+    sheet: CallSheet  # accroche et douleurs (C110, C111)
+    health: list[tuple[str, str]]  # indices de santé (C112)
 
 
 def signals_for(row: ProspectRow, today: date) -> Signals:
@@ -70,8 +74,9 @@ def insights(row: ProspectRow, servers: dict[str, str], today: date) -> Insights
     emails = [(c.email, c.status, c.reason) for c in checks]
     doubts = [f"Email {c.email} : {c.reason}" for c in checks if c.status in (DOUBTFUL, INVALID)]
     flags = [*row.to_check, *doubts]
+    trade = row.keywords[0] if row.keywords else ""
     return Insights(score, details, reason(s), confidence(s), flags, emails, _phones(row, s),
-                    _linkedin(row, s))  # fmt: skip
+                    _linkedin(row, s), call_sheet(s, trade), health_lines(s))  # fmt: skip
 
 
 def _phones(row: ProspectRow, s: Signals) -> list[tuple[str, str, str]]:

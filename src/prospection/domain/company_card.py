@@ -28,7 +28,7 @@ def _read(name: str) -> object:
 
 
 @cache
-def _labels() -> _Labels:
+def labels() -> _Labels:
     return _Labels.model_validate(_read("registre.yaml"))
 
 
@@ -38,7 +38,7 @@ def _activities() -> dict[str, str]:
     return {str(k): str(v) for k, v in raw.items()} if isinstance(raw, dict) else {}
 
 
-def _euros(value: int | None) -> str:
+def euros(value: int | None) -> str:
     return NOT_PUBLISHED if value is None else f"{value:,}".replace(",", " ") + " €"
 
 
@@ -50,25 +50,20 @@ def _activity(naf: str | None) -> str:
 
 
 def describe(company: Company) -> list[tuple[str, str]]:
-    """Lignes « L'entreprise » ; jamais rien d'inventé, « non publié » quand l'info manque."""
+    """Identité de l'entreprise ; jamais rien d'inventé, « non publié » quand l'info manque."""
     if not company.diffusible:
         return [("Registre", MESSAGES[NON_DIFFUSIBLE])]
-    labels, s, siret = _labels(), company.siren, company.siret
+    names, s, siret = labels(), company.siren, company.siret
     form = company.legal_form
     lines = [
         ("SIREN", f"{s[:3]} {s[3:6]} {s[6:]}"),
         *([("SIRET", f"{siret[:3]} {siret[3:6]} {siret[6:9]} {siret[9:]}")] if siret else []),
         ("Création", company.created.strftime("%d/%m/%Y") if company.created else NOT_PUBLISHED),
-        ("Forme", labels.formes.get(form, f"autre forme (code {form})") if form else NOT_PUBLISHED),
+        ("Forme", names.formes.get(form, f"autre forme (code {form})") if form else NOT_PUBLISHED),
         ("Activité", _activity(company.naf)),
-        ("Effectif", labels.effectifs.get(company.workforce or "", NOT_PUBLISHED)),
         ("Dirigeants", ", ".join(company.leaders) or NOT_PUBLISHED),
     ]  # fmt: skip
-    if company.finances:
-        year, revenue, result = company.finances
-        return [*lines, (f"Chiffre d'affaires {year}", _euros(revenue)),
-                (f"Résultat {year}", _euros(result))]  # fmt: skip
-    return [*lines, ("Chiffre d'affaires", NOT_PUBLISHED)]
+    return lines  # chiffres et effectif : bloc « Santé » (C112)
 
 
 def registry_lines(company: Company | None, status: str | None) -> list[tuple[str, str]]:

@@ -22,7 +22,7 @@
 {% include "_suivi.html" %}
 {% include "_notes.html" %}
 {% include "_contact.html" %}
-{% if seen %}{% include "_confiance.html" %}{% endif %}
+{% if seen %}{% include "_pour_appel.html" %}{% include "_confiance.html" %}{% endif %}
 <section class="group" aria-labelledby="titre-site">
   <h2 class="row-title form" id="titre-site">Le site</h2>
   {% for label, value in card.site_lines %}<p class="row"><span class="secondary">{{ label }}</span><span>{{ value }}</span></p>{% endfor %}

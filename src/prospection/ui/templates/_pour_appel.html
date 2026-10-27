@@ -1,0 +1,11 @@
+<section class="group" aria-labelledby="titre-appel">
+  <h2 class="row-title form" id="titre-appel">Pour l'appel</h2>
+  <p class="row secondary">{{ seen.sheet.notice }}</p>
+  {% if seen.sheet.hook %}<p class="row"><span><span class="secondary">Accroche</span><br>{{ seen.sheet.hook }}</span></p>{% endif %}
+  {% if seen.sheet.pains %}<div class="row"><span><span class="secondary">Douleurs probables</span><ul>{% for pain in seen.sheet.pains %}<li>{{ pain }}</li>{% endfor %}</ul></span></div>
+  {% else %}<p class="row secondary">Aucun indice particulier : écoutez ce que la personne attend.</p>{% endif %}
+</section>
+<section class="group" aria-labelledby="titre-sante">
+  <h2 class="row-title form" id="titre-sante">Santé de l'entreprise</h2>
+  {% for label, value in seen.health %}<p class="row"><span class="secondary">{{ label }}</span><span>{{ value }}</span></p>{% endfor %}
+</section>

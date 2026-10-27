@@ -96,3 +96,15 @@ def test_C46_registry_company_site_found_and_audited(campaign_db: Engine) -> Non
     with campaign_db.connect() as conn:
         reasons = conn.exec_driver_sql("SELECT reasons FROM prospects")
         assert [r for (r,) in reasons] == [["Site correct (90/100)"]]
+
+
+def test_C52_card_shows_the_site_and_its_link(campaign_db: Engine) -> None:
+    from prospection.application.prospect_card import card
+    from tests.application.test_call_tracking import PARIS
+
+    found = SiteReport("retrouvé", "https://cuisines-martin-1.fr", audit=GOOD)
+    run(campaign_db, Criteria(phone="any"), [api_place(1)], FakeSites({"Cuisines Martin 1": found}))
+    [row] = prospect_list(campaign_db, None, "", "trouves").rows
+    shown = card(campaign_db, row.id, NOW, PARIS)
+    assert ("Score", "90/100") in shown.site_lines
+    assert shown.website == "https://cuisines-martin-1.fr"  # site retrouvé : bouton « Site web »

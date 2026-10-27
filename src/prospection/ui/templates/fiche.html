@@ -19,6 +19,12 @@
 {% include "_suivi.html" %}
 {% include "_notes.html" %}
 {% include "_contact.html" %}
+<section class="group" aria-labelledby="titre-site">
+  <h2 class="row-title form" id="titre-site">Le site</h2>
+  {% for label, value in card.site_lines %}<p class="row"><span class="secondary">{{ label }}</span><span>{{ value }}</span></p>{% endfor %}
+  {% set others = card.site_links | rejectattr(0, "equalto", "Site web") | list %}
+  {% if others %}<div class="links">{% for label, url in others %}<a class="button-secondary" href="{{ url }}" target="_blank" rel="noopener noreferrer">{{ label }}</a>{% endfor %}</div>{% endif %}
+</section>
 <section class="group" aria-labelledby="titre-entreprise">
   <h2 class="row-title form" id="titre-entreprise">L'entreprise</h2>
   {% for label, value in card.company_lines %}<p class="row"><span class="secondary">{{ label }}</span><span>{{ value }}</span></p>{% endfor %}

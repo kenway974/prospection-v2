@@ -39,6 +39,7 @@ class Step:
     attempts: int
     kind: str = "google"
     registry: dict[str, Any] | None = None
+    pending_page: dict[str, Any] | None = None  # page déjà payée, pas encore enregistrée
 
 
 def next_step(conn: Connection, campaign_id: int) -> Step | None:
@@ -55,6 +56,7 @@ def next_step(conn: Connection, campaign_id: int) -> Step | None:
         row.id, row.query, row.keyword, row.zone_label, decode_circle(row.bias),
         row.restrict_to_bias, row.region, row.country,
         row.page_token, row.page_number, row.attempts, row.kind, row.registry_json,
+        row.pending_page_json,
     )  # fmt: skip
 
 
@@ -67,14 +69,24 @@ def record_page(conn: Connection, step_id: int, next_token: str | None) -> None:
     done = next_token is None or (row.kind == "google" and number >= MAX_PAGES_PER_QUERY)
     conn.execute(
         update(campaign_steps).where(s.id == step_id).values(
-            page_token=next_token, page_number=number, done=done, attempts=0
+            page_token=next_token, page_number=number, done=done, attempts=0,
+            pending_page_json=None,
         )
     )  # fmt: skip
 
 
 def skip_step(conn: Connection, step_id: int) -> None:
     s = campaign_steps.c
-    conn.execute(update(campaign_steps).where(s.id == step_id).values(done=True, skipped=True))
+    conn.execute(
+        update(campaign_steps).where(s.id == step_id)
+        .values(done=True, skipped=True, pending_page_json=None)
+    )  # fmt: skip
+
+
+def keep_pending_page(conn: Connection, step_id: int, page: dict[str, Any]) -> None:
+    """Page Google payée : gardée tout de suite, une reprise la relit sans la repayer (C40)."""
+    s = campaign_steps.c
+    conn.execute(update(campaign_steps).where(s.id == step_id).values(pending_page_json=page))
 
 
 def skipped_steps(conn: Connection, campaign_id: int) -> int:

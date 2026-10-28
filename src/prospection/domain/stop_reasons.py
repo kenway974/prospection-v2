@@ -12,9 +12,18 @@ def _count(qualified: int, target: int) -> str:
     return f"{qualified} {word} sur {target} voulus"
 
 
+GOAL = "Objectif atteint"
+SOURCE_DONE = ("Plus de résultats", "Plus d'entreprises")
+
+
+def is_failure(reason: str | None) -> bool:
+    """Programmée, une campagne a échoué sauf objectif atteint ou source épuisée (C98)."""
+    return not reason or not reason.startswith((GOAL, *SOURCE_DONE))
+
+
 def goal_reached(qualified: int) -> str:
     words = "prospect qualifié" if qualified <= 1 else "prospects qualifiés"
-    return f"Objectif atteint : {qualified} {words}."
+    return f"{GOAL} : {qualified} {words}."
 
 
 def exhausted(qualified: int, target: int, registry_only: bool = False) -> str:

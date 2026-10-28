@@ -34,4 +34,5 @@
   <h2 class="row-title form" id="titre-entreprise">L'entreprise</h2>
   {% for label, value in card.company_lines %}<p class="row"><span class="secondary">{{ label }}</span><span>{{ value }}</span></p>{% endfor %}
 </section>
+<a class="button-secondary" href="/prospects/{{ p.id }}/supprimer">Supprimer toutes ses données (RGPD)</a>
 {% endblock %}

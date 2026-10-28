@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Confidentialité · Prospection{% endblock %}
+{% block content %}
+<a href="/reglages" class="back">Réglages</a>
+<h1 class="large-title">Confidentialité</h1>
+{% if erased %}<p class="notice" role="status">Entreprise supprimée ({{ erased }} fiche{{ "s" if erased > 1 }}) : elle ne sera plus jamais reprise. Supprimez-la aussi dans votre CRM si elle y est.</p>{% endif %}
+<p class="empty">Les prospects non retenus (exclus, à appeler jamais appelés, pas intéressés, pas joints, messagerie, faux numéro) sont supprimés après cette durée sans activité. Jamais les intéressés, les exportés, ni ceux qui ont une action prévue.</p>
+<form method="post" action="/reglages/confidentialite" class="group form">
+  <label for="mois">Durée avant suppression (mois, de 1 à 24)</label>
+  <input id="mois" name="mois" inputmode="numeric" value="{{ months }}">
+  {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+  <button type="submit" class="button-primary">Enregistrer</button>
+</form>
+<p class="secondary">Pour supprimer une entreprise sur demande : ouvrez sa fiche, puis « Supprimer toutes ses données ».</p>
+{% endblock %}

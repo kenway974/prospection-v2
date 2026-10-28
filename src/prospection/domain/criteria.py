@@ -7,6 +7,7 @@ from prospection.domain.category import category_verdict
 from prospection.domain.franchises import brand_match
 from prospection.domain.phones import is_mobile
 from prospection.domain.place import Place
+from prospection.domain.privacy import ERASED_REASON, erasure_key
 from prospection.domain.site_guess import address_city
 from prospection.domain.trades import Trade, normalize
 
@@ -36,6 +37,7 @@ class Exclusions:
     crm_ids: frozenset[str] = frozenset()  # déjà dans le CRM (C32) : ID app, SIREN, nom
     crm_sirens: frozenset[str] = frozenset()
     crm_names: frozenset[str] = frozenset()
+    erased: frozenset[str] = frozenset()  # suppression demandée (C95) : empreintes
 
 
 @dataclass(frozen=True)
@@ -54,6 +56,8 @@ def _in_crm_by_name(place: Place, names: frozenset[str]) -> bool:
 
 def _list_reasons(place: Place, criteria: Criteria, exclusions: Exclusions) -> list[str]:
     reasons = []
+    if erasure_key(place.place_id) in exclusions.erased:
+        reasons.append(ERASED_REASON)
     if place.business_status == "CLOSED_PERMANENTLY":
         reasons.append("Fermé définitivement")
     if place.place_id in exclusions.blacklist_ids or (

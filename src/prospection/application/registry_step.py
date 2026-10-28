@@ -27,6 +27,7 @@ from prospection.application.site_verdict import (
 from prospection.application.step_flow import StepOutcome, finish, retry_later, skip
 from prospection.domain.criteria import Verdict, evaluate
 from prospection.domain.google_cost import Pricing
+from prospection.domain.privacy import erasure_key
 from prospection.domain.registry import (
     LOOKUPS_PER_TARGET,
     is_candidate,
@@ -103,6 +104,7 @@ def run_registry_step(
         if handled and time.monotonic() - started > STEP_SECONDS:
             return StepOutcome(done=False)  # page reprise au tour suivant : rien en double
         already = company.siren in known or company.siren in exclusions.crm_sirens  # C32
+        already = already or erasure_key(f"siren:{company.siren}") in exclusions.erased  # C95
         if already or not is_candidate(company, query.since, query.naf_prefixes):
             continue
         if not workforce_ok(company.workforce, criteria.max_workforce):

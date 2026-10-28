@@ -1,8 +1,10 @@
 """Point d'entrée de production : `uvicorn prospection.ui.main:app`."""
 
 from prospection.config import load_settings
+from prospection.monitoring import start_monitoring
 from prospection.storage.db import make_engine
 from prospection.ui.app import create_app
 
 settings = load_settings()
+start_monitoring(settings.sentry_dsn.get_secret_value() if settings.sentry_dsn else None, "app")
 app = create_app(settings, make_engine(settings.database_url))

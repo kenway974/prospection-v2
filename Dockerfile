@@ -1,4 +1,8 @@
 FROM python:3.13-slim
+# pg_dump et pg_restore pour la sauvegarde quotidienne (C91) ; un client récent lit aussi
+# les serveurs plus anciens.
+RUN apt-get update && apt-get install -y --no-install-recommends postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
 RUN pip install --no-cache-dir uv==0.11.32
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PROJECT_ENVIRONMENT=/app/.venv \
     PATH="/app/.venv/bin:$PATH" PYTHONUNBUFFERED=1

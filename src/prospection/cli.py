@@ -1,7 +1,10 @@
-"""Commandes d'administration : `python -m prospection.cli hash-password | migrate`."""
+"""Commandes d'administration : `python -m prospection.cli hash-password | migrate |
+generate-encryption-key | restore-backup <fichier>`."""
 
 import sys
+from collections.abc import Callable
 from getpass import getpass
+from pathlib import Path
 
 from cryptography.fernet import Fernet
 from sqlalchemy.exc import OperationalError
@@ -38,13 +41,41 @@ def generate_encryption_key() -> int:
     return 0
 
 
+def restore_backup(path: str, ask: Callable[[str], str] = input) -> int:
+    """C91 : remplace le contenu de la base par une sauvegarde déchiffrée."""
+    from prospection.application.backup import read_backup
+    from prospection.storage.backup_dump import BackupFailed, restore_database
+
+    try:
+        settings = load_settings()
+        copy = read_backup(settings.encryption_key.get_secret_value(), Path(path).read_bytes())
+    except (ConfigError, OSError, ValueError) as error:
+        print(error)
+        return 1
+    if ask("Toutes les données actuelles seront remplacées. Tapez RESTAURER : ") != "RESTAURER":
+        print("Rien n'a été changé.")
+        return 1
+    try:
+        restore_database(settings.database_url, copy)
+    except BackupFailed as error:
+        print(f"Restauration impossible, base inchangée : {error}")
+        return 1
+    print("Base restaurée.")
+    return 0
+
+
 def main(argv: list[str]) -> int:
+    if len(argv) == 2 and argv[0] == "restore-backup":
+        return restore_backup(argv[1])
     if argv == ["migrate"]:
         return migrate()
     if argv == ["generate-encryption-key"]:
         return generate_encryption_key()
     if argv != ["hash-password"]:
-        print("Usage : python -m prospection.cli hash-password | migrate | generate-encryption-key")
+        print(
+            "Usage : python -m prospection.cli hash-password | migrate | "
+            "generate-encryption-key | restore-backup <fichier>"
+        )
         return 2
     first = getpass("Mot de passe : ")
     if len(first) < MIN_LENGTH:

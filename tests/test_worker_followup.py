@@ -26,7 +26,7 @@ def test_C77_C78_C108_worker_runs_schedules_and_reminders(campaign_db: Engine) -
     with campaign_db.connect() as conn:
         pid = conn.exec_driver_sql("SELECT min(id) FROM prospects").scalar_one()
     schedule(campaign_db, pid, "passer", NOW.date().isoformat(), "", NOW, "UTC")
-    worker.next_reminders = NOW
+    worker.reminders.next_at = NOW
     worker.work_once()
     with campaign_db.connect() as conn:
         assert {a.kind for a in unseen_alerts(conn)} == {"nouveaux", "relance"}

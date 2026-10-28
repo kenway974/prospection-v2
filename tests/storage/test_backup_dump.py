@@ -43,3 +43,11 @@ def test_C91_failed_restore_changes_nothing(engine: Engine, database_url: str) -
         restore_database(database_url, b"pas une sauvegarde")
     with engine.connect() as conn:
         assert conn.execute(text("SELECT count(*) FROM alembic_version")).scalar_one() == before
+
+
+def test_C91_copy_from_newer_client_restores_on_older_server() -> None:
+    """pg_dump 17 écrit « SET transaction_timeout », inconnu de PostgreSQL 16 (Railway)."""
+    from prospection.storage.backup_dump import for_older_servers
+
+    script = b"SET statement_timeout = 0;\nSET transaction_timeout = 0;\nCREATE TABLE t ();\n"
+    assert for_older_servers(script) == b"SET statement_timeout = 0;\nCREATE TABLE t ();\n"

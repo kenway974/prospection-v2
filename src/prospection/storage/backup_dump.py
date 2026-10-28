@@ -7,6 +7,7 @@ import subprocess
 from sqlalchemy import make_url
 
 DUMP_TIMEOUT = 600
+UNKNOWN_TO_OLDER = (b"SET transaction_timeout",)  # réglages récents émis par pg_dump 17+
 
 
 class BackupFailed(Exception):
@@ -24,8 +25,9 @@ def _libpq(database_url: str) -> tuple[list[str], dict[str, str]]:
     return args, env
 
 
-def _run(command: list[str], database_url: str, data: bytes | None = None) -> bytes:
-    args, env = _libpq(database_url)
+def _run(command: list[str], database_url: str | None, data: bytes | None = None) -> bytes:
+    """`database_url` None : le programme ne se connecte pas (conversion de fichier)."""
+    args, env = _libpq(database_url) if database_url else ([], dict(os.environ))
     try:
         done = subprocess.run(  # noqa: S603 (programme fixe, arguments séparés)
             [*command, *args], input=data, env=env, capture_output=True, timeout=DUMP_TIMEOUT,
@@ -44,7 +46,15 @@ def dump_database(database_url: str) -> bytes:
 
 
 def restore_database(database_url: str, data: bytes) -> None:
-    """Remplace le contenu de la base par la copie (une seule transaction : tout ou rien)."""
-    command = ["pg_restore", "--clean", "--if-exists", "--no-owner", "--no-privileges",
-               "--single-transaction"]  # fmt: skip
-    _run(command, database_url, data)
+    """Remplace le contenu de la base par la copie, en une seule transaction (tout ou rien).
+    La copie est d'abord convertie en SQL, sans les réglages qu'un serveur plus ancien ne
+    connaît pas (pg_restore 17 vers PostgreSQL 16 : « transaction_timeout »)."""
+    script = _run(["pg_restore", "--clean", "--if-exists", "--no-owner", "--no-privileges",
+                   "--file=-"], None, data)  # fmt: skip
+    psql = ["psql", "--quiet", "--no-psqlrc", "--single-transaction", "-v", "ON_ERROR_STOP=1"]
+    _run(psql, database_url, for_older_servers(script))
+
+
+def for_older_servers(script: bytes) -> bytes:
+    lines = script.splitlines(keepends=True)
+    return b"".join(line for line in lines if not line.startswith(UNKNOWN_TO_OLDER))

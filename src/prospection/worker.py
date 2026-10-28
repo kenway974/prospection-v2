@@ -14,12 +14,16 @@ from datetime import UTC, datetime, timedelta
 import httpx
 from sqlalchemy import Engine
 
+from prospection.application.campaign_end import after_campaign
 from prospection.application.campaign_queue import claim_next, release_until
+from prospection.application.campaign_refresh import refresh_next
 from prospection.application.campaign_step import run_step
 from prospection.application.crm_export import send_pending
 from prospection.application.crm_index import refresh_crm_index
 from prospection.application.mail_check import check_mail_domains
 from prospection.application.registry_enrich import enrich_new_prospects
+from prospection.application.reminders import remind_due_actions
+from prospection.application.schedules import run_due_schedule
 from prospection.application.site_verdict import SiteChecker, skip_sites
 from prospection.domain.google_cost import Pricing, load_pricing
 from prospection.sources.mail_domain import mail_server
@@ -28,6 +32,7 @@ from prospection.storage.secret_box import SecretBox
 logger = logging.getLogger("prospection.worker")
 MAIL_CHECK_PAUSE = timedelta(minutes=10)
 CRM_INDEX_PAUSE = timedelta(hours=1)
+REMINDER_PAUSE = timedelta(minutes=1)
 
 
 class Worker:
@@ -35,12 +40,14 @@ class Worker:
         self, engine: Engine, box: SecretBox, client: httpx.Client, pricing: Pricing,
         now: Callable[[], datetime] = lambda: datetime.now(UTC),
         sites: SiteChecker = skip_sites,
-        mail_lookup: Callable[[str], str | None] | None = None,
+        mail_lookup: Callable[[str], str | None] | None = None, timezone: str = "Europe/Paris",
     ) -> None:  # fmt: skip
         self.engine, self.box, self.client, self.pricing = engine, box, client, pricing
         self.now, self.sites, self.mail_lookup = now, sites, mail_lookup
+        self.timezone = timezone
         self.next_mail_check = datetime.min.replace(tzinfo=UTC)
         self.next_crm_index = datetime.min.replace(tzinfo=UTC)
+        self.next_reminders = datetime.min.replace(tzinfo=UTC)
         self.worker_id = uuid.uuid4().hex
 
     def work_once(self) -> bool:
@@ -49,29 +56,41 @@ class Worker:
         Vrai si travail. Les campagnes avancent ainsi à tour de rôle, et un arrêt
         (SIGTERM d'un déploiement) n'attend jamais plus d'une page.
         """
+        if self.now() >= self.next_reminders:  # C108 : à la minute près, même en pleine campagne
+            self.next_reminders = self.now() + REMINDER_PAUSE
+            remind_due_actions(self.engine, self.now(), self.timezone)
+        if run_due_schedule(self.engine, self.now(), self.timezone):  # C77
+            return True
         campaign_id = claim_next(self.engine, self.now(), self.worker_id)
-        if campaign_id is None:  # rien à chercher : envois CRM, registre, CRM, serveurs mail
-            if send_pending(self.engine, self.box, self.client, self.now()) > 0:
-                return True
-            if enrich_new_prospects(self.engine, self.client, self.now()) > 0:
-                return True
-            if self.now() >= self.next_crm_index:  # C32 : relue toutes les heures au plus
-                self.next_crm_index = self.now() + CRM_INDEX_PAUSE
-                refresh_crm_index(self.engine, self.box, self.client, self.now())
-            if self.mail_lookup is None or self.now() < self.next_mail_check:
-                return False
-            checked = check_mail_domains(self.engine, self.now(), self.mail_lookup)
-            if not checked:  # plus rien : on ne relance la recherche que dans 10 minutes
-                self.next_mail_check = self.now() + MAIL_CHECK_PAUSE
-            return checked > 0
+        if campaign_id is None:
+            return self._between_campaigns()
         outcome = run_step(
             self.engine, self.box, self.client, self.pricing, campaign_id, self.now(), self.sites
         )
         if outcome.done:
             logger.info("Campagne %s terminée", campaign_id)
+            after_campaign(self.engine, campaign_id, self.now())  # C78, C98
         else:
             release_until(self.engine, campaign_id, outcome.retry_at or self.now(), self.worker_id)
         return True
+
+    def _between_campaigns(self) -> bool:
+        """Rien à chercher : envois CRM, registre, mises à jour, index CRM, serveurs mail."""
+        if send_pending(self.engine, self.box, self.client, self.now()) > 0:
+            return True
+        if enrich_new_prospects(self.engine, self.client, self.now()) > 0:
+            return True
+        if refresh_next(self.engine, self.box, self.client, self.pricing, self.now()):  # C76
+            return True
+        if self.now() >= self.next_crm_index:  # C32 : relue toutes les heures au plus
+            self.next_crm_index = self.now() + CRM_INDEX_PAUSE
+            refresh_crm_index(self.engine, self.box, self.client, self.now())
+        if self.mail_lookup is None or self.now() < self.next_mail_check:
+            return False
+        checked = check_mail_domains(self.engine, self.now(), self.mail_lookup)
+        if not checked:  # plus rien : on ne relance la recherche que dans 10 minutes
+            self.next_mail_check = self.now() + MAIL_CHECK_PAUSE
+        return checked > 0
 
     def run_forever(self, stop: threading.Event, idle_seconds: float = 2.0) -> None:
         while not stop.is_set():
@@ -112,7 +131,8 @@ def main() -> None:  # pragma: no cover (point d'entrée, testé en bout en bout
     with make_client(settings.test_services_url) as client, web:
         engine = make_engine(settings.database_url)
         lookup = mail_lookup_for(settings.test_services_url)
-        worker = Worker(engine, box, client, load_pricing(), sites=sites, mail_lookup=lookup)
+        worker = Worker(engine, box, client, load_pricing(), sites=sites, mail_lookup=lookup,
+                        timezone=settings.timezone)  # fmt: skip
         logger.info("Tâche de fond démarrée")
         worker.run_forever(stop)
 

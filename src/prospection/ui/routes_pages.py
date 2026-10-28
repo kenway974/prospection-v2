@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, Response
 from sqlalchemy import Engine
 
+from prospection.application.alerts import current_alerts
 from prospection.application.call_actions import today_screen
 from prospection.application.connection_journal import JOURNAL_SIZE, latest_attempts
 from prospection.config import Settings
@@ -36,7 +37,7 @@ def today(
     return _page(
         request, "aujourdhui.html", "today", day=long_day(now, settings.timezone),
         agenda=screen.agenda, resume=resume, kinds=ACTION_KINDS, finished=terminee,
-        reopen_failed=rouvrir == "impossible",
+        reopen_failed=rouvrir == "impossible", alerts=current_alerts(engine),
     )  # fmt: skip
 
 

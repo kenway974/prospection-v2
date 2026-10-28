@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlalchemy import Engine
 
+from prospection.application.campaign_refresh import refresh_info, request_refresh
 from prospection.application.campaigns import (
     Progress,
     UnknownCampaign,
@@ -14,7 +15,8 @@ from prospection.application.campaigns import (
 )
 from prospection.application.file_export import campaign_csv, campaign_xlsx
 from prospection.config import Settings
-from prospection.ui.deps import get_engine, get_now, get_settings, templates
+from prospection.domain.google_cost import Pricing
+from prospection.ui.deps import get_engine, get_now, get_pricing, get_settings, templates
 from prospection.ui.formatting import euros, short_datetime
 from prospection.ui.session import require_session
 
@@ -41,9 +43,23 @@ def _context(state: Progress, campaign_id: int, settings: Settings) -> dict[str,
 def campaign_page(
     request: Request, campaign_id: int,
     engine: Engine = Depends(get_engine), settings: Settings = Depends(get_settings),  # noqa: B008
+    pricing: Pricing = Depends(get_pricing), now: datetime = Depends(get_now),  # noqa: B008
 ) -> Response:  # fmt: skip
     context = _context(_progress(engine, campaign_id), campaign_id, settings)
+    refresh = refresh_info(engine, pricing, campaign_id, now)  # C76
+    context |= {"refresh": refresh, "refresh_cost": euros(refresh.cost.paid_cents)}
     return templates.TemplateResponse(request, "suivi.html", context)
+
+
+@router.post("/{campaign_id}/mettre-a-jour")
+def refresh(
+    campaign_id: int,
+    engine: Engine = Depends(get_engine), now: datetime = Depends(get_now),  # noqa: B008
+) -> Response:  # fmt: skip
+    """C76 : la tâche de fond relit les fiches, une par une, dans le budget."""
+    _progress(engine, campaign_id)
+    request_refresh(engine, campaign_id, now)
+    return RedirectResponse(f"/campagnes/{campaign_id}", status_code=303)
 
 
 @router.get("/{campaign_id}/progression", response_class=HTMLResponse)

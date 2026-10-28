@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
 
-from sqlalchemy import Engine
+from sqlalchemy import Connection, Engine
 from sqlalchemy.exc import NoResultFound
 
 from prospection.application.registry_plan import registry_steps
@@ -80,8 +80,16 @@ def build_steps(request: CampaignRequest, now: datetime | None = None) -> list[S
 
 def create_campaign(engine: Engine, request: CampaignRequest, now: datetime) -> int:
     with engine.begin() as conn:
-        campaign_id = store_campaign(conn, request, build_steps(request, now), now)
-        add_event(conn, campaign_id, now, "info", "Campagne créée, en attente de démarrage")
+        return create_campaign_in(conn, request, now)
+
+
+def create_campaign_in(
+    conn: Connection, request: CampaignRequest, now: datetime, schedule_id: int | None = None
+) -> int:
+    """Dans la transaction donnée (une campagne programmée naît avec son prochain passage)."""
+    steps = build_steps(request, now)
+    campaign_id = store_campaign(conn, request, steps, now, schedule_id)
+    add_event(conn, campaign_id, now, "info", "Campagne créée, en attente de démarrage")
     return campaign_id
 
 

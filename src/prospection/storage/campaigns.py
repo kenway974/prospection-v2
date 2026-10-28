@@ -32,9 +32,11 @@ class Event:
 
 
 def create_campaign(
-    conn: Connection, request: CampaignRequest, steps: Sequence[StepSpec], now: datetime
-) -> int:
-    values = {"name": request.name, "request_json": encode_request(request), "status": "queued"}
+    conn: Connection, request: CampaignRequest, steps: Sequence[StepSpec], now: datetime,
+    schedule_id: int | None = None,
+) -> int:  # fmt: skip
+    values = {"name": request.name, "request_json": encode_request(request), "status": "queued",
+              "schedule_id": schedule_id, "scheduled": schedule_id is not None}  # fmt: skip
     counters = {"found": 0, "excluded": 0, "qualified": 0, "cost_cents": 0}
     campaign_id = int(
         conn.execute(
@@ -110,3 +112,9 @@ def recent_events(conn: Connection, campaign_id: int, limit: int) -> list[Event]
 def recent_campaigns(conn: Connection, limit: int) -> list[Campaign]:
     query = select(campaigns.c.id).order_by(campaigns.c.created_at.desc()).limit(limit)
     return [load_campaign(conn, campaign_id) for campaign_id in conn.scalars(query)]
+
+
+def is_scheduled(conn: Connection, campaign_id: int) -> bool:
+    """Lancée par une programmation (C77), même supprimée depuis."""
+    query = select(campaigns.c.scheduled).where(campaigns.c.id == campaign_id)
+    return bool(conn.execute(query).scalar_one_or_none())

@@ -3,11 +3,14 @@
 from sqlalchemy import Engine
 
 from prospection.domain.registry import REGISTRY
-from prospection.domain.stop_reasons import exhausted, finished_with_skips, goal_reached
+from prospection.domain.stop_reasons import (
+    STOPPED_BY_YOU,
+    exhausted,
+    finished_with_skips,
+    goal_reached,
+)
 from prospection.storage.campaign_steps import next_step, skipped_steps
 from prospection.storage.campaigns import load_campaign
-
-STOPPED_BY_YOU = "Arrêtée à votre demande : les prospects trouvés sont gardés."
 
 
 def stop_reason(engine: Engine, campaign_id: int) -> str | None:

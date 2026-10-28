@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Rappels · Prospection{% endblock %}
+{% block content %}
+<a href="/reglages" class="back">Réglages</a>
+<h1 class="large-title">Rappels</h1>
+<p class="empty">Avant chaque relance, une alerte apparaît sur l'écran Aujourd'hui (et plus tard sur le téléphone).</p>
+<form method="post" action="/reglages/rappels" class="group form">
+  <label for="minutes">Minutes avant une action avec heure (0 à 240)</label>
+  <input id="minutes" name="minutes" inputmode="numeric" value="{{ minutes }}">
+  <label for="heure">Heure du rappel pour les actions du jour sans heure (0 à 23)</label>
+  <input id="heure" name="heure" inputmode="numeric" value="{{ hour }}">
+  {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+  <button type="submit" class="button-primary">Enregistrer</button>
+</form>
+{% endblock %}

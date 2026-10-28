@@ -68,7 +68,8 @@ def campaign_db(engine: Engine) -> Iterator[Engine]:
         conn.exec_driver_sql(f"TRUNCATE {CAMPAIGN_TABLES}, crm_index RESTART IDENTITY CASCADE")
         conn.exec_driver_sql(
             "UPDATE app_settings SET google_budget_cents = NULL, crm = 'none', "
-            "notion_database_id = NULL, notion_database_title = NULL"
+            "notion_database_id = NULL, notion_database_title = NULL, reminder_minutes = 15, "
+            "reminder_hour = 8"
         )
 
 

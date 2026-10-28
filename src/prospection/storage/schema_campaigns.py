@@ -26,6 +26,9 @@ campaigns = Table(
     Column("qualified", Integer, nullable=False), Column("cost_cents", Integer, nullable=False),
     Column("created_at", TS, nullable=False), Column("updated_at", TS, nullable=False),
     Column("claimed_by", Text), Column("heartbeat_at", TS), Column("retry_at", TS),
+    Column("schedule_id", BigInteger),  # campagne lancée par une programmation (C77)
+    Column("scheduled", Boolean, nullable=False, server_default="false"),
+    Column("refresh_running", Boolean, nullable=False, server_default="false"),  # C76
 )  # fmt: skip
 
 campaign_steps = Table(
@@ -55,6 +58,8 @@ prospects = Table(
     Column("contact_name", Text), Column("contact_mobile", Text), Column("contact_email", Text),
     Column("updated_at", TS), Column("company_json", JSONB), Column("registry_status", Text),
     Column("site_json", JSONB),
+    Column("refresh_pending", Boolean, nullable=False, server_default="false"),  # C76
+    Column("refresh_taken_at", TS),
     UniqueConstraint("campaign_id", "place_id", name="uq_prospect_place"),
 )  # fmt: skip
 

@@ -62,3 +62,15 @@ def known_places(conn: Connection, campaign_id: int, place_ids: list[str]) -> se
         select(p.place_id).where(p.campaign_id == campaign_id, p.place_id.in_(place_ids))
     )
     return {str(place_id) for (place_id,) in rows}
+
+
+def new_qualified(conn: Connection, campaign_id: int) -> int:
+    """Retenus jamais vus dans une campagne plus ancienne (C78)."""
+    p, older = prospects.c, prospects.alias("older")
+    seen = select(older.c.id).where(
+        older.c.place_id == p.place_id, older.c.campaign_id < campaign_id
+    )
+    query = select(func.count()).where(
+        p.campaign_id == campaign_id, p.qualified.is_(True), ~seen.exists()
+    )
+    return int(conn.execute(query).scalar_one())

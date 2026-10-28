@@ -3,6 +3,7 @@
 from datetime import date, timedelta
 
 TO_CALL = "à appeler"
+INTERESTED = "intéressé"
 EXPORTED = "exporté"  # posé seulement par un export réussi (lot 7)
 CALL_RESULTS = (
     "intéressé", "à rappeler", "pas intéressé", "messagerie", "pas joint", "faux numéro",

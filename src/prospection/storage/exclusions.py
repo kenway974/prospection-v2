@@ -6,6 +6,7 @@ from sqlalchemy import Connection, delete, insert, select
 
 from prospection.domain.criteria import Exclusions
 from prospection.domain.trades import normalize
+from prospection.storage.crm_index import APP_ID, NAME, SIREN, crm_values
 from prospection.storage.schema_campaigns import exclusion_names
 
 FRANCHISE, BLACKLIST = "franchise", "blacklist"
@@ -40,7 +41,8 @@ def _names(conn: Connection, kind: str) -> list[tuple[str, str]]:
 def load_exclusions(conn: Connection) -> Exclusions:
     franchises = frozenset(n for n, _ in _names(conn, FRANCHISE))
     blacklist = frozenset(n for n, _ in _names(conn, BLACKLIST))
-    return Exclusions(franchises, frozenset(), blacklist)
+    return Exclusions(franchises, frozenset(), blacklist, crm_values(conn, APP_ID),
+                      crm_values(conn, SIREN), crm_values(conn, NAME))  # fmt: skip
 
 
 def personal_lists(conn: Connection) -> tuple[list[str], list[str]]:

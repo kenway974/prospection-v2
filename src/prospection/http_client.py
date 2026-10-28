@@ -16,12 +16,12 @@ logger = logging.getLogger(__name__)
 
 # Services externes remplacés par un faux local en bout en bout (jamais de vrai réseau)
 FAKED_HOSTS = frozenset(
-    {"places.googleapis.com", "recherche-entreprises.api.gouv.fr", "api.insee.fr"}
+    {"places.googleapis.com", "recherche-entreprises.api.gouv.fr", "api.insee.fr", "api.notion.com"}
 )
 
 
 class ServicesToFake(httpx.BaseTransport):
-    """Bout en bout seulement : envoie Google, le registre et Sirène vers un faux local."""
+    """Bout en bout seulement : envoie Google, le registre, Sirène et Notion vers un faux local."""
 
     def __init__(self, fake_url: str, inner: httpx.BaseTransport | None = None) -> None:
         self.fake = httpx.URL(fake_url)

@@ -109,3 +109,19 @@ def test_small_shop_family_never_excluded_on_category_alone() -> None:
     shop = replace(PLACE, name="Les Jolies Choses", types=("clothing_store",))
     verdict = evaluate(shop, FLEURISTE, Criteria(), NONE)
     assert verdict.qualified is True and verdict.to_check
+
+
+def test_C32_already_in_crm_excluded() -> None:
+    from prospection.domain.criteria import Criteria
+
+    criteria = Criteria(phone="any", max_reviews=None)
+    lyon = replace(PLACE, address="12 rue X, 69002 Lyon")
+    by_id = Exclusions(frozenset(), frozenset(), frozenset(), crm_ids=frozenset({PLACE.place_id}))
+    same_city = Exclusions(frozenset(), frozenset(), frozenset(),
+                           crm_names=frozenset({"atelier cuisine hoarau|lyon"}))  # fmt: skip
+    bare = Exclusions(frozenset(), frozenset(), frozenset(),
+                      crm_names=frozenset({"atelier cuisine hoarau"}))  # fmt: skip
+    for exclusions in (by_id, same_city, bare):
+        assert "Déjà dans le CRM" in evaluate(lyon, None, criteria, exclusions).reasons
+    elsewhere = replace(PLACE, address="1 rue Y, 13001 Marseille")
+    assert "Déjà dans le CRM" not in evaluate(elsewhere, None, criteria, same_city).reasons

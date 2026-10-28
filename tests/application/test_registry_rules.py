@@ -118,3 +118,15 @@ def test_C37_registry_only_campaign_ends_with_its_own_reason(campaign_db: Engine
         "Plus d'entreprises récemment créées pour ces métiers et cette zone "
         "(0 qualifié sur 5 voulus)."
     )
+
+
+def test_C32_company_already_in_crm_never_looked_up(campaign_db: Engine) -> None:
+    from prospection.storage.crm_index import SIREN, replace_index
+
+    with_insee_key(campaign_db)
+    with campaign_db.begin() as conn:
+        replace_index(conn, {(SIREN, "923456789")})
+    seen: list[str] = []
+    campaign_id = create_campaign(campaign_db, default_request(), NOW)
+    run_all(campaign_db, campaign_id, services([etab()], seen))
+    assert seen == [] and names(campaign_db) == []

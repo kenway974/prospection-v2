@@ -26,7 +26,7 @@ def rows(engine: Engine) -> list[ProspectRow]:
 
 def run(engine: Engine, handler: object) -> list[httpx.Request]:
     client, recorder = fake_client(handler)  # type: ignore[arg-type]
-    enrich_new_prospects(engine, client, NOW, pause=0)
+    enrich_new_prospects(engine, client, NOW)
     return recorder.requests
 
 

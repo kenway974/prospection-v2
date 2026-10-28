@@ -7,6 +7,7 @@ from prospection.domain.category import category_verdict
 from prospection.domain.franchises import brand_match
 from prospection.domain.phones import is_mobile
 from prospection.domain.place import Place
+from prospection.domain.site_guess import address_city
 from prospection.domain.trades import Trade, normalize
 
 SiteChoice = Literal["any", "only", "exclude"]
@@ -32,6 +33,9 @@ class Exclusions:
     personal_franchises: frozenset[str]
     blacklist_ids: frozenset[str]
     blacklist_names: frozenset[str]
+    crm_ids: frozenset[str] = frozenset()  # déjà dans le CRM (C32) : ID app, SIREN, nom
+    crm_sirens: frozenset[str] = frozenset()
+    crm_names: frozenset[str] = frozenset()
 
 
 @dataclass(frozen=True)
@@ -39,6 +43,13 @@ class Verdict:
     qualified: bool
     reasons: tuple[str, ...]
     to_check: tuple[str, ...]
+
+
+def _in_crm_by_name(place: Place, names: frozenset[str]) -> bool:
+    """Nom et ville (C32) : un homonyme d'une autre ville n'est pas exclu. Le nom seul ne
+    vaut que pour une fiche CRM sans identifiant, sans SIREN et sans ville."""
+    name, city = normalize(place.name), normalize(address_city(place.address) or "")
+    return f"{name}|{city}" in names or name in names
 
 
 def _list_reasons(place: Place, criteria: Criteria, exclusions: Exclusions) -> list[str]:
@@ -49,6 +60,8 @@ def _list_reasons(place: Place, criteria: Criteria, exclusions: Exclusions) -> l
         normalize(place.name) in exclusions.blacklist_names
     ):
         reasons.append("Liste noire")
+    if place.place_id in exclusions.crm_ids or _in_crm_by_name(place, exclusions.crm_names):
+        reasons.append("Déjà dans le CRM")
     return reasons
 
 

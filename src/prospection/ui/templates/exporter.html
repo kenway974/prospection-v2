@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Exporter · Prospection{% endblock %}
+{% block content %}
+<a href="/prospects" class="back">Prospects</a>
+<h1 class="large-title">Exporter vers Notion</h1>
+{% if not ready %}
+<p class="notice">Choisissez d'abord Notion et sa base dans Réglages → CRM, puis ajoutez la clé Notion dans Réglages → Clés API.</p>
+{% endif %}
+{% if report.waiting or report.created or report.updated or report.failed %}
+<section class="group" aria-labelledby="titre-bilan">
+  <h2 class="row-title form" id="titre-bilan">Dernier envoi</h2>
+  <p class="row" role="status">{{ report.created }} créés · {{ report.updated }} mis à jour · {{ report.failed | length }} en échec{% if report.waiting %} · {{ report.waiting }} en attente d'envoi{% endif %}</p>
+  {% for name, why in report.failed %}<p class="row"><span>{{ name }}</span><span class="secondary">{{ why }}</span></p>{% endfor %}
+</section>
+{% endif %}
+{% if rows %}
+<form method="post" action="/exporter" class="group form">
+  <p class="secondary">Décochez ceux à ne pas envoyer. Les prospects « à vérifier » sont décochés.</p>
+  {% for r in rows %}{% set s = summaries.get(r.id) %}
+  <label class="choice"><input type="checkbox" name="ids" value="{{ r.id }}"{% if not (s and s.flagged) %} checked{% endif %}> {{ r.data.name }}{% if s %} · {{ s.score }}{% if s.flagged %} · à vérifier{% endif %}{% endif %}</label>
+  {% endfor %}
+  <button type="submit" class="button-primary"{% if not ready %} disabled{% endif %}>Exporter</button>
+</form>
+{% else %}
+<p class="empty">Aucun prospect intéressé à envoyer pour l'instant.</p>
+{% endif %}
+{% endblock %}

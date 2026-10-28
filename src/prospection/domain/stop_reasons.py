@@ -14,11 +14,13 @@ def _count(qualified: int, target: int) -> str:
 
 GOAL = "Objectif atteint"
 SOURCE_DONE = ("Plus de résultats", "Plus d'entreprises")
+STOPPED_BY_YOU = "Arrêtée à votre demande : les prospects trouvés sont gardés."
 
 
 def is_failure(reason: str | None) -> bool:
-    """Programmée, une campagne a échoué sauf objectif atteint ou source épuisée (C98)."""
-    return not reason or not reason.startswith((GOAL, *SOURCE_DONE))
+    """Programmée, une campagne a échoué sauf objectif atteint, source épuisée ou arrêt
+    demandé (C98)."""
+    return not reason or not reason.startswith((GOAL, *SOURCE_DONE, STOPPED_BY_YOU))
 
 
 def goal_reached(qualified: int) -> str:

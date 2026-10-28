@@ -21,7 +21,12 @@ def test_C76_unknown_place_busy_or_refused() -> None:
     gone, _ = fake_client(json_reply(404, {"error": {"status": "NOT_FOUND"}}))
     assert place_details(gone, "k", "place-1") is None
     forged, calls = fake_client(json_reply(200, {}))
-    assert place_details(forged, "k", "../../autre") is None and calls.requests == []
+    with pytest.raises(ValueError):
+        place_details(forged, "k", "../../autre")
+    assert calls.requests == []
+    mask_refused = fake_client(json_reply(400, {"error": {"status": "INVALID_ARGUMENT"}}))[0]
+    with pytest.raises(GoogleRefused):  # jamais « plus trouvé » pour une requête refusée
+        place_details(mask_refused, "k", "place-1")
     with pytest.raises(GoogleBusy):
         place_details(fake_client(json_reply(503, {}))[0], "k", "place-1")
     with pytest.raises(GoogleBusy):

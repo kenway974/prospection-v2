@@ -1,6 +1,15 @@
 """Tables du suivi dans le temps (description pour les requêtes ; migration 0010)."""
 
-from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, SmallInteger, Table, Text
+from sqlalchemy import (
+    BigInteger,
+    Column,
+    DateTime,
+    ForeignKey,
+    SmallInteger,
+    Table,
+    Text,
+    UniqueConstraint,
+)
 
 from prospection.storage.db import metadata
 
@@ -20,4 +29,5 @@ campaign_schedules = Table(
     Column("template_name", Text, ForeignKey("campaign_templates.name"), nullable=False),
     Column("weekday", SmallInteger, nullable=False), Column("hour", SmallInteger, nullable=False),
     Column("next_run_at", TS, nullable=False), Column("created_at", TS, nullable=False),
+    UniqueConstraint("template_name", "weekday", "hour", name="uq_schedule"),
 )  # fmt: skip

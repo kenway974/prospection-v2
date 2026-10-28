@@ -32,6 +32,7 @@ def upgrade() -> None:
         sa.Column("next_run_at", TS, nullable=False),
         sa.Column("created_at", TS, nullable=False),
         sa.CheckConstraint("weekday BETWEEN 0 AND 6 AND hour BETWEEN 0 AND 23"),
+        sa.UniqueConstraint("template_name", "weekday", "hour", name="uq_schedule"),
     )
     op.add_column(
         "campaigns",
@@ -41,10 +42,17 @@ def upgrade() -> None:
             sa.ForeignKey("campaign_schedules.id", ondelete="SET NULL"),
         ),
     )
+    # Lancée par une programmation (reste vrai si la programmation est supprimée) ; mise à
+    # jour des fiches en cours (C76).
+    for name in ("scheduled", "refresh_running"):
+        op.add_column(
+            "campaigns", sa.Column(name, sa.Boolean, nullable=False, server_default=sa.false())
+        )
     op.add_column(
         "prospects",
         sa.Column("refresh_pending", sa.Boolean, nullable=False, server_default=sa.false()),
     )
+    op.add_column("prospects", sa.Column("refresh_taken_at", TS))  # fiche en cours de lecture
     op.add_column(
         "app_settings",
         sa.Column("reminder_minutes", sa.Integer, nullable=False, server_default="15"),
@@ -58,7 +66,10 @@ def upgrade() -> None:
 def downgrade() -> None:
     op.drop_column("app_settings", "reminder_hour")
     op.drop_column("app_settings", "reminder_minutes")
+    op.drop_column("prospects", "refresh_taken_at")
     op.drop_column("prospects", "refresh_pending")
+    op.drop_column("campaigns", "refresh_running")
+    op.drop_column("campaigns", "scheduled")
     op.drop_column("campaigns", "schedule_id")
     op.drop_table("campaign_schedules")
     op.drop_table("alerts")

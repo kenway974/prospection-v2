@@ -78,4 +78,9 @@ def test_C76_only_finished_campaigns_and_stops_without_key(campaign_db: Engine) 
     assert refresh_next(campaign_db, BOX, client, PRICING, NOW)
     assert seen.requests == []
     with campaign_db.connect() as conn:
-        assert "Mise à jour arrêtée" in recent_events(conn, 1, 3)[1].message
+        messages = [e.message for e in recent_events(conn, 1, 5)]
+        [alert] = unseen_alerts(conn)
+    assert any(m.startswith("Mise à jour arrêtée : clé Google absente") for m in messages)
+    assert (
+        "Mise à jour terminée" not in messages and "arrêtée" in alert.message
+    )  # jamais « terminée »

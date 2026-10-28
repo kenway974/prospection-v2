@@ -6,14 +6,14 @@ from sqlalchemy import Engine
 
 from prospection.domain.stop_reasons import is_failure
 from prospection.storage.alerts import add_alert
-from prospection.storage.campaigns import load_campaign, schedule_of
+from prospection.storage.campaigns import is_scheduled, load_campaign
 from prospection.storage.prospects import new_qualified
 
 
 def after_campaign(engine: Engine, campaign_id: int, now: datetime) -> None:
     """Rien pour une campagne lancée à la main : je suis devant l'écran."""
     with engine.begin() as conn:
-        if schedule_of(conn, campaign_id) is None:
+        if not is_scheduled(conn, campaign_id):
             return
         campaign = load_campaign(conn, campaign_id)
         link, name = f"/campagnes/{campaign_id}", campaign.request.name

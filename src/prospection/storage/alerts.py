@@ -46,3 +46,12 @@ def mark_seen(conn: Connection, now: datetime, alert_id: int | None = None) -> N
     if alert_id is not None:
         query = query.where(alerts.c.id == alert_id)
     conn.execute(query.values(seen_at=now))
+
+
+def retire_alerts(conn: Connection, prefix: str, keep: set[str], now: datetime) -> None:
+    """Marque vues les alertes non lues de ce type dont le sujet n'existe plus."""
+    a = alerts.c
+    query = update(alerts).where(a.seen_at.is_(None), a.key.startswith(prefix, autoescape=True))
+    if keep:
+        query = query.where(a.key.not_in(keep))
+    conn.execute(query.values(seen_at=now))

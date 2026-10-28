@@ -20,10 +20,16 @@ DETAILS_MASK = ",".join(
 _PLACE_ID = re.compile(r"[A-Za-z0-9_-]{1,300}")
 
 
+def valid_place_id(place_id: str) -> bool:
+    """Identifiant Google utilisable tel quel dans l'adresse (jamais de chemin forgé)."""
+    return _PLACE_ID.fullmatch(place_id) is not None
+
+
 def place_details(client: httpx.Client, key: str, place_id: str) -> Place | None:
-    """La fiche, ou None si Google ne connaît plus l'établissement (fermé, supprimé)."""
-    if not _PLACE_ID.fullmatch(place_id):  # jamais de chemin forgé dans l'adresse appelée
-        return None
+    """La fiche, ou None si Google ne connaît plus l'établissement (404). Toute autre
+    erreur 4xx (masque refusé, clé…) lève GoogleRefused : rien n'est dit « fermé » à tort."""
+    if not valid_place_id(place_id):
+        raise ValueError("identifiant Google invalide")
     headers = {"X-Goog-Api-Key": key, "X-Goog-FieldMask": DETAILS_MASK}
     response = send(
         client, "GET", DETAILS_URL + place_id, "Google Maps", headers=headers,
@@ -33,9 +39,7 @@ def place_details(client: httpx.Client, key: str, place_id: str) -> Place | None
         raise GoogleBusy
     if response.status_code >= 500:
         raise GoogleBusy
-    if response.status_code == 404 or (
-        response.status_code == 400 and "API_KEY_INVALID" not in response.text
-    ):
+    if response.status_code == 404:
         return None
     if response.status_code != 200:
         raise GoogleRefused(check_google_key_response(response).message)

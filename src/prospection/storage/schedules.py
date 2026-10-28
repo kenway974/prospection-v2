@@ -4,7 +4,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import Connection, delete, insert, select, update
+from sqlalchemy import Connection, delete, select, update
+from sqlalchemy.dialects.postgresql import insert
 
 from prospection.storage.schema_followup import campaign_schedules
 
@@ -25,11 +26,14 @@ def _schedule(r: Any) -> Schedule:
 def add_schedule(
     conn: Connection, template_name: str, weekday: int, hour: int, next_run_at: datetime,
     now: datetime,
-) -> int:  # fmt: skip
+) -> None:  # fmt: skip
+    """Rien si la même programmation existe déjà (double appui)."""
     values = {"template_name": template_name, "weekday": weekday, "hour": hour,
               "next_run_at": next_run_at, "created_at": now}  # fmt: skip
-    statement = insert(campaign_schedules).values(**values).returning(campaign_schedules.c.id)
-    return int(conn.execute(statement).scalar_one())
+    statement = (
+        insert(campaign_schedules).values(**values).on_conflict_do_nothing(constraint="uq_schedule")
+    )
+    conn.execute(statement)
 
 
 def list_schedules(conn: Connection) -> list[Schedule]:

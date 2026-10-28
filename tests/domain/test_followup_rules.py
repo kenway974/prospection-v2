@@ -63,3 +63,12 @@ def test_C98_failure_is_anything_but_goal_or_exhausted_source() -> None:
     assert not is_failure(exhausted(0, 3, registry_only=True))
     assert is_failure(budget_reached(0, 1, 3))
     assert is_failure("Clé Google absente ou illisible : ajoutez-la.") and is_failure(None)
+
+
+def test_C77_C108_autumn_clock_change() -> None:
+    """Nuit du 24 au 25 octobre 2026 : 3 h redevient 2 h ; l'heure affichée est gardée."""
+    saturday = datetime(2026, 10, 24, 10, tzinfo=PARIS)
+    sunday = next_run(saturday, 6, 7)
+    assert sunday == datetime(2026, 10, 25, 7, tzinfo=PARIS) and sunday.utcoffset().seconds == 3600  # type: ignore[union-attr]
+    morning = datetime(2026, 10, 25, 7, 50, tzinfo=PARIS)
+    assert reminder_due(date(2026, 10, 25), time(8, 0), morning)

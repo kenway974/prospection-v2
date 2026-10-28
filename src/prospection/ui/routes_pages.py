@@ -40,11 +40,6 @@ def today(
     )  # fmt: skip
 
 
-@router.get("/terrain", response_class=HTMLResponse)
-def field(request: Request) -> Response:
-    return _page(request, "terrain.html", "field")
-
-
 @router.get("/reglages/connexions", response_class=HTMLResponse)
 def connection_journal(
     request: Request,

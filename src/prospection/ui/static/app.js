@@ -29,3 +29,19 @@ document.addEventListener("htmx:afterRequest", function (event) {
 window.addEventListener("beforeunload", function (event) {
   if (unsaved.size) { event.preventDefault(); }
 });
+
+// Terrain (C113) : la position du téléphone, avec son accord, remplit le formulaire
+var positionButton = document.getElementById("ma-position");
+if (positionButton && navigator.geolocation) {
+  positionButton.addEventListener("click", function () {
+    var state = document.getElementById("position-etat");
+    state.textContent = "Recherche de votre position…";
+    navigator.geolocation.getCurrentPosition(function (where) {
+      document.getElementById("lat").value = where.coords.latitude.toFixed(6);
+      document.getElementById("lon").value = where.coords.longitude.toFixed(6);
+      state.textContent = "Position trouvée : lancez la recherche.";
+    }, function () {
+      state.textContent = "Position refusée ou introuvable : écrivez une adresse.";
+    }, { enableHighAccuracy: true, timeout: 10000 });
+  });
+}

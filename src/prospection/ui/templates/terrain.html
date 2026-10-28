@@ -1,6 +1,31 @@
 {% extends "base.html" %}
 {% block title %}Terrain · Prospection{% endblock %}
+{% macro error(key) %}{% if errors.get(key) %}<p class="error" role="alert">{{ errors[key] }}</p>{% endif %}{% endmacro %}
 {% block content %}
 <h1 class="large-title">Terrain</h1>
-<p class="empty">La prospection terrain arrive bientôt. Elle listera les petits commerces autour de vous.</p>
+<form method="post" action="/terrain" class="group form" id="terrain">
+  <input type="hidden" name="lat" id="lat" value="{{ values.get('lat', '') }}">
+  <input type="hidden" name="lon" id="lon" value="{{ values.get('lon', '') }}">
+  <button type="button" class="button-secondary" id="ma-position">Utiliser ma position</button>
+  <p class="secondary" id="position-etat" role="status"></p>
+  <label for="adresse">Ou une adresse</label>
+  <input id="adresse" name="adresse" value="{{ values.get('adresse', '') }}" placeholder="12 rue de la République, Lyon" autocomplete="street-address">
+  {{ error("adresse") }}
+  <label for="metiers">Commerces cherchés</label>
+  <input id="metiers" name="metiers" value="{{ values.get('metiers', '') }}" placeholder="boulangerie, coiffeur">
+  <label for="rayon">Rayon (km)</label>
+  <input id="rayon" name="rayon" inputmode="numeric" value="{{ values.get('rayon', '1') }}">
+  {{ error("rayon") }}
+  <label for="avis_max">Avis au plus</label>
+  <input id="avis_max" name="avis_max" inputmode="numeric" value="{{ values.get('avis_max', '') }}">
+  {{ error("avis_max") }}
+  <label for="nombre">Commerces voulus</label>
+  <input id="nombre" name="nombre" inputmode="numeric" value="{{ values.get('nombre', '15') }}">
+  {{ error("nombre") }}
+  {% for key, message in errors.items() if key not in ("adresse", "rayon", "avis_max", "nombre") %}<p class="error" role="alert">{{ message }}</p>{% endfor %}
+  <label class="choice"><input type="checkbox" name="sans_site"{% if values.get('sans_site') == 'on' %} checked{% endif %}> Sans site seulement</label>
+  <label class="choice"><input type="checkbox" name="ouvert" value="1"{% if values.get('ouvert') == '1' %} checked{% endif %}> Ouverts maintenant (filtre de la tournée)</label>
+  <button type="submit" class="button-primary">Chercher autour</button>
+  <p class="secondary">Même budget Google que les campagnes ; la recherche tourne sur le serveur.</p>
+</form>
 {% endblock %}

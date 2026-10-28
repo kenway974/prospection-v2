@@ -25,7 +25,14 @@ class CityZone:
     country: str = "FR"
 
     @property
+    def is_point(self) -> bool:
+        """Une position ou une adresse (mode Terrain), pas une commune."""
+        return self.country == "FR" and not self.code
+
+    @property
     def label(self) -> str:
+        if self.is_point:
+            return self.name
         if self.country == "FR":
             return f"{self.name} ({department_of(self.code)})"
         return (

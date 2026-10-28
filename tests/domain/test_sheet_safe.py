@@ -6,7 +6,8 @@ from prospection.domain.sheet_safe import safe_cell
 
 
 @pytest.mark.parametrize("text", ["=1+1", "+33 6 12", "-2+3", "@SUM(A1)", "\t=1", "\r=1",
-                                  '=HYPERLINK("http://x","clic")'])  # fmt: skip
+                                  '=HYPERLINK("http://x","clic")', "\x01=1", "  =1", "\n=1",
+                                  "\uff1d1+1", "\uff0b1", "\uff201"])  # fmt: skip
 def test_C89_formula_neutralized(text: str) -> None:
     assert str(safe_cell(text)).startswith("'")
 

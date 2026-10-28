@@ -10,7 +10,9 @@ from urllib.parse import urlencode
 
 from prospection.domain.geo import distance_m
 
-MAX_WAYPOINTS = 9  # étapes intermédiaires par lien (limite des liens Google Maps sur mobile)
+# Étapes intermédiaires par lien : 3 au plus dans un navigateur mobile (9 ailleurs),
+# d'après la documentation des liens Google Maps (« Maps URLs »).
+MAX_WAYPOINTS = 3
 DIR_URL = "https://www.google.com/maps/dir/"
 
 

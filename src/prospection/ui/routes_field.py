@@ -4,6 +4,7 @@ from datetime import datetime
 
 import httpx
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlalchemy import Engine
 
@@ -39,7 +40,7 @@ async def field_search(
     values = {k: str(v)[:200] for k, v in (await request.form()).items()}
     parsed, errors = read_field_form(values)
     if parsed is None and not errors:
-        located = find_address(client, values.get("adresse", ""))
+        located = await run_in_threadpool(find_address, client, values.get("adresse", ""))
         if located is None:
             errors = {"adresse": "Adresse introuvable : précisez-la (numéro, rue, ville)."}
         else:
@@ -48,10 +49,11 @@ async def field_search(
     if parsed is None or errors:
         return _form(request, values, errors, 400)
     try:
-        campaign_id = start_field(engine, parsed, now, settings.timezone)
+        campaign_id = await run_in_threadpool(start_field, engine, parsed, now, settings.timezone)
     except InvalidRequest as invalid:
         return _form(request, values, invalid.errors, 400)
-    return RedirectResponse(f"/terrain/{campaign_id}", status_code=303)
+    tail = "?ouvert=1" if values.get("ouvert") == "1" else ""
+    return RedirectResponse(f"/terrain/{campaign_id}{tail}", status_code=303)
 
 
 @router.get("/{campaign_id}", response_class=HTMLResponse)
@@ -62,9 +64,9 @@ def tour_page(
 ) -> Response:  # fmt: skip
     try:
         state = progress(engine, campaign_id)
+        tour = field_tour(engine, campaign_id, now, settings.timezone, open_only=ouvert == "1")
     except UnknownCampaign:
         raise HTTPException(status_code=404) from None
-    tour = field_tour(engine, campaign_id, now, settings.timezone, open_only=ouvert == "1")
     context = {"tab": "field", "id": campaign_id, "state": state, "tour": tour,
                "open_only": ouvert == "1"}  # fmt: skip
     return templates.TemplateResponse(request, "terrain_tournee.html", context)

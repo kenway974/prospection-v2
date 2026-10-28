@@ -10,14 +10,16 @@ from zoneinfo import ZoneInfo
 
 from sqlalchemy import Engine
 
-from prospection.application import call_actions
-from prospection.application.campaigns import create_campaign
+from prospection.application.call_actions import InvalidInput
+from prospection.application.campaigns import UnknownCampaign, create_campaign
+from prospection.application.prospect_card import UnknownProspect
 from prospection.domain.campaign_request import CityZone, RadiusZone, RawRequest, validate_request
 from prospection.domain.criteria import Criteria
 from prospection.domain.opening import open_now
 from prospection.domain.tour import Stop, order_tour, route_links
+from prospection.storage import call_tracking as store
 from prospection.storage.campaigns import load_campaign
-from prospection.storage.prospect_list import ProspectRow, campaign_rows
+from prospection.storage.prospect_list import ProspectRow, campaign_rows, load_prospect
 
 CHOICES = {"interesse": "intéressé", "repasser": "à rappeler", "non": "pas intéressé"}
 
@@ -39,6 +41,7 @@ class Tour:
     start: tuple[float, float]
     stops: list[ProspectRow]
     links: list[str] = field(default_factory=list)
+    unplaced: list[ProspectRow] = field(default_factory=list)  # position inconnue : hors itinéraire
 
 
 def start_field(
@@ -58,31 +61,34 @@ def start_field(
 def field_tour(
     engine: Engine, campaign_id: int, now: datetime, timezone: str, open_only: bool
 ) -> Tour:
+    """Lève UnknownCampaign si la campagne n'est pas une recherche autour d'un point."""
     with engine.connect() as conn:
         zone = load_campaign(conn, campaign_id).request.zones[0]
         rows = [r for r, _ in campaign_rows(conn, campaign_id, qualified=True)]
-    city = zone.city if isinstance(zone, RadiusZone) else zone
-    start = (city.lat, city.lon) if isinstance(city, CityZone) else (0.0, 0.0)
+    if not isinstance(zone, RadiusZone):
+        raise UnknownCampaign(campaign_id)
+    start = (zone.city.lat, zone.city.lon)
     local = now.astimezone(ZoneInfo(timezone))
     if open_only:  # horaires inconnus : écartés (on ne promet pas une boutique ouverte)
         rows = [r for r in rows if open_now(tuple(r.data.get("opening_hours") or ()), local)]
-    by_id = {r.id: r for r in rows}
-    stops = [Stop(r.id, float(r.data["lat"]), float(r.data["lon"])) for r in rows
-             if r.data.get("lat") is not None and r.data.get("lon") is not None]  # fmt: skip
-    ordered = order_tour(start, stops)
-    return Tour(
-        start, [by_id[s.id] for s in ordered], route_links(start, ordered) if ordered else []
-    )
+    placed = [r for r in rows if r.data.get("lat") is not None and r.data.get("lon") is not None]
+    by_id = {r.id: r for r in placed}
+    ordered = order_tour(start, [Stop(r.id, float(r.data["lat"]), float(r.data["lon"]))
+                                 for r in placed])  # fmt: skip
+    links = route_links(start, ordered) if ordered else []
+    unplaced = [r for r in rows if r.id not in by_id]
+    return Tour(start, [by_id[s.id] for s in ordered], links, unplaced)
 
 
 def mark_stop(engine: Engine, prospect_id: int, choice: str, now: datetime, timezone: str) -> None:
-    """Intéressé, repasser (« Passer » demain) ou non, en un geste (C115)."""
+    """Intéressé, repasser (« Passer » demain) ou non, en un geste (C115), d'un seul bloc."""
     status = CHOICES.get(choice)
     if status is None:
-        raise call_actions.InvalidInput("statut", "Choisissez Intéressé, Repasser ou Non.")
-    call_actions.record_result(engine, prospect_id, status, now)
-    if choice == "repasser":
-        tomorrow = now.astimezone(ZoneInfo(timezone)).date() + timedelta(days=1)
-        call_actions.schedule(
-            engine, prospect_id, "passer", tomorrow.isoformat(), "", now, timezone
-        )
+        raise InvalidInput("statut", "Choisissez Intéressé, Repasser ou Non.")
+    tomorrow = now.astimezone(ZoneInfo(timezone)).date() + timedelta(days=1)
+    with engine.begin() as conn:
+        if load_prospect(conn, prospect_id) is None:
+            raise UnknownProspect(prospect_id)
+        store.set_call_status(conn, prospect_id, status, now)
+        if choice == "repasser":
+            store.plan_action(conn, prospect_id, "passer", tomorrow, None, now)

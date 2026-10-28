@@ -49,9 +49,8 @@ def _zone_step(query: str, keyword: str, zone: Zone) -> StepSpec:
         return StepSpec(f"{query} {zone.name}", keyword, zone.label, bias, country=zone.country)
     if isinstance(zone, RadiusZone):
         bias = Circle(zone.city.lat, zone.city.lon, zone.radius_km * 1000)
-        return StepSpec(
-            f"{query} {zone.city.name}", keyword, zone.label, bias, True, country=zone.city.country
-        )
+        text = query if zone.city.is_point else f"{query} {zone.city.name}"  # le cercle situe
+        return StepSpec(text, keyword, zone.label, bias, True, country=zone.city.country)
     return StepSpec(
         f"{query} {zone.name}", keyword, zone.label, None, region=zone.code, country=zone.country
     )

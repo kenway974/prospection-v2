@@ -4,7 +4,7 @@
 <a href="/terrain" class="back">Terrain</a>
 <h1 class="large-title">{{ state.name }}</h1>
 <p class="secondary" role="status">{{ state.qualified }} commerces trouvés{% if state.status in ("queued", "running") %} · recherche en cours, rechargez dans un instant{% endif %}</p>
-<p><a href="/terrain/{{ id }}?ouvert={{ '' if open_only else '1' }}">{{ "Voir tous les commerces" if open_only else "Seulement les ouverts maintenant" }}</a></p>
+<p><a class="chip" href="/terrain/{{ id }}?ouvert={{ '' if open_only else '1' }}">{{ "Voir tous les commerces" if open_only else "Seulement les ouverts maintenant" }}</a></p>
 {% if tour.links %}<div class="links">{% for link in tour.links %}<a class="button-primary" href="{{ link }}" target="_blank" rel="noopener noreferrer">Ouvrir l'itinéraire{% if tour.links | length > 1 %} ({{ loop.index }}/{{ tour.links | length }}){% endif %}</a>{% endfor %}</div>{% endif %}
 <ol class="group">{% for p in tour.stops %}
   <li class="row"><span><a href="/prospects/{{ p.id }}">{{ p.data.name }}</a><br><span class="secondary">{{ p.data.address }} · {{ p.status | capitalize }}</span></span>
@@ -14,4 +14,6 @@
       <button class="button-secondary" name="choix" value="non"{% if p.status == "pas intéressé" %} aria-pressed="true"{% endif %}>Non</button>
     </form></li>
 {% else %}<li class="row secondary">Aucun commerce pour l'instant.</li>{% endfor %}</ol>
+{% if tour.unplaced %}<h2>Position inconnue (hors itinéraire)</h2>
+<ul class="group">{% for p in tour.unplaced %}<li class="row"><a href="/prospects/{{ p.id }}">{{ p.data.name }}</a></li>{% endfor %}</ul>{% endif %}
 {% endblock %}

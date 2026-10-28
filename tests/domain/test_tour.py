@@ -42,3 +42,19 @@ def test_C113_open_now_read_from_google_hours() -> None:
     assert open_now(HOURS, datetime(2026, 10, 28, 3, tzinfo=PARIS)) is True  # 24h/24
     assert open_now(HOURS, datetime(2026, 10, 29, 10, tzinfo=PARIS)) is None  # jeudi inconnu
     assert open_now((), monday) is None
+
+
+def test_C113_open_now_slots_past_midnight() -> None:
+    """Un créneau qui passe minuit compte la veille au soir et le lendemain avant la fin."""
+    late = ("dimanche: 18:00\u201302:00", "lundi: Fermé", "mardi: 18:00\u201302:00")
+    assert open_now(late, datetime(2026, 10, 26, 1, tzinfo=PARIS)) is True  # lundi 1 h
+    assert open_now(late, datetime(2026, 10, 27, 1, tzinfo=PARIS)) is False  # mardi 1 h
+    assert open_now(late, datetime(2026, 10, 27, 19, tzinfo=PARIS)) is True
+    midnight = ("lundi: 08:00\u201324:00",)
+    assert open_now(midnight, datetime(2026, 10, 26, 23, 59, 30, tzinfo=PARIS)) is True
+
+
+def test_C114_mobile_browser_limit_by_default() -> None:
+    """Liens Google Maps : 3 étapes au plus dans un navigateur mobile."""
+    stops = [Stop(i, 45.76 + i / 1000, 4.83) for i in range(5)]
+    assert len(route_links(START, stops)) == 2

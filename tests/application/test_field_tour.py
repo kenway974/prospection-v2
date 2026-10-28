@@ -67,3 +67,33 @@ def test_C115_one_gesture_in_front_of_the_shop(campaign_db: Engine) -> None:
     assert again.prospect.status == "à rappeler" and again.action is not None
     assert again.action.kind == "passer"
     assert card(campaign_db, third, NOW, PARIS).prospect.status == "pas intéressé"
+
+
+def test_C113_google_query_is_the_trade_around_my_position(campaign_db: Engine) -> None:
+    """Jamais « boulangerie Ma position » ni l'adresse : le cercle suffit à situer."""
+    from prospection.application.campaigns import plan_steps
+    from prospection.domain.campaign_request import CityZone, RadiusZone
+
+    zone = RadiusZone(CityZone("12 rue de la République, Lyon", "", 45.76, 4.83), 1)
+    (step,) = plan_steps(("boulangerie",), [zone], False)
+    assert step.query == "boulangerie" and step.restrict_to_bias
+
+
+def test_C114_stop_without_position_listed_apart(campaign_db: Engine) -> None:
+    campaign_id = with_stops(campaign_db)
+    with campaign_db.begin() as conn:
+        place = dataclasses.replace(PLACE, place_id="t9", name="Sans GPS", lat=None, lon=None)
+        insert_prospect(conn, campaign_id, place, "boulangerie", Verdict(True, (), ()), NOW)
+    tour = field_tour(campaign_db, campaign_id, NOW, PARIS, open_only=False)
+    assert [r.data["name"] for r in tour.unplaced] == ["Sans GPS"]
+
+
+def test_C114_tour_only_for_field_searches(campaign_db: Engine) -> None:
+    import pytest
+
+    from prospection.application.campaigns import UnknownCampaign, create_campaign
+    from tests.application.campaign_helpers import request
+
+    campaign_id = create_campaign(campaign_db, request(), NOW)
+    with pytest.raises(UnknownCampaign):
+        field_tour(campaign_db, campaign_id, NOW, PARIS, open_only=False)

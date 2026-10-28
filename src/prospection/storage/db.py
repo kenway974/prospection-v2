@@ -54,6 +54,11 @@ app_settings = Table(
     Column("google_budget_cents", Integer),
     Column("reminder_minutes", Integer, nullable=False, server_default="15"),  # C108
     Column("reminder_hour", SmallInteger, nullable=False, server_default="8"),
+    Column("purge_months", SmallInteger, nullable=False, server_default="6"),  # C94
+    Column("api_checked_at", DateTime(timezone=True)),  # C99
+    Column("api_failures", SmallInteger, nullable=False, server_default="0"),
+    Column("backup_at", DateTime(timezone=True)),
+    Column("backup_error", Text),  # C91
     CheckConstraint("id = 1", name="app_settings_single_row"),
 )
 
@@ -66,4 +71,4 @@ def make_engine(database_url: str) -> Engine:
     url = make_url(database_url).update_query_dict(
         {"connect_timeout": str(CONNECT_TIMEOUT_SECONDS)}
     )
-    return create_engine(url, pool_pre_ping=True)
+    return create_engine(url, pool_pre_ping=True, hide_parameters=True)  # valeurs hors journaux

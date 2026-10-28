@@ -1,5 +1,6 @@
 """Configuration lue dans les variables d'environnement de l'hébergeur."""
 
+from typing import TYPE_CHECKING
 from urllib.parse import urlsplit
 
 from argon2 import extract_parameters
@@ -7,6 +8,9 @@ from argon2.exceptions import InvalidHashError
 from cryptography.fernet import Fernet
 from pydantic import Field, SecretStr, ValidationError, ValidationInfo, field_validator
 from pydantic_settings import BaseSettings
+
+if TYPE_CHECKING:
+    from prospection.application.backup import BackupTarget
 
 LOCAL_HOSTS = ("127.0.0.1", "localhost")
 
@@ -23,6 +27,29 @@ class Settings(BaseSettings):
     behind_proxy: bool = True
     timezone: str = "Europe/Paris"
     test_services_url: str | None = None  # bout en bout seulement : faux services locaux
+    sentry_dsn: SecretStr | None = None  # C100 : erreurs remontées, si défini
+    # C91 : stockage compatible S3 des sauvegardes (https://<compte>.r2.cloudflarestorage.com/<seau>)
+    backup_s3_url: str | None = None
+    backup_s3_access_key: SecretStr | None = None
+    backup_s3_secret_key: SecretStr | None = None
+    backup_s3_region: str = "auto"
+
+    @field_validator("backup_s3_url")
+    @classmethod
+    def _backup_url_is_https(cls, url: str | None) -> str | None:
+        if url is not None and urlsplit(url).scheme != "https":
+            raise ValueError("adresse https:// attendue")
+        return url
+
+    def backup_target(self) -> "BackupTarget | None":
+        """Stockage des sauvegardes, s'il est entièrement configuré."""
+        from prospection.application.backup import BackupTarget
+
+        if not (self.backup_s3_url and self.backup_s3_access_key and self.backup_s3_secret_key):
+            return None
+        access, secret = self.backup_s3_access_key, self.backup_s3_secret_key
+        return BackupTarget(self.backup_s3_url, access.get_secret_value(),
+                            secret.get_secret_value(), self.backup_s3_region)  # fmt: skip
 
     @field_validator("app_password_hash")
     @classmethod

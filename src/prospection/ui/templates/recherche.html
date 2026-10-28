@@ -3,6 +3,7 @@
 {% macro error(name) %}{% if errors.get(name) %}<p class="error" role="alert">{{ errors[name] }}</p>{% endif %}{% endmacro %}
 {% block content %}
 <h1 class="large-title">Recherche</h1>
+<p><a class="chip" href="/tableau-de-bord">Tableau de bord</a></p>
 {% if not readiness.has_google_key %}
 <p class="notice" role="status">Ajoutez votre clé Google dans Réglages pour chercher sur Google Maps. Les entreprises récemment créées restent disponibles. <a href="/reglages/cles">Ajouter la clé</a></p>
 {% endif %}

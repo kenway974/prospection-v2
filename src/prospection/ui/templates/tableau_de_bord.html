@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Tableau de bord · Prospection{% endblock %}
+{% block content %}
+<a href="/recherche" class="back">Recherche</a>
+<h1 class="large-title">Tableau de bord</h1>
+<section class="group form" aria-label="Depuis le début">
+  <p class="big-number">{{ board.qualified }} qualifiés</p>
+  <p class="secondary">{{ board.campaigns }} campagnes · {{ board.found }} trouvés{% if board.rate is not none %} · {{ board.rate }} % qualifiés{% endif %}</p>
+  <p class="secondary">{{ spent }} dépensés{% if per_qualified %} · {{ per_qualified }} par prospect qualifié{% endif %}</p>
+</section>
+<section class="group form" aria-label="Sauvegarde de la base">
+  {% if not backup.configured %}<p class="notice">Sauvegarde quotidienne non configurée : renseignez BACKUP_S3_URL, BACKUP_S3_ACCESS_KEY et BACKUP_S3_SECRET_KEY dans Railway (voir le guide de déploiement).</p>
+  {% else %}<p class="secondary" role="status">Dernière sauvegarde : {{ backup.at or "aucune pour l'instant" }}</p>
+  {% if backup.error %}<p class="error" role="alert">Dernier essai échoué : {{ backup.error }}</p>{% endif %}{% endif %}
+</section>
+{% if lines %}
+<h2 class="section-header">Par campagne</h2>
+<ul class="group">{% for stats, when, rate, cost, per in lines %}
+  <li><a class="row link-row" href="/campagnes/{{ stats.id }}"><span>{{ stats.name }}<br><span class="secondary">{{ when }} · {{ stats.qualified }} qualifiés sur {{ stats.found }}{% if rate is not none %} ({{ rate }} %){% endif %} · {{ cost }}{% if per %} · {{ per }} / qualifié{% endif %}</span></span></a></li>
+{% endfor %}</ul>
+{% else %}<p class="empty">Aucune campagne pour l'instant.</p>{% endif %}
+{% endblock %}

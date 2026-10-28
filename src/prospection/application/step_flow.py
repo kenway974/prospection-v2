@@ -28,8 +28,9 @@ def finish(engine: Engine, campaign_id: int, reason: str, now: datetime) -> Step
     return StepOutcome(done=True)
 
 
-def reserve_call(engine: Engine, pricing: Pricing, campaign_id: int, now: datetime) -> bool:
-    """Compte l'appel Google avant de le faire, si le plafond le permet (C07, C79)."""
+def reserve_call(engine: Engine, pricing: Pricing, campaign_id: int | None, now: datetime) -> bool:
+    """Compte l'appel Google avant de le faire, si le plafond le permet (C07, C79) ; sans
+    campagne (vérification hebdomadaire), il compte seulement pour le mois."""
     month, budget = billing_month(now), current_budget(engine)
     with engine.begin() as conn:
         lock_google(conn)
@@ -38,7 +39,8 @@ def reserve_call(engine: Engine, pricing: Pricing, campaign_id: int, now: dateti
             return False
         cost = call_cost_cents(pricing, calls)
         add_call(conn, month, cost)
-        add_counts(conn, campaign_id, now, 0, 0, 0, cost)
+        if campaign_id is not None:
+            add_counts(conn, campaign_id, now, 0, 0, 0, cost)
     return True
 
 

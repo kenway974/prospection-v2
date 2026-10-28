@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Journal · Prospection{% endblock %}
+{% block content %}
+<a href="/campagnes/{{ id }}" class="back">{{ name }}</a>
+<h1 class="large-title">Journal</h1>
+{% if events %}<ul class="group">{% for when, level, message in events %}
+  <li class="row"><span>{% if level == "warning" %}<strong>Attention · </strong>{% endif %}{{ message }}</span><span class="secondary">{{ when }}</span></li>
+{% endfor %}</ul>
+{% else %}<p class="empty">Rien pour l'instant.</p>{% endif %}
+{% endblock %}

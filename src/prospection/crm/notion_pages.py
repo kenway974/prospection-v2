@@ -90,12 +90,12 @@ def update_page(client: httpx.Client, token: str, page_id: str, props: dict[str,
 
 def index_pages(
     client: httpx.Client, token: str, db: str, cursor: str | None
-) -> tuple[list[tuple[str | None, str | None, str | None]], str | None]:
-    """Une page de la base (100 fiches) : (ID app, SIREN, Entreprise) ; curseur suivant (C32)."""
+) -> tuple[list[tuple[str | None, str | None, str | None, str | None]], str | None]:
+    """Une page de la base (100 fiches) : (ID app, SIREN, Entreprise, Ville) ; curseur suivant."""
     body: dict[str, Any] = {"page_size": PAGE_SIZE, **({"start_cursor": cursor} if cursor else {})}
     data = _query(client, token, db, body)
     pages = [p for raw in data.get("results") or [] if (p := _page(raw))]
-    entries = [(p.values.get("ID app"), p.values.get("SIREN"), p.values.get("Entreprise"))
-               for p in pages]  # fmt: skip
+    entries = [(p.values.get("ID app"), p.values.get("SIREN"), p.values.get("Entreprise"),
+                p.values.get("Ville")) for p in pages]  # fmt: skip
     following = data.get("next_cursor") if data.get("has_more") else None
     return entries, following if isinstance(following, str) else None

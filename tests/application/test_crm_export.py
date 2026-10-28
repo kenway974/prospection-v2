@@ -102,10 +102,37 @@ def test_C32_crm_index_excludes_known_prospects(campaign_db: Engine) -> None:
     notion.pages["x"] = {"id": "x", "url": "u", "properties": _as_read({
         "ID app": {"rich_text": [{"text": {"content": "place-7"}}]},
         "SIREN": {"rich_text": [{"text": {"content": "912345678"}}]},
+        "Ville": {"rich_text": [{"text": {"content": "Saint-Pierre"}}]},
         "Entreprise": {"title": [{"text": {"content": "Cuisines Hoarau"}}]}})}  # fmt: skip
+    notion.pages["y"] = {"id": "y", "url": "u", "properties": _as_read({
+        "Entreprise": {"title": [{"text": {"content": "Garage du Centre"}}]}})}  # fmt: skip
     client, _ = fake_client(notion)
-    assert refresh_crm_index(campaign_db, BOX, client, NOW) == 1
+    assert refresh_crm_index(campaign_db, BOX, client, NOW) == 2
     with campaign_db.connect() as conn:
         exclusions = load_exclusions(conn)
     assert "place-7" in exclusions.crm_ids and "912345678" in exclusions.crm_sirens
-    assert "cuisines hoarau" in exclusions.crm_names
+    assert exclusions.crm_names == {"cuisines hoarau|saint pierre", "garage du centre"}
+
+
+def test_C32_index_cleared_when_crm_disabled(campaign_db: Engine) -> None:
+    test_C32_crm_index_excludes_known_prospects(campaign_db)
+    with campaign_db.begin() as conn:
+        conn.exec_driver_sql("UPDATE app_settings SET crm = 'none'")
+    assert refresh_crm_index(campaign_db, BOX, fake_client(FakeNotion())[0], NOW) == -1
+    with campaign_db.connect() as conn:
+        assert load_exclusions(conn).crm_ids == frozenset()
+
+
+def test_C32_partial_index_never_replaces_the_full_one(campaign_db: Engine) -> None:
+    from prospection.application import crm_index
+
+    test_C32_crm_index_excludes_known_prospects(campaign_db)
+    endless = lambda r: httpx.Response(200, json={"results": [], "has_more": True,  # noqa: E731
+                                                  "next_cursor": "encore"})  # fmt: skip
+    old, crm_index.MAX_PAGES = crm_index.MAX_PAGES, 2
+    try:
+        assert refresh_crm_index(campaign_db, BOX, fake_client(endless)[0], NOW) == -1
+    finally:
+        crm_index.MAX_PAGES = old
+    with campaign_db.connect() as conn:
+        assert "place-7" in load_exclusions(conn).crm_ids

@@ -78,7 +78,7 @@ def test_C32_index_read_page_by_page() -> None:
                   {"results": [], "has_more": False}])  # fmt: skip
     client, _ = fake_client(lambda r: httpx.Response(200, json=next(pages)))
     entries, cursor = index_pages(client, "secret", DB, None)
-    assert entries == [("place-1", "912345678", "Atelier")] and cursor == "c2"
+    assert entries == [("place-1", "912345678", "Atelier", None)] and cursor == "c2"
     assert index_pages(client, "secret", DB, cursor) == ([], None)
 
 

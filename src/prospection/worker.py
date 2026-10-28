@@ -9,19 +9,22 @@ import signal
 import threading
 import uuid
 from collections.abc import Callable
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import httpx
 from sqlalchemy import Engine
 
 from prospection.application.campaign_queue import claim_next, release_until
 from prospection.application.campaign_step import run_step
+from prospection.application.mail_check import check_mail_domains
 from prospection.application.registry_enrich import enrich_new_prospects
 from prospection.application.site_verdict import SiteChecker, skip_sites
 from prospection.domain.google_cost import Pricing, load_pricing
+from prospection.sources.mail_domain import mail_server
 from prospection.storage.secret_box import SecretBox
 
 logger = logging.getLogger("prospection.worker")
+MAIL_CHECK_PAUSE = timedelta(minutes=10)
 
 
 class Worker:
@@ -29,9 +32,11 @@ class Worker:
         self, engine: Engine, box: SecretBox, client: httpx.Client, pricing: Pricing,
         now: Callable[[], datetime] = lambda: datetime.now(UTC),
         sites: SiteChecker = skip_sites,
+        mail_lookup: Callable[[str], str | None] | None = None,
     ) -> None:  # fmt: skip
         self.engine, self.box, self.client, self.pricing = engine, box, client, pricing
-        self.now, self.sites = now, sites
+        self.now, self.sites, self.mail_lookup = now, sites, mail_lookup
+        self.next_mail_check = datetime.min.replace(tzinfo=UTC)
         self.worker_id = uuid.uuid4().hex
 
     def work_once(self) -> bool:
@@ -41,8 +46,15 @@ class Worker:
         (SIGTERM d'un déploiement) n'attend jamais plus d'une page.
         """
         campaign_id = claim_next(self.engine, self.now(), self.worker_id)
-        if campaign_id is None:  # rien à chercher : on complète les fiches avec le registre
-            return enrich_new_prospects(self.engine, self.client, self.now()) > 0
+        if campaign_id is None:  # rien à chercher : registre, puis serveurs mail des emails
+            if enrich_new_prospects(self.engine, self.client, self.now()) > 0:
+                return True
+            if self.mail_lookup is None or self.now() < self.next_mail_check:
+                return False
+            checked = check_mail_domains(self.engine, self.now(), self.mail_lookup)
+            if not checked:  # plus rien : on ne relance la recherche que dans 10 minutes
+                self.next_mail_check = self.now() + MAIL_CHECK_PAUSE
+            return checked > 0
         outcome = run_step(
             self.engine, self.box, self.client, self.pricing, campaign_id, self.now(), self.sites
         )
@@ -61,6 +73,11 @@ class Worker:
                 worked = False
             if not worked:
                 stop.wait(idle_seconds)
+
+
+def mail_lookup_for(test_services_url: str | None) -> Callable[[str], str | None] | None:
+    """Vrai DNS en production ; aucun en bout en bout (faux services, règle 3)."""
+    return None if test_services_url else mail_server
 
 
 def main() -> None:  # pragma: no cover (point d'entrée, testé en bout en bout)
@@ -85,7 +102,8 @@ def main() -> None:  # pragma: no cover (point d'entrée, testé en bout en bout
 
     with make_client(settings.test_services_url) as client, web:
         engine = make_engine(settings.database_url)
-        worker = Worker(engine, box, client, load_pricing(), sites=sites)
+        lookup = mail_lookup_for(settings.test_services_url)
+        worker = Worker(engine, box, client, load_pricing(), sites=sites, mail_lookup=lookup)
         logger.info("Tâche de fond démarrée")
         worker.run_forever(stop)
 

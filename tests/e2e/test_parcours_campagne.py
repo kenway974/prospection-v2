@@ -71,3 +71,7 @@ def test_C46_C52_found_site_shown_on_the_card(page: Page, base_url: str) -> None
     expect(site).to_contain_text("Retrouvé à partir du nom")
     expect(site).to_contain_text("/100")
     expect(site.get_by_role("link", name="Facebook")).to_be_visible()
+    appel = page.locator("section", has=page.get_by_role("heading", name="Pour l'appel"))
+    expect(appel).to_contain_text("Indices à confirmer pendant l'appel")
+    expect(page.get_by_role("link", name="Dirigeant sur LinkedIn")).to_be_visible()
+    expect(page.get_by_text("Détail du score")).to_be_visible()

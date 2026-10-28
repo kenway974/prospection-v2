@@ -6,6 +6,7 @@ import threading
 from datetime import timedelta
 
 import httpx
+import pytest
 from sqlalchemy import Engine, text
 
 from prospection.application.campaign_queue import claim_next
@@ -82,3 +83,57 @@ def test_C40_worker_never_releases_a_campaign_taken_over(campaign_db: Engine) ->
     with campaign_db.connect() as conn:
         owner = conn.execute(text("SELECT claimed_by FROM campaigns")).scalar_one()
     assert (len(recorder.requests), owner) == (1, "autre worker")
+
+
+def test_C53_idle_worker_checks_mail_servers(campaign_db: Engine) -> None:
+    """Rien à chercher, registre à jour : la tâche de fond vérifie les serveurs mail."""
+    from tests.application.test_mail_check import with_emails
+
+    with_emails(campaign_db)
+    with campaign_db.begin() as conn:
+        conn.exec_driver_sql("UPDATE prospects SET registry_status = 'sûr'")
+        conn.exec_driver_sql("UPDATE campaigns SET status = 'done'")
+    asked: list[str] = []
+
+    def lookup(domain: str) -> str:
+        asked.append(domain)
+        return "mx"
+
+    client, _ = fake_client(pages())
+    worker = Worker(campaign_db, BOX, client, PRICING, now=lambda: NOW, mail_lookup=lookup)
+    assert worker.work_once() is True and len(asked) == 3
+    assert worker.work_once() is False
+
+
+def test_rule_3_end_to_end_worker_never_asks_the_real_dns() -> None:
+    """En bout en bout (faux services), la vérification des serveurs mail est coupée."""
+    from prospection.sources.mail_domain import mail_server
+    from prospection.worker import mail_lookup_for
+
+    assert mail_lookup_for("http://127.0.0.1:8099") is None
+    assert mail_lookup_for(None) is mail_server
+
+
+def test_C53_idle_mail_check_at_most_every_ten_minutes(
+    campaign_db: Engine, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Rien à vérifier : la recherche de domaines n'est pas relancée à chaque pause."""
+    import prospection.worker as worker_module
+
+    calls: list[object] = []
+    clock = [NOW]
+
+    def counting(*args: object) -> int:
+        calls.append(args)
+        return 0
+
+    monkeypatch.setattr(worker_module, "check_mail_domains", counting)
+    client, _ = fake_client(pages())
+    worker = Worker(campaign_db, BOX, client, PRICING, now=lambda: clock[0],
+                    mail_lookup=lambda d: "mx")  # fmt: skip
+    worker.work_once()
+    worker.work_once()
+    assert len(calls) == 1
+    clock[0] = NOW + timedelta(minutes=11)
+    worker.work_once()
+    assert len(calls) == 2

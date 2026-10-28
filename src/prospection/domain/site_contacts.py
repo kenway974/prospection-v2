@@ -11,11 +11,11 @@ from urllib.parse import unquote, urlsplit
 
 import phonenumbers
 
+from prospection.domain.email_check import is_email
 from prospection.domain.html_page import Page
 from prospection.domain.place import web_link
 
 MAX_FOUND = 5
-_EMAIL = re.compile(r"[a-z0-9._%+-]{1,64}@[a-z0-9.-]{1,200}\.[a-z]{2,24}", re.IGNORECASE)
 _LOCAL = re.compile(r"[a-z0-9._%+-]{1,64}$", re.IGNORECASE)
 _DOMAIN = re.compile(r"[a-z0-9.-]{1,200}\.[a-z]{2,24}", re.IGNORECASE)
 MAX_AT = 50
@@ -73,7 +73,7 @@ def _emails(page: Page) -> tuple[str, ...]:
     mailtos = [
         unquote(link[7:].split("?")[0]) for link in page.links if link.lower().startswith("mailto:")
     ]
-    found = [e.lower() for e in [*mailtos, *_in_text(page.text)] if _EMAIL.fullmatch(e)]
+    found = [e for e in (m.lower() for m in [*mailtos, *_in_text(page.text)]) if is_email(e)]
     return _unique(
         [e for e in found if not any(i in e for i in _IGNORED) and not e.endswith(_IMAGE)]
     )

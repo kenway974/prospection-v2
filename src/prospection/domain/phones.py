@@ -11,15 +11,19 @@ MOBILE_TYPES = {
 }
 
 
-def is_mobile(number: str, country: str | None = None) -> bool:
-    """Un numéro international se suffit ; un numéro national est lu dans le pays de
-    l'établissement s'il est connu, sinon dans chaque territoire français."""
-    regions = (country,) if country and country != "FR" else REGIONS
-    for region in regions:
+def parse_phone(number: str, country: str | None = None) -> phonenumbers.PhoneNumber | None:
+    """Lecture unique d'un numéro : international tel quel ; national lu dans le pays de
+    l'établissement, puis dans chaque territoire français (0692… à La Réunion)."""
+    for region in dict.fromkeys((country or "FR", *REGIONS)):
         try:
             parsed = phonenumbers.parse(number, region)
         except phonenumbers.NumberParseException:
-            return False
+            continue
         if phonenumbers.is_valid_number(parsed):
-            return phonenumbers.number_type(parsed) in MOBILE_TYPES
-    return False
+            return parsed
+    return None
+
+
+def is_mobile(number: str, country: str | None = None) -> bool:
+    parsed = parse_phone(number, country)
+    return parsed is not None and phonenumbers.number_type(parsed) in MOBILE_TYPES

@@ -1,0 +1,9 @@
+<section class="group" aria-labelledby="titre-score">
+  <h2 class="row-title form" id="titre-score">Score et fiabilité</h2>
+  <details class="row"><summary>Détail du score ({{ seen.score }}/100)</summary>
+    <ul>{% for label, points in seen.score_details %}<li>{{ label }} : {{ "%+d" | format(points) }}</li>{% endfor %}</ul>
+  </details>
+  {% for label, value, level in seen.confidence %}<p class="row"><span class="secondary">{{ label }}</span><span>{{ value }} · <span class="level">{{ level }}</span></span></p>{% endfor %}
+  {% for number, kind, source, level in seen.phones %}<p class="row"><span class="secondary">Téléphone ({{ source }})</span><span>{{ number }} · {{ kind }} · <span class="level">{{ level }}</span></span></p>{% endfor %}
+  {% for email, status, why in seen.emails %}<p class="row"><span class="secondary">Email</span><span>{{ email }} · <span class="level">{{ status }}</span><br><span class="secondary">{{ why }}</span></span></p>{% endfor %}
+</section>

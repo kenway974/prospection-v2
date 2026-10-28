@@ -1,0 +1,39 @@
+# Règles de vérification des emails (repris de prospection-bot, services/email_check.py,
+# version 530ba12). Tout en minuscules.
+noreply: [noreply, no-reply, no_reply, donotreply, do-not-reply, nepasrepondre, ne-pas-repondre,
+          mailer-daemon, postmaster, bounce, bounces]
+placeholder_local: [test, exemple, example, email, votre-email, votremail, xxx, nom]
+placeholder_domains: [example.com, example.org, example.net, exemple.com, exemple.fr, domain.com,
+                      domaine.com, email.com, test.com, votresite.com, yourdomain.com, sentry.io,
+                      wixpress.com]
+generic_local: [contact, info, infos, hello, bonjour, accueil, admin, office, commercial,
+                direction, secretariat, service, support, sales, team, devis, reservation, rh,
+                compta, comptabilite, facturation, recrutement, boutique, magasin, agence,
+                atelier, gerance, administration, entreprise]
+# « email@ » et « nom@ » restent factices : ce sont les exemples des formulaires (« votre
+# email »), pas de vraies adresses.
+typos:
+  gmial.com: gmail.com
+  gmal.com: gmail.com
+  gmaill.com: gmail.com
+  gamil.com: gmail.com
+  gmail.co: gmail.com
+  gmail.fr: gmail.com
+  gnail.com: gmail.com
+  hotmial.com: hotmail.com
+  hotmal.com: hotmail.com
+  hotmail.fe: hotmail.fr
+  hotmai.fr: hotmail.fr
+  yahooo.fr: yahoo.fr
+  yaho.fr: yahoo.fr
+  orange.fe: orange.fr
+  oranje.fr: orange.fr
+  wanadoo.fe: wanadoo.fr
+  outlok.com: outlook.com
+  icloud.fr: icloud.com
+  laposte.fe: laposte.net
+disposable: [yopmail.com, yopmail.fr, yopmail.net, mailinator.com, 10minutemail.com,
+             guerrillamail.com, guerrillamail.net, tempmail.com, temp-mail.org, trashmail.com,
+             trashmail.fr, jetable.org, getnada.com, maildrop.cc, throwawaymail.com,
+             dispostable.com, sharklasers.com, fakeinbox.com, mailnesia.com, tempr.email,
+             emailondeck.com, mohmal.com, burnermail.io]

@@ -49,17 +49,13 @@ def test_C44_company_described_in_plain_words() -> None:
     assert lines == [
         ("SIREN", "912 345 678"), ("SIRET", "912 345 678 00012"), ("Création", "01/03/2022"),
         ("Forme", "SAS"), ("Activité", "Travaux de menuiserie bois et PVC (43.32A)"),
-        ("Effectif", "6 à 9 salariés"),
         ("Dirigeants", "Marie DUPONT (Présidente)"),
-        ("Chiffre d'affaires 2024", "450 000 €"), ("Résultat 2024", "32 000 €"),
-    ]  # fmt: skip
+    ]  # fmt: skip  # chiffres et effectif : bloc « Santé » (C112)
 
 
-def test_C44_missing_finances_said_not_published() -> None:
-    bare = dataclasses.replace(LYON_SAS, finances=None, workforce=None, legal_form="9999")
-    lines = dict(describe(bare))
-    assert lines["Chiffre d'affaires"] == "non publié"
-    assert lines["Effectif"] == "non publié" and lines["Forme"] == "autre forme (code 9999)"
+def test_C44_unknown_legal_form_said_with_its_code() -> None:
+    bare = dataclasses.replace(LYON_SAS, legal_form="9999")
+    assert dict(describe(bare))["Forme"] == "autre forme (code 9999)"
 
 
 def test_C93_non_diffusible_keeps_nothing_personal() -> None:
@@ -68,8 +64,7 @@ def test_C93_non_diffusible_keeps_nothing_personal() -> None:
 
 
 def test_C44_unknown_staff_and_activity_said_plainly() -> None:
-    lines = dict(describe(dataclasses.replace(LYON_SAS, workforce="NN", naf="99.99Z")))
-    assert lines["Effectif"] == "non employeuse ou effectif non déclaré"
+    lines = dict(describe(dataclasses.replace(LYON_SAS, naf="99.99Z")))
     assert lines["Activité"] == "99.99Z"
 
 

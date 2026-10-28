@@ -12,11 +12,13 @@ from prospection.application.campaigns import (
     progress,
     request_stop,
 )
+from prospection.application.file_export import campaign_csv, campaign_xlsx
 from prospection.config import Settings
 from prospection.ui.deps import get_engine, get_now, get_settings, templates
 from prospection.ui.formatting import euros, short_datetime
 from prospection.ui.session import require_session
 
+XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 router = APIRouter(prefix="/campagnes", dependencies=[Depends(require_session)])
 
 
@@ -61,3 +63,29 @@ def stop(
     _progress(engine, campaign_id)
     request_stop(engine, campaign_id, now)
     return RedirectResponse(f"/campagnes/{campaign_id}", status_code=303)
+
+
+def _download(data: bytes, kind: str, name: str) -> Response:
+    disposition = f'attachment; filename="{name}"'
+    return Response(data, media_type=kind, headers={"Content-Disposition": disposition})
+
+
+@router.get("/{campaign_id}/export.csv")
+def export_csv(
+    campaign_id: int, liste: str = "prospects",
+    engine: Engine = Depends(get_engine), now: datetime = Depends(get_now),  # noqa: B008
+) -> Response:  # fmt: skip
+    """C62, C65, C66 : prospects ou exclus ; aucun statut modifié (C118)."""
+    _progress(engine, campaign_id)
+    which = "exclus" if liste == "exclus" else "prospects"
+    data = campaign_csv(engine, campaign_id, which, now)
+    return _download(data, "text/csv; charset=utf-8", f"campagne-{campaign_id}-{which}.csv")
+
+
+@router.get("/{campaign_id}/export.xlsx")
+def export_xlsx(
+    campaign_id: int,
+    engine: Engine = Depends(get_engine), now: datetime = Depends(get_now),  # noqa: B008
+) -> Response:  # fmt: skip
+    _progress(engine, campaign_id)
+    return _download(campaign_xlsx(engine, campaign_id, now), XLSX, f"campagne-{campaign_id}.xlsx")

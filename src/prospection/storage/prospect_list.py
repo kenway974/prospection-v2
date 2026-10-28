@@ -126,3 +126,15 @@ def move_session(conn: Connection, prospect_id: int, now: datetime) -> None:
         update(call_session).where(call_session.c.id == 1)
         .values(prospect_id=prospect_id, updated_at=now)
     )  # fmt: skip
+
+
+def campaign_rows(
+    conn: Connection, campaign_id: int, qualified: bool
+) -> list[tuple[ProspectRow, list[str]]]:
+    """Prospects d'une campagne (retenus ou exclus), avec leurs raisons d'exclusion."""
+    query = (
+        select(*_COLUMNS, _P.reasons)
+        .where(_P.campaign_id == campaign_id, _P.qualified.is_(qualified))
+        .order_by(_P.created_at, _P.id)
+    )
+    return [(_row(r), list(r.reasons)) for r in conn.execute(query)]

@@ -3,5 +3,10 @@
 {% block content %}
 <a href="/recherche" class="back">Recherche</a>
 <h1 class="large-title">{{ state.name }}</h1>
+<div class="links" aria-label="Exporter cette campagne">
+  <a class="button-secondary" href="/campagnes/{{ id }}/export.xlsx">Excel</a>
+  <a class="button-secondary" href="/campagnes/{{ id }}/export.csv">CSV prospects</a>
+  <a class="button-secondary" href="/campagnes/{{ id }}/export.csv?liste=exclus">CSV exclus</a>
+</div>
 {% include "_progress.html" %}
 {% endblock %}

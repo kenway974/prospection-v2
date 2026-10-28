@@ -53,3 +53,17 @@ def test_C110_invalid_rules_stop_the_start(
     monkeypatch.setattr(app_module, "load_rules", broken)
     with pytest.raises(call_sheet.InvalidRules):
         app_module.create_app(settings, campaign_db)
+
+
+def test_C62_C63_C66_campaign_exports_downloadable(client: TestClient, campaign_db: Engine) -> None:
+    add(campaign_db, PLACE)
+    with campaign_db.connect() as conn:
+        campaign_id = int(conn.exec_driver_sql("SELECT max(id) FROM campaigns").scalar_one())
+    page = text(client.get(f"/campagnes/{campaign_id}"))
+    assert f'href="/campagnes/{campaign_id}/export.xlsx"' in page
+    csv_file = client.get(f"/campagnes/{campaign_id}/export.csv?liste=exclus")
+    assert csv_file.headers["content-type"].startswith("text/csv")
+    assert "attachment" in csv_file.headers["content-disposition"]
+    xlsx = client.get(f"/campagnes/{campaign_id}/export.xlsx")
+    assert xlsx.content[:2] == b"PK" and xlsx.status_code == 200
+    assert client.get("/campagnes/999999/export.xlsx").status_code == 404

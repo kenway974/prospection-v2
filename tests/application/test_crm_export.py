@@ -13,6 +13,7 @@ from prospection.domain.crm_choice import Crm
 from prospection.domain.services import Service
 from prospection.storage.app_settings import save_crm
 from prospection.storage.exclusions import load_exclusions
+from prospection.storage.secret_box import SecretBox
 from tests.application.campaign_helpers import BOX, NOW
 from tests.application.test_call_tracking import PARIS, add
 from tests.fake_http import fake_client
@@ -22,8 +23,8 @@ from tests.storage.test_campaigns import PLACE
 DB = "ebbf6ef71a4945bf8575a326c745d824"
 
 
-def with_notion(engine: Engine) -> None:
-    store_key(engine, BOX, Service.NOTION, "secret_notion", NOW)
+def with_notion(engine: Engine, box: SecretBox = BOX) -> None:
+    store_key(engine, box, Service.NOTION, "secret_notion", NOW)
     with engine.begin() as conn:
         save_crm(conn, Crm.NOTION, DB, "Prospects v2")
 

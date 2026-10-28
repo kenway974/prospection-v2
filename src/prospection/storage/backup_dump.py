@@ -48,7 +48,10 @@ def dump_database(database_url: str) -> bytes:
 def restore_database(database_url: str, data: bytes) -> None:
     """Remplace le contenu de la base par la copie, en une seule transaction (tout ou rien).
     La copie est d'abord convertie en SQL, sans les réglages qu'un serveur plus ancien ne
-    connaît pas (pg_restore 17 vers PostgreSQL 16 : « transaction_timeout »)."""
+    connaît pas (pg_restore 17 vers PostgreSQL 16 : « transaction_timeout »).
+    Sécurité (méta-commandes psql, CVE-2025-8714) : seule une copie authentifiée par
+    ENCRYPTION_KEY arrive ici, les noms d'objets viennent de nos migrations, et pg_restore
+    / psql ≥ 17.6 encadrent le script de « \\restrict »."""
     script = _run(["pg_restore", "--clean", "--if-exists", "--no-owner", "--no-privileges",
                    "--file=-"], None, data)  # fmt: skip
     psql = ["psql", "--quiet", "--no-psqlrc", "--single-transaction", "-v", "ON_ERROR_STOP=1"]

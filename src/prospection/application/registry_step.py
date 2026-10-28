@@ -102,7 +102,8 @@ def run_registry_step(
             break
         if handled and time.monotonic() - started > STEP_SECONDS:
             return StepOutcome(done=False)  # page reprise au tour suivant : rien en double
-        if company.siren in known or not is_candidate(company, query.since, query.naf_prefixes):
+        already = company.siren in known or company.siren in exclusions.crm_sirens  # C32
+        if already or not is_candidate(company, query.since, query.naf_prefixes):
             continue
         if not workforce_ok(company.workforce, criteria.max_workforce):
             continue

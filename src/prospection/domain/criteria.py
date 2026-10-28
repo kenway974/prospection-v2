@@ -32,6 +32,9 @@ class Exclusions:
     personal_franchises: frozenset[str]
     blacklist_ids: frozenset[str]
     blacklist_names: frozenset[str]
+    crm_ids: frozenset[str] = frozenset()  # déjà dans le CRM (C32) : ID app, SIREN, nom
+    crm_sirens: frozenset[str] = frozenset()
+    crm_names: frozenset[str] = frozenset()
 
 
 @dataclass(frozen=True)
@@ -49,6 +52,8 @@ def _list_reasons(place: Place, criteria: Criteria, exclusions: Exclusions) -> l
         normalize(place.name) in exclusions.blacklist_names
     ):
         reasons.append("Liste noire")
+    if place.place_id in exclusions.crm_ids or normalize(place.name) in exclusions.crm_names:
+        reasons.append("Déjà dans le CRM")
     return reasons
 
 

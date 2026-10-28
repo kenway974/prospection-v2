@@ -1,0 +1,129 @@
+"""Pages de la base Notion « Prospects v2 » : chercher, créer, mettre à jour, relire (C32,
+C68 à C75). API officielle, version épinglée. Réponses validées ; un champ inattendu est lu
+comme vide, jamais inventé.
+
+Repris de prospection-bot (services/crm/notion.py, version 530ba12) : messages 401 / 404
+qui disent quoi faire, recherche de doublon avant création, mise à jour par PATCH.
+"""
+
+from dataclasses import dataclass
+from typing import Any
+
+import httpx
+
+from prospection.crm.notion import API_URL, LABEL, headers
+from prospection.domain.key_check import KeyCheck
+from prospection.http_client import json_object, send
+
+PAGE_SIZE = 100
+REFUSED = {
+    401: "Jeton refusé par Notion : vérifiez le « secret » de l'intégration (Réglages).",
+    403: "Notion refuse l'accès : partagez la base avec l'intégration (base → ⋯ → Connexions).",
+    404: "Base introuvable : partagez-la avec l'intégration (base → ⋯ → Connexions), ou "
+    "choisissez-la de nouveau dans Réglages → CRM.",
+}
+
+
+class NotionBusy(Exception):
+    """Notion trop sollicité ou muet : réessayer plus tard (après `retry_after` s si donné)."""
+
+    def __init__(self, retry_after: float | None = None) -> None:
+        super().__init__("Notion indisponible pour l'instant : nouvel essai plus tard.")
+        self.retry_after = retry_after
+
+
+class NotionRefused(Exception):
+    """Notion refuse la demande ; le message dit pourquoi (envoi en échec)."""
+
+
+@dataclass(frozen=True)
+class FoundPage:
+    id: str
+    url: str
+    values: dict[str, Any]
+
+
+def _call(client: httpx.Client, method: str, path: str, token: str, body: Any) -> dict[str, Any]:
+    response = send(client, method, f"{API_URL}{path}", LABEL, headers=headers(token), json=body)
+    if isinstance(response, KeyCheck) or response.status_code >= 500:
+        raise NotionBusy
+    if response.status_code == 429:
+        try:
+            raise NotionBusy(float(response.headers.get("Retry-After", "")))
+        except ValueError:
+            raise NotionBusy from None
+    data = json_object(response)
+    if response.status_code != 200 or data is None:
+        detail = str((data or {}).get("message", ""))[:300]
+        raise NotionRefused(REFUSED.get(response.status_code) or f"Notion refuse : {detail}")
+    return data
+
+
+def _plain(prop: Any) -> Any:
+    """Valeur simple d'une propriété Notion (texte, nombre, date, lien…)."""
+    if not isinstance(prop, dict):
+        return None
+    kind = prop.get("type")
+    value = prop.get(kind) if isinstance(kind, str) else None
+    if kind in ("title", "rich_text"):
+        parts = value if isinstance(value, list) else []
+        text = "".join(str(p.get("plain_text", "")) for p in parts if isinstance(p, dict))
+        return text or None
+    if kind == "date":
+        return value.get("start") if isinstance(value, dict) else None
+    return value if isinstance(value, (str, int, float)) else None
+
+
+def _page(data: Any) -> FoundPage | None:
+    if not isinstance(data, dict) or not isinstance(data.get("id"), str):
+        return None
+    raw = data.get("properties")
+    props: dict[str, Any] = raw if isinstance(raw, dict) else {}
+    values = {name: _plain(p) for name, p in props.items()}
+    return FoundPage(data["id"], str(data.get("url") or ""), values)
+
+
+def _query(client: httpx.Client, token: str, db: str, body: dict[str, Any]) -> dict[str, Any]:
+    return _call(client, "POST", f"/databases/{db}/query", token, body)
+
+
+def find_page(
+    client: httpx.Client, token: str, db: str, app_id: str, siren: str | None
+) -> FoundPage | None:
+    """Doublon (C69) : par « ID app », puis par SIREN."""
+    for prop, value in (("ID app", app_id), ("SIREN", siren)):
+        if value:
+            body = {"filter": {"property": prop, "rich_text": {"equals": value}}, "page_size": 1}
+            results = _query(client, token, db, body).get("results")
+            found = _page(results[0]) if isinstance(results, list) and results else None
+            if found:
+                return found
+    return None
+
+
+def create_page(
+    client: httpx.Client, token: str, db: str, props: dict[str, Any]
+) -> tuple[str, str]:
+    body = {"parent": {"database_id": db}, "properties": props}
+    page = _page(_call(client, "POST", "/pages", token, body))
+    if page is None:
+        raise NotionBusy
+    return page.id, page.url
+
+
+def update_page(client: httpx.Client, token: str, page_id: str, props: dict[str, Any]) -> str:
+    page = _page(_call(client, "PATCH", f"/pages/{page_id}", token, {"properties": props}))
+    return page.url if page else ""
+
+
+def index_pages(
+    client: httpx.Client, token: str, db: str, cursor: str | None
+) -> tuple[list[tuple[str | None, str | None, str | None]], str | None]:
+    """Une page de la base (100 fiches) : (ID app, SIREN, Entreprise) ; curseur suivant (C32)."""
+    body: dict[str, Any] = {"page_size": PAGE_SIZE, **({"start_cursor": cursor} if cursor else {})}
+    data = _query(client, token, db, body)
+    pages = [p for raw in data.get("results") or [] if (p := _page(raw))]
+    entries = [(p.values.get("ID app"), p.values.get("SIREN"), p.values.get("Entreprise"))
+               for p in pages]  # fmt: skip
+    following = data.get("next_cursor") if data.get("has_more") else None
+    return entries, following if isinstance(following, str) else None

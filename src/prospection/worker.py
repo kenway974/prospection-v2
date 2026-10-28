@@ -16,6 +16,8 @@ from sqlalchemy import Engine
 
 from prospection.application.campaign_queue import claim_next, release_until
 from prospection.application.campaign_step import run_step
+from prospection.application.crm_export import send_pending
+from prospection.application.crm_index import refresh_crm_index
 from prospection.application.mail_check import check_mail_domains
 from prospection.application.registry_enrich import enrich_new_prospects
 from prospection.application.site_verdict import SiteChecker, skip_sites
@@ -25,6 +27,7 @@ from prospection.storage.secret_box import SecretBox
 
 logger = logging.getLogger("prospection.worker")
 MAIL_CHECK_PAUSE = timedelta(minutes=10)
+CRM_INDEX_PAUSE = timedelta(hours=1)
 
 
 class Worker:
@@ -37,6 +40,7 @@ class Worker:
         self.engine, self.box, self.client, self.pricing = engine, box, client, pricing
         self.now, self.sites, self.mail_lookup = now, sites, mail_lookup
         self.next_mail_check = datetime.min.replace(tzinfo=UTC)
+        self.next_crm_index = datetime.min.replace(tzinfo=UTC)
         self.worker_id = uuid.uuid4().hex
 
     def work_once(self) -> bool:
@@ -46,9 +50,14 @@ class Worker:
         (SIGTERM d'un déploiement) n'attend jamais plus d'une page.
         """
         campaign_id = claim_next(self.engine, self.now(), self.worker_id)
-        if campaign_id is None:  # rien à chercher : registre, puis serveurs mail des emails
+        if campaign_id is None:  # rien à chercher : envois CRM, registre, CRM, serveurs mail
+            if send_pending(self.engine, self.box, self.client, self.now()) > 0:
+                return True
             if enrich_new_prospects(self.engine, self.client, self.now()) > 0:
                 return True
+            if self.now() >= self.next_crm_index:  # C32 : relue toutes les heures au plus
+                self.next_crm_index = self.now() + CRM_INDEX_PAUSE
+                refresh_crm_index(self.engine, self.box, self.client, self.now())
             if self.mail_lookup is None or self.now() < self.next_mail_check:
                 return False
             checked = check_mail_domains(self.engine, self.now(), self.mail_lookup)

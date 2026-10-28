@@ -42,7 +42,7 @@ def test_C68_C71_C72_sent_then_exported_with_link(campaign_db: Engine) -> None:
     queue_export(campaign_db, [pid], NOW)
     notion = FakeNotion()
     client, _ = fake_client(notion)
-    assert send_pending(campaign_db, BOX, client, NOW, pause=0) == 1
+    assert send_pending(campaign_db, BOX, client, NOW) == 1
     [page] = notion.pages.values()
     props = page["properties"]
     assert _text(page, "ID app") == "p1" and props["Statut CRM"]["status"]["name"] == "Nouveau"  # type: ignore[index]
@@ -59,11 +59,11 @@ def test_C69_C70_sent_again_updates_without_overwriting(campaign_db: Engine) -> 
     notion = FakeNotion()
     client, _ = fake_client(notion)
     queue_export(campaign_db, [pid], NOW)
-    send_pending(campaign_db, BOX, client, NOW, pause=0)
+    send_pending(campaign_db, BOX, client, NOW)
     page = notion.pages["p1"]
     page["properties"]["Ville"] = {"type": "rich_text", "rich_text": [{"plain_text": "Saisi main"}]}  # type: ignore[index]
     queue_export(campaign_db, [pid], NOW + timedelta(days=1))
-    send_pending(campaign_db, BOX, client, NOW + timedelta(days=1), pause=0)
+    send_pending(campaign_db, BOX, client, NOW + timedelta(days=1))
     assert len(notion.pages) == 1  # pas de doublon
     assert _text(page, "Ville") == "Saisi main"  # saisie manuelle gardée
     assert export_report(campaign_db).updated == 1
@@ -76,11 +76,11 @@ def test_C73_notion_down_nothing_lost_retried_later(campaign_db: Engine) -> None
     notion.answer = httpx.Response(503)
     client, _ = fake_client(notion)
     queue_export(campaign_db, [pid], NOW)
-    send_pending(campaign_db, BOX, client, NOW, pause=0)
+    send_pending(campaign_db, BOX, client, NOW)
     assert prospect_list(campaign_db, None, "", "trouves").rows[0].status == "intéressé"
     notion.answer = None
-    assert send_pending(campaign_db, BOX, client, NOW, pause=0) == 0  # pas avant le délai
-    assert send_pending(campaign_db, BOX, client, NOW + timedelta(minutes=10), pause=0) == 1
+    assert send_pending(campaign_db, BOX, client, NOW) == 0  # pas avant le délai
+    assert send_pending(campaign_db, BOX, client, NOW + timedelta(minutes=10)) == 1
     assert prospect_list(campaign_db, None, "", "trouves").rows[0].status == "exporté"
 
 
@@ -91,7 +91,7 @@ def test_C74_refusal_reported_with_its_reason(campaign_db: Engine) -> None:
     notion.answer = httpx.Response(400, json={"message": "Score is expected to be number."})
     client, _ = fake_client(notion)
     queue_export(campaign_db, [pid], NOW)
-    send_pending(campaign_db, BOX, client, NOW, pause=0)
+    send_pending(campaign_db, BOX, client, NOW)
     [(name, reason)] = export_report(campaign_db).failed
     assert name == "Atelier" and "Score is expected" in reason
 
@@ -104,7 +104,7 @@ def test_C32_crm_index_excludes_known_prospects(campaign_db: Engine) -> None:
         "SIREN": {"rich_text": [{"text": {"content": "912345678"}}]},
         "Entreprise": {"title": [{"text": {"content": "Cuisines Hoarau"}}]}})}  # fmt: skip
     client, _ = fake_client(notion)
-    assert refresh_crm_index(campaign_db, BOX, client, NOW, pause=0) == 1
+    assert refresh_crm_index(campaign_db, BOX, client, NOW) == 1
     with campaign_db.connect() as conn:
         exclusions = load_exclusions(conn)
     assert "place-7" in exclusions.crm_ids and "912345678" in exclusions.crm_sirens

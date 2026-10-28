@@ -11,29 +11,17 @@ from typing import Any
 
 import httpx
 
-from prospection.crm.notion import API_URL, LABEL, headers
-from prospection.domain.key_check import KeyCheck
-from prospection.http_client import json_object, send
+from prospection.crm.notion_http import (
+    MIN_INTERVAL,
+    PACER,
+    NotionBusy,
+    NotionRefused,
+    Pacer,
+    call,
+)
 
 PAGE_SIZE = 100
-REFUSED = {
-    401: "Jeton refusé par Notion : vérifiez le « secret » de l'intégration (Réglages).",
-    403: "Notion refuse l'accès : partagez la base avec l'intégration (base → ⋯ → Connexions).",
-    404: "Base introuvable : partagez-la avec l'intégration (base → ⋯ → Connexions), ou "
-    "choisissez-la de nouveau dans Réglages → CRM.",
-}
-
-
-class NotionBusy(Exception):
-    """Notion trop sollicité ou muet : réessayer plus tard (après `retry_after` s si donné)."""
-
-    def __init__(self, retry_after: float | None = None) -> None:
-        super().__init__("Notion indisponible pour l'instant : nouvel essai plus tard.")
-        self.retry_after = retry_after
-
-
-class NotionRefused(Exception):
-    """Notion refuse la demande ; le message dit pourquoi (envoi en échec)."""
+__all__ = ["MIN_INTERVAL", "PACER", "NotionBusy", "NotionRefused", "Pacer"]
 
 
 @dataclass(frozen=True)
@@ -41,22 +29,6 @@ class FoundPage:
     id: str
     url: str
     values: dict[str, Any]
-
-
-def _call(client: httpx.Client, method: str, path: str, token: str, body: Any) -> dict[str, Any]:
-    response = send(client, method, f"{API_URL}{path}", LABEL, headers=headers(token), json=body)
-    if isinstance(response, KeyCheck) or response.status_code >= 500:
-        raise NotionBusy
-    if response.status_code == 429:
-        try:
-            raise NotionBusy(float(response.headers.get("Retry-After", "")))
-        except ValueError:
-            raise NotionBusy from None
-    data = json_object(response)
-    if response.status_code != 200 or data is None:
-        detail = str((data or {}).get("message", ""))[:300]
-        raise NotionRefused(REFUSED.get(response.status_code) or f"Notion refuse : {detail}")
-    return data
 
 
 def _plain(prop: Any) -> Any:
@@ -84,7 +56,7 @@ def _page(data: Any) -> FoundPage | None:
 
 
 def _query(client: httpx.Client, token: str, db: str, body: dict[str, Any]) -> dict[str, Any]:
-    return _call(client, "POST", f"/databases/{db}/query", token, body)
+    return call(client, "POST", f"/databases/{db}/query", token, body)
 
 
 def find_page(
@@ -105,14 +77,14 @@ def create_page(
     client: httpx.Client, token: str, db: str, props: dict[str, Any]
 ) -> tuple[str, str]:
     body = {"parent": {"database_id": db}, "properties": props}
-    page = _page(_call(client, "POST", "/pages", token, body))
+    page = _page(call(client, "POST", "/pages", token, body))
     if page is None:
         raise NotionBusy
     return page.id, page.url
 
 
 def update_page(client: httpx.Client, token: str, page_id: str, props: dict[str, Any]) -> str:
-    page = _page(_call(client, "PATCH", f"/pages/{page_id}", token, {"properties": props}))
+    page = _page(call(client, "PATCH", f"/pages/{page_id}", token, {"properties": props}))
     return page.url if page else ""
 
 

@@ -80,3 +80,15 @@ def test_C32_index_read_page_by_page() -> None:
     entries, cursor = index_pages(client, "secret", DB, None)
     assert entries == [("place-1", "912345678", "Atelier")] and cursor == "c2"
     assert index_pages(client, "secret", DB, cursor) == ([], None)
+
+
+def test_C75_requests_spaced_whatever_the_thread() -> None:
+    import time
+
+    from prospection.crm.notion_pages import MIN_INTERVAL, Pacer
+
+    pacer = Pacer(0.05)
+    start = time.monotonic()
+    for _ in range(4):
+        pacer.wait()
+    assert time.monotonic() - start >= 0.15 and MIN_INTERVAL >= 0.33

@@ -1,19 +1,20 @@
 """Valeurs d'un prospect pour sa fiche Notion (C68, C71) : ce que l'app sait, rien d'inventé."""
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any
 
 from sqlalchemy import Connection
 
 from prospection.application.prospect_view import emails_of, insights
 from prospection.domain.call_links import leader_name
+from prospection.domain.crm_record import MAX_TEXT
 from prospection.domain.site_guess import address_city
 from prospection.storage.call_tracking import notes, open_action
 from prospection.storage.crm_exports import campaign_name
 from prospection.storage.mail_domains import mail_servers
 from prospection.storage.prospect_list import ProspectRow
 
-MAX_NOTES = 2000
+MAX_NOTES = MAX_TEXT
 
 
 def _notes(conn: Connection, prospect_id: int) -> str | None:
@@ -21,14 +22,20 @@ def _notes(conn: Connection, prospect_id: int) -> str | None:
     return "\n".join(lines)[:MAX_NOTES] or None
 
 
-def crm_values(conn: Connection, row: ProspectRow, now: datetime) -> dict[str, Any]:
-    """Colonnes de l'app ; dates en texte ISO, comparables à ce que Notion relit."""
-    seen = insights(row, mail_servers(conn, [e.split("@")[-1] for e in emails_of(row)]), now.date())
+def _clip(values: dict[str, Any]) -> dict[str, Any]:
+    """Textes coupés comme Notion les garde : la valeur relue reste comparable (C70)."""
+    return {k: v[:MAX_TEXT] if isinstance(v, str) else v for k, v in values.items()}
+
+
+def crm_values(conn: Connection, row: ProspectRow, now: datetime, today: str) -> dict[str, Any]:
+    """Colonnes de l'app ; dates en texte ISO (jour du fuseau du propriétaire)."""
+    day = date.fromisoformat(today)
+    seen = insights(row, mail_servers(conn, [e.split("@")[-1] for e in emails_of(row)]), day)
     sure = row.company if row.company and row.registry_status == "sûr" else None
     action = open_action(conn, row.id)
     emails = emails_of(row)
     data = row.data
-    return {
+    return _clip({
         "Entreprise": data.get("name"), "ID app": data.get("place_id"),
         "Dirigeant": row.contact[0] or (leader_name(sure.leaders) if sure else None),
         "Mobile": row.contact[1], "Téléphone": data.get("phone"),
@@ -40,5 +47,5 @@ def crm_values(conn: Connection, row: ProspectRow, now: datetime) -> dict[str, A
         "Notes app": _notes(conn, row.id),
         "Prochaine action": action.kind if action else None,
         "Date action": action.due_date.isoformat() if action else None,
-        "Campagne": campaign_name(conn, row.id) or None, "Exporté le": now.date().isoformat(),
-    }  # fmt: skip
+        "Campagne": campaign_name(conn, row.id) or None, "Exporté le": today,
+    })  # fmt: skip

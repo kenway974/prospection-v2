@@ -70,3 +70,14 @@ def campaign_db(engine: Engine) -> Iterator[Engine]:
             "UPDATE app_settings SET google_budget_cents = NULL, crm = 'none', "
             "notion_database_id = NULL, notion_database_title = NULL"
         )
+
+
+@pytest.fixture(autouse=True)
+def notion_without_pause() -> Iterator[None]:
+    """Le rythme réel de Notion (C75) est testé à part : ici, pas d'attente."""
+    from prospection.crm import notion_http as notion_pages
+
+    interval = notion_pages.PACER.interval
+    notion_pages.PACER.interval = 0
+    yield
+    notion_pages.PACER.interval = interval

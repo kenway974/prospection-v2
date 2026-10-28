@@ -51,7 +51,8 @@ def test_C63_C65_excel_two_sheets(campaign_db: Engine) -> None:
     campaign_id = campaign_with_prospects(campaign_db)
     book = openpyxl.load_workbook(io.BytesIO(campaign_xlsx(campaign_db, campaign_id, NOW)))
     assert book.sheetnames == ["Prospects", "Exclus"]
-    assert book["Prospects"]["B2"].value == '\'=HYPERLINK("x")'
+    cell = book["Prospects"]["B2"]
+    assert cell.value == '=HYPERLINK("x")' and cell.data_type == "s"  # texte, jamais formule
     assert book["Prospects"].freeze_panes == "A2"
 
 
@@ -61,3 +62,13 @@ def test_C118_file_export_changes_no_status(campaign_db: Engine) -> None:
     campaign_csv(campaign_db, campaign_id, "prospects", NOW)
     campaign_xlsx(campaign_db, campaign_id, NOW)
     assert [r.status for r in prospect_list(campaign_db, None, "", "trouves").rows] == before
+
+
+def test_C64_export_day_is_the_owner_day(campaign_db: Engine) -> None:
+    """Juste après minuit à Paris (encore la veille en UTC), l'ancienneté suit le jour de Paris."""
+    from datetime import UTC, datetime
+
+    campaign_id = campaign_with_prospects(campaign_db)
+    late = datetime(2026, 10, 27, 23, 30, tzinfo=UTC)  # 28 octobre à Paris
+    data = campaign_csv(campaign_db, campaign_id, "prospects", late, "Europe/Paris")
+    assert data.startswith(b"\xef\xbb\xbf")

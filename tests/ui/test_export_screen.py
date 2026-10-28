@@ -46,3 +46,13 @@ def test_C67_nothing_sent_without_notion(client: TestClient, campaign_db: Engine
     interested(campaign_db)
     page = text(client.get("/exporter"))
     assert "Réglages → CRM" in page
+
+
+def test_C67_only_interested_prospects_can_be_queued(
+    client: TestClient, campaign_db: Engine
+) -> None:
+    with_notion(campaign_db, client.app.state.box)  # type: ignore[attr-defined]
+    [other] = add(campaign_db, dataclasses.replace(PLACE, place_id="p9"))  # « à appeler »
+    client.post("/exporter", data={"ids": [str(other), "999999"]}, headers=ORIGIN)
+    with campaign_db.connect() as conn:
+        assert conn.exec_driver_sql("SELECT count(*) FROM crm_exports").scalar_one() == 0

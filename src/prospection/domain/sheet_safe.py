@@ -9,11 +9,20 @@ _FORMULA_START = ("=", "+", "-", "@", "\uff1d", "\uff0b", "\uff0d", "\uff20")
 MAX_CELL = 32_000  # Excel refuse plus de 32 767 caractères par cellule
 
 
-def safe_cell(value: object) -> object:
+def clean(value: object) -> object:
+    """Nombre tel quel ; texte sans caractères de contrôle, borné ; rien → vide."""
     if value is None:
         return ""
     if isinstance(value, bool) or not isinstance(value, (int, float)):
-        text = _CONTROL.sub(" ", str(value))[:MAX_CELL]
-        risky = text[:1] in ("\t", "\r", "\n") or text.lstrip().startswith(_FORMULA_START)
-        return f"'{text}" if risky else text
+        return _CONTROL.sub(" ", str(value))[:MAX_CELL]
     return value
+
+
+def looks_like_formula(text: str) -> bool:
+    return text[:1] in ("\t", "\r", "\n") or text.lstrip().startswith(_FORMULA_START)
+
+
+def safe_cell(value: object) -> object:
+    """Pour le CSV : une formule possible est précédée d'une apostrophe (texte pour Excel)."""
+    cleaned = clean(value)
+    return f"'{cleaned}" if isinstance(cleaned, str) and looks_like_formula(cleaned) else cleaned

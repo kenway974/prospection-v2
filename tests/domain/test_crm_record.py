@@ -26,7 +26,12 @@ def test_C70_manual_edits_never_overwritten() -> None:
 
 
 def test_C70_personal_columns_never_written() -> None:
-    assert "Notes perso" not in APP_COLUMNS and "Statut CRM" not in APP_COLUMNS
+    """Même si la fiche Notion porte « Notes perso », la fusion n'y touche jamais."""
+    current = {"Notes perso": "client difficile", "Statut CRM": "RDV", "Entreprise": "Atelier"}
+    update = merge(current, {}, {**WANTED, "Entreprise": "Atelier"})
+    assert "Notes perso" not in update and "Statut CRM" not in update
+    assert "Statut CRM" not in to_properties(update, creating=False)
+    assert "Notes perso" not in APP_COLUMNS
 
 
 def test_C68_notion_properties_by_type() -> None:

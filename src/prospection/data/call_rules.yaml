@@ -1,63 +1,72 @@
 # Fiche « Pour l'appel » (C110, C111) : règles fixes, sans IA. Vous pouvez en ajouter.
 # Une règle = conditions (toutes vraies) -> une accroche et/ou des douleurs probables.
 # La règle de plus haute priorité donne l'accroche ; 3 douleurs au plus, par priorité.
-# Variables possibles : {nom}, {métier}, {ville}, {ancienneté}, {note}.
-# Conditions : has_site, found_site, site_score_max, no_form, no_https, not_mobile,
-# seo_missing, reviews_max, reviews_min, rating_max, created_within_days, no_hours.
-# Formulez des indices, jamais des certitudes : ils se confirment pendant l'appel.
+# Variables possibles : {nom}, {métier}, {ville}, {ancienneté}, {note} (sans format).
+# Une règle dont une variable est inconnue pour ce prospect ne s'affiche pas.
+# Conditions : has_site, found_site, probable_site, site_down, site_score_max, no_form,
+# no_https, not_mobile, seo_missing, reviews_max, reviews_min, rating_max,
+# created_within_days, no_hours.
+# Formulez des indices (« peut-être », « sans doute », « semble »), jamais des certitudes :
+# ils se confirment pendant l'appel (un test le vérifie).
 rules:
   - id: sans_site
     priority: 100
-    when: {has_site: false}
-    hook: "{nom} n'a pas de site : les clients de {ville} qui cherchent un {métier} sur Google tombent peut-être d'abord sur vos concurrents."
+    when: {has_site: false, probable_site: false}
+    hook: "{nom} ne semble pas avoir de site : les clients de {ville} qui cherchent un {métier} sur Google tombent peut-être d'abord sur vos concurrents ?"
     pains:
-      - "Sans site, un client qui compare avant d'appeler a du mal à vous faire confiance"
-      - "Les demandes arrivent seulement par téléphone, pas le soir ni le week-end"
+      - "Sans site, un client qui compare avant d'appeler a sans doute du mal à vous faire confiance"
+      - "Les demandes arrivent peut-être seulement par téléphone, pas le soir ni le week-end"
   - id: creation_recente
     priority: 90
     when: {created_within_days: 365}
     hook: "Vous avez lancé {nom} il y a {ancienneté} : c'est souvent le moment où les premiers clients se gagnent en ligne."
     pains:
-      - "Activité récente : peu de bouche-à-oreille, il faut se faire connaître vite"
+      - "Activité récente : peu de bouche-à-oreille sans doute, il faut se faire connaître vite"
+  - id: site_injoignable
+    priority: 85
+    when: {site_down: true}
+    hook: "Le site indiqué sur la fiche Google de {nom} ne semble pas répondre : des clients tombent peut-être sur une page d'erreur."
+    pains:
+      - "Un site qui ne répond pas fait peut-être croire que l'entreprise a fermé"
   - id: pas_mobile
     priority: 80
     when: {not_mobile: true}
-    hook: "Votre site s'affiche mal sur téléphone, alors que la plupart des clients cherchent un {métier} depuis leur mobile."
+    hook: "Votre site ne semble pas prévu pour le téléphone, alors que la plupart des clients cherchent un {métier} depuis leur mobile."
     pains:
-      - "Site pas adapté au mobile : des visiteurs repartent peut-être sans appeler"
+      - "Site sans doute peu lisible sur mobile : des visiteurs repartent peut-être sans appeler"
   - id: site_faible
     priority: 75
     when: {site_score_max: 59}
     hook: "J'ai regardé le site de {nom} : quelques points simples freinent sans doute les demandes."
     pains:
-      - "Site vieillissant ou incomplet : une image moins pro que celle des concurrents"
+      - "Site qui semble vieillissant ou incomplet : une image peut-être moins pro que les concurrents"
   - id: sans_formulaire
     priority: 70
     when: {no_form: true}
     pains:
-      - "Pas de formulaire : un client pressé ne peut pas laisser sa demande"
+      - "Pas de formulaire repéré : un client pressé ne peut peut-être pas laisser sa demande"
   - id: sans_https
     priority: 60
     when: {no_https: true}
     pains:
-      - "Site sans HTTPS : le navigateur affiche « non sécurisé », ça peut faire fuir"
+      - "Site sans HTTPS : le navigateur affiche « non sécurisé », ça risque de faire fuir"
   - id: seo_local
     priority: 50
     when: {seo_missing: true}
     pains:
-      - "Le métier ou la ville manquent dans le titre du site : moins visible à {ville}"
+      - "Le métier ou la ville semblent absents du titre du site : sans doute moins visible à {ville}"
   - id: peu_avis
     priority: 40
     when: {reviews_max: 9}
     pains:
-      - "Peu d'avis Google : moins rassurant que des concurrents mieux notés"
+      - "Peu d'avis Google : sans doute moins rassurant que des concurrents mieux notés"
   - id: site_hors_fiche
     priority: 30
     when: {found_site: true}
     pains:
-      - "Le site n'est pas relié à la fiche Google : des clients ne le trouvent pas"
+      - "Le site ne semble pas relié à la fiche Google : des clients ne le trouvent peut-être pas"
   - id: sans_horaires
     priority: 20
     when: {no_hours: true}
     pains:
-      - "Horaires absents de la fiche Google : des clients hésitent à appeler"
+      - "Horaires absents de la fiche Google : des clients hésitent peut-être à appeler"

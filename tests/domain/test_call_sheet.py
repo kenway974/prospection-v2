@@ -51,8 +51,53 @@ def test_C111_nothing_matches_says_so() -> None:
     "text",
     ["rules: [{id: x, priority: 1, when: {inconnu: true}, pains: [a]}]",
      "rules: [{id: x, priority: 1, when: {has_site: false}, hook: 'Bonjour {inconnu}'}]",
-     "rules: [{id: x, priority: 1, when: {}, pains: [a]}]", "rules: 3"],
+     "rules: [{id: x, priority: 1, when: {}, pains: [a]}]", "rules: 3",
+     "rules: [{id: x, priority: 1, when: {has_site: false}, hook: '{nom!z}'}]",
+     "rules: [{id: x, priority: 1, when: {has_site: false}, hook: '{nom:d}'}]",
+     "rules: [{id: x, priority: 1, when: {has_site: false}, hook: '{nom:>999999999}'}]",
+     "rules: [{id: x, priority: 1, when: {has_site: false}, hook: 'a {'}]",
+     "rules: [{id: x, priority: 1, when: {has_site: false}, pains: [a]},"
+     " {id: x, priority: 2, when: {no_hours: true}, pains: [b]}]"],
 )  # fmt: skip
 def test_C110_invalid_rule_file_refused(text: str) -> None:
     with pytest.raises(InvalidRules):
         parse_rules(text)
+
+
+def test_C111_probable_site_never_called_absent() -> None:
+    """Site probable (homonyme possible) : on ne dit pas « pas de site »."""
+    place = dataclasses.replace(PLACE, review_count=50)
+    site = SiteReport("aucun", probable="https://atelier.fr")
+    sheet = call_sheet(signals_of(place, site, None, None, (), TODAY), "menuisier")
+    assert sheet.hook is None or "pas de site" not in sheet.hook
+
+
+def test_C111_texts_are_hints_not_certainties() -> None:
+    """Chaque accroche et douleur du fichier livré est une hypothèse, pas une affirmation."""
+    from prospection.domain.call_sheet import load_rules
+
+    hedges = ("peut-être", "sans doute", "semble", "souvent", "risque", "parfois", "?")
+    for rule in load_rules():
+        for text in (rule.hook or "", *rule.pains):
+            if text:
+                assert any(h in text.lower() for h in hedges), (rule.id, text)
+
+
+def test_C57_C110_site_down_is_an_opportunity() -> None:
+    from prospection.domain.opportunity import opportunity
+
+    place = dataclasses.replace(PLACE, website="https://a.fr", review_count=50)
+    down = SiteReport("fiche Google", problem="Site injoignable")
+    s = signals_of(place, down, None, None, (), TODAY)
+    assert ("Site injoignable ou illisible", 40) in opportunity(s)[1]
+    sheet = call_sheet(s, "plombier")
+    assert sheet.hook is not None and "répondre" in sheet.hook
+
+
+def test_rule_with_an_unknown_value_is_skipped() -> None:
+    """Une règle qui cite l'ancienneté ne s'affiche pas quand elle est inconnue."""
+    rules = parse_rules(
+        "rules: [{id: x, priority: 1, when: {no_hours: true}, hook: 'Créée il y a {ancienneté}'}]"
+    )
+    sheet = call_sheet(signals_of(PLACE, None, None, None, (), TODAY), "plombier", rules)
+    assert sheet.hook is None

@@ -25,6 +25,8 @@ class Conditions(BaseModel):
     rating_max: float | None = None
     created_within_days: int | None = None
     no_hours: bool | None = None
+    probable_site: bool | None = None  # site du même nom trouvé, homonyme possible
+    site_down: bool | None = None  # site de la fiche Google injoignable ou illisible
 
     @model_validator(mode="after")
     def _not_empty(self) -> "Conditions":
@@ -48,6 +50,8 @@ class _Facts:
     rating: float | None
     age: int | None
     no_hours: bool
+    probable_site: bool
+    site_down: bool
 
 
 def _facts(s: Signals) -> _Facts:
@@ -57,7 +61,7 @@ def _facts(s: Signals) -> _Facts:
         audit.score if audit else None, (not audit.contact_form) if audit else None,
         (not audit.https) if audit else None, (not audit.mobile) if audit else None,
         bool(seo.problems) if seo else None, s.place.review_count, s.place.rating,
-        s.age_days, not s.place.opening_hours,
+        s.age_days, not s.place.opening_hours, bool(s.site and s.site.probable), s.site_down,
     )  # fmt: skip
 
 
@@ -66,7 +70,8 @@ def matches(when: Conditions, s: Signals) -> bool:
     flags = [(when.has_site, f.has_site), (when.found_site, f.found_site),
              (when.no_form, f.no_form), (when.no_https, f.no_https),
              (when.not_mobile, f.not_mobile), (when.seo_missing, f.seo_missing),
-             (when.no_hours, f.no_hours)]  # fmt: skip
+             (when.no_hours, f.no_hours), (when.probable_site, f.probable_site),
+             (when.site_down, f.site_down)]  # fmt: skip
     if any(wanted is not None and actual != wanted for wanted, actual in flags):
         return False
     bounds: list[tuple[float | None, float | None, Callable[[float, float], bool]]] = [

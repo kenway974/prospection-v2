@@ -33,6 +33,11 @@ class Signals:
         return self.site.audit if self.site else None
 
     @property
+    def site_down(self) -> bool:
+        """Un site est indiqué mais n'a pas pu être lu (injoignable, refusé, trop lent)."""
+        return bool(self.has_site and self.site and self.site.problem and not self.audit)
+
+    @property
     def mobile(self) -> bool:
         return bool(self.place.phone and is_mobile(self.place.phone, self.place.country))
 
@@ -48,6 +53,8 @@ def signals_of(
 
 def months(days: int) -> str:
     """Ancienneté en clair : « 12 jours », « 2 mois », « 3 ans »."""
+    if days < 1:
+        return "moins d'un jour"
     if days < 45:
         return f"{days} jour{'s' if days > 1 else ''}"
     if days < 730:

@@ -21,14 +21,23 @@ MAX_PAINS = 3
 VARIABLES = {"nom", "métier", "ville", "ancienneté", "note"}
 
 
-class InvalidRules(ValueError):
+class InvalidRules(ValueError):  # une valeur inconnue (ancienneté…) écarte la règle
     """Le fichier des règles « Pour l'appel » est mal formé."""
 
 
+def _used(text: str) -> set[str]:
+    return {name for _, name, _, _ in Formatter().parse(text) if name is not None}
+
+
 def _check_text(text: str) -> str:
-    used = {name for _, name, _, _ in Formatter().parse(text) if name is not None}
-    if used - VARIABLES:
-        raise ValueError(f"variable inconnue : {sorted(used - VARIABLES)}")
+    """Variables connues seulement, sans conversion ni format (« {nom:d} » planterait à
+    l'affichage, « {nom:>999999999} » fabriquerait un texte énorme)."""
+    fields = [(n, conv, spec) for _, n, spec, conv in Formatter().parse(text) if n is not None]
+    if {n for n, _, _ in fields} - VARIABLES:
+        raise ValueError(f"variable inconnue : {sorted({n for n, _, _ in fields} - VARIABLES)}")
+    if any(conv or spec for _, conv, spec in fields):
+        raise ValueError("pas de conversion ni de format : seulement {nom}, {ville}…")
+    text.format_map(dict.fromkeys(VARIABLES, "x"))
     return text
 
 
@@ -52,6 +61,13 @@ class Rule(BaseModel):
 class _File(BaseModel):
     model_config = ConfigDict(extra="forbid")
     rules: tuple[Rule, ...]
+
+    @model_validator(mode="after")
+    def _unique_ids(self) -> "_File":
+        ids = [r.id for r in self.rules]
+        if len(ids) != len(set(ids)):
+            raise ValueError("deux règles portent le même id")
+        return self
 
 
 def parse_rules(text: str) -> tuple[Rule, ...]:
@@ -82,7 +98,11 @@ def call_sheet(s: Signals, trade: str, rules: tuple[Rule, ...] | None = None) ->
               "ville": address_city(s.place.address) or "votre ville",
               "ancienneté": months(s.age_days) if s.age_days is not None else "",
               "note": rating}  # fmt: skip
-    found = [r for r in (rules if rules is not None else load_rules()) if matches(r.when, s)]
+    known = {k for k, v in values.items() if v}
+    found = [
+        r for r in (rules if rules is not None else load_rules())
+        if matches(r.when, s) and _used(" ".join((r.hook or "", *r.pains))) <= known
+    ]  # fmt: skip
     hook = next((r.hook for r in found if r.hook), None)
     pains = list(dict.fromkeys(p for r in found for p in r.pains))[:MAX_PAINS]
     return CallSheet(hook.format_map(values) if hook else None,

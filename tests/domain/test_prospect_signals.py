@@ -71,3 +71,9 @@ def test_C60_confidence_of_each_information() -> None:
     unsure_signals = signals_of(place, doubtful, None, "à confirmer", (), TODAY)
     unsure = {label: level for label, _, level in confidence(unsure_signals)}
     assert unsure["Site"] == "à vérifier" and unsure["Entreprise"] == "à vérifier"
+
+
+def test_months_never_says_zero() -> None:
+    from prospection.domain.signals import months
+
+    assert months(0) == "moins d'un jour" and months(1) == "1 jour"

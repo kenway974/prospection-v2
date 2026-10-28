@@ -7,7 +7,7 @@ score. Chaque ligne du détail est affichée telle quelle.
 
 from prospection.domain.signals import Signals, months
 
-NO_SITE, WEAK_FACTOR, NO_FORM, FOUND_SITE = 55, 0.5, 15, 5
+NO_SITE, WEAK_FACTOR, NO_FORM, FOUND_SITE, SITE_DOWN = 55, 0.5, 15, 5, 40
 FEW_REVIEWS = ((10, 20, "Très peu d'avis Google"), (30, 10, "Peu d'avis Google"))
 MANY_REVIEWS, MANY_POINTS = 100, -10
 SOLID, SOLID_REVIEWS, SOLID_RATING, SOLID_SITE = -40, 50, 4.5, 80
@@ -19,6 +19,8 @@ def _site(s: Signals) -> list[tuple[str, int]]:
     audit = s.audit
     if not s.has_site:
         return [("Aucun site (ni sur la fiche Google, ni retrouvé)", NO_SITE)]
+    if s.site_down:
+        return [("Site injoignable ou illisible", SITE_DOWN)]
     lines = []
     if audit and (weak := round((100 - audit.score) * WEAK_FACTOR)):
         lines.append((f"Site à améliorer (qualité {audit.score}/100)", weak))

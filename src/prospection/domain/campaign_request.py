@@ -26,6 +26,8 @@ class CityZone:
 
     @property
     def label(self) -> str:
+        if self.country == "FR" and not self.code:  # position ou adresse (mode Terrain)
+            return self.name
         if self.country == "FR":
             return f"{self.name} ({department_of(self.code)})"
         return (

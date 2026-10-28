@@ -16,7 +16,13 @@ logger = logging.getLogger(__name__)
 
 # Services externes remplacés par un faux local en bout en bout (jamais de vrai réseau)
 FAKED_HOSTS = frozenset(
-    {"places.googleapis.com", "recherche-entreprises.api.gouv.fr", "api.insee.fr", "api.notion.com"}
+    {
+        "places.googleapis.com",
+        "recherche-entreprises.api.gouv.fr",
+        "api.insee.fr",
+        "api.notion.com",
+        "api-adresse.data.gouv.fr",
+    }
 )
 
 

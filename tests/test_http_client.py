@@ -45,6 +45,6 @@ def test_google_calls_go_to_local_fake_only_when_asked() -> None:
         "http://127.0.0.1:8099/v1/places:searchText",
         "http://127.0.0.1:8099/search?q=x",
         "http://127.0.0.1:8099/api-sirene/3.11/siret",
-        "https://api.notion.com/v1/users/me",
+        "http://127.0.0.1:8099/v1/users/me",  # Notion aussi : la tâche de fond y écrit
     ]
     assert make_client()._transport.__class__ is not ServicesToFake

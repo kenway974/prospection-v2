@@ -52,6 +52,8 @@ app_settings = Table(
     Column("notion_database_id", Text),
     Column("notion_database_title", Text),
     Column("google_budget_cents", Integer),
+    Column("reminder_minutes", Integer, nullable=False, server_default="15"),  # C108
+    Column("reminder_hour", SmallInteger, nullable=False, server_default="8"),
     CheckConstraint("id = 1", name="app_settings_single_row"),
 )
 

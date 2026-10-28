@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from datetime import date
 
 from prospection.domain.company import Company
+from prospection.domain.company_card import SURE
 from prospection.domain.phones import is_mobile
 from prospection.domain.place import Place
 from prospection.domain.site_audit import Audit
@@ -46,9 +47,12 @@ def signals_of(
     place: Place, site: SiteReport | None, company: Company | None,
     registry_status: str | None, flags: tuple[str, ...], today: date,
 ) -> Signals:  # fmt: skip
-    created = company.created if company else None
+    # Rapprochement sûr et entreprise diffusible seulement : un homonyme possible (« à
+    # confirmer ») ne nourrit ni le score, ni l'accroche, ni la santé, ni le dirigeant (C59, C93)
+    trusted = company if company and company.diffusible and registry_status == SURE else None
+    created = trusted.created if trusted else None
     age = (today - created).days if created and created <= today else None
-    return Signals(place, site, company, registry_status, flags, age)
+    return Signals(place, site, trusted, registry_status, flags, age)
 
 
 def months(days: int) -> str:

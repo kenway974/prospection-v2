@@ -77,3 +77,24 @@ def test_months_never_says_zero() -> None:
     from prospection.domain.signals import months
 
     assert months(0) == "moins d'un jour" and months(1) == "1 jour"
+
+
+def test_C59_C60_unsure_company_never_used_as_if_sure() -> None:
+    """Rapprochement « à confirmer » : peut-être un homonyme, rien n'en est tiré."""
+    from prospection.domain.call_sheet import call_sheet
+    from prospection.domain.health import health_lines
+
+    place = dataclasses.replace(PLACE, review_count=4)
+    s = signals_of(place, SiteReport("aucun"), YOUNG, "à confirmer", (), TODAY)
+    assert s.company is None and s.age_days is None
+    assert not any("créée" in label for label, _ in opportunity(s)[1])
+    assert "créée" not in reason(s)
+    hook = call_sheet(s, "menuisier").hook or ""
+    assert "lancé" not in hook
+    lines = dict(health_lines(s))
+    assert lines["Chiffre d'affaires"] == "entreprise pas trouvée avec certitude"
+
+
+def test_C93_non_diffusible_company_never_reaches_the_signals() -> None:
+    hidden = dataclasses.replace(LYON_SAS, diffusible=False)
+    assert signals_of(PLACE, None, hidden, "sûr", (), TODAY).company is None

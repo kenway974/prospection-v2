@@ -27,11 +27,17 @@ def test_C112_published_figures_and_google_activity() -> None:
     assert lines["Photos"] == "8 (ajoutées par le propriétaire : probable)"
 
 
-def test_C112_missing_said_not_published() -> None:
+def test_C112_registry_not_consulted_yet_said_so() -> None:
     lines = dict(health_lines(signals_of(PLACE, None, None, None, (), TODAY)))
-    assert lines["Chiffre d'affaires"] == "non publié"
-    assert lines["Effectif"] == "non publié" and lines["Horaires"] == "non publiés"
-    assert lines["Ancienneté"] == "non publiée"
+    assert lines["Chiffre d'affaires"] == "registre pas encore consulté"
+    assert lines["Effectif"] == "registre pas encore consulté"
+    assert lines["Horaires"] == "non publiés" and lines["Ancienneté"] == "non publiée"
+
+
+def test_C112_known_company_without_figures_not_published() -> None:
+    bare = dataclasses.replace(LYON_SAS, finances=None, workforce=None)
+    lines = dict(health_lines(signals_of(PLACE, None, bare, "sûr", (), TODAY)))
+    assert lines["Chiffre d'affaires"] == "non publié" and lines["Effectif"] == "non publié"
 
 
 def test_C112_non_employer_and_missing_finances() -> None:
@@ -42,6 +48,6 @@ def test_C112_non_employer_and_missing_finances() -> None:
 
 
 def test_C93_non_diffusible_figures_never_shown() -> None:
-    hidden = dataclasses.replace(LYON_SAS, diffusible=False)
-    lines = dict(health_lines(signals_of(PLACE, None, hidden, "sûr", (), TODAY)))
-    assert lines["Chiffre d'affaires"] == "non publié" and lines["Effectif"] == "non publié"
+    lines = dict(health_lines(signals_of(PLACE, None, None, "non diffusible", (), TODAY)))
+    assert lines["Chiffre d'affaires"] == "non diffusé à la demande de l'entreprise"
+    assert lines["Ancienneté"] == "non publiée"

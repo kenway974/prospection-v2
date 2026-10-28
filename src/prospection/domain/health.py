@@ -5,18 +5,35 @@ estimation. Le rythme des avis demanderait un champ Google payant : il est dit �
 disponible » (budget à 0 €, voir le plan du lot 6).
 """
 
-from prospection.domain.company_card import NOT_PUBLISHED, euros, labels
+from prospection.domain.company_card import (
+    NON_DIFFUSIBLE,
+    NOT_FRENCH,
+    NOT_PUBLISHED,
+    SURE,
+    TO_CONFIRM,
+    euros,
+    labels,
+)
 from prospection.domain.signals import Signals, months
 
+_WHY = {
+    TO_CONFIRM: "entreprise pas trouvée avec certitude",
+    NOT_FRENCH: "registre non consulté (hors France)",
+    NON_DIFFUSIBLE: "non diffusé à la demande de l'entreprise",
+    SURE: NOT_PUBLISHED,
+}
 _PHOTOS = {"probable propriétaire": "ajoutées par le propriétaire : probable",
            "clients seulement": "ajoutées par des clients : probable"}  # fmt: skip
 
 
 def _figures(s: Signals) -> list[tuple[str, str]]:
-    company = s.company if s.company and s.company.diffusible else None
-    staff = labels().effectifs.get(company.workforce or "", NOT_PUBLISHED) if company else None
-    lines = [("Effectif", staff or NOT_PUBLISHED)]
-    if company and company.finances:
+    company = s.company
+    if company is None:  # dire pourquoi, plutôt que « non publié » (rien d'inventé)
+        why = _WHY.get(s.registry_status or "", "registre pas encore consulté")
+        return [("Chiffre d'affaires", why), ("Effectif", why)]
+    staff = labels().effectifs.get(company.workforce or "", NOT_PUBLISHED)
+    lines = [("Effectif", staff)]
+    if company.finances:
         year, revenue, result = company.finances
         return [(f"Chiffre d'affaires {year}", euros(revenue)), (f"Résultat {year}", euros(result)),
                 *lines]  # fmt: skip

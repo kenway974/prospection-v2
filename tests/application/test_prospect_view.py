@@ -77,3 +77,15 @@ def test_C110_C112_card_prepares_the_call(campaign_db: Engine) -> None:
     assert seen is not None and seen.sheet.hook is not None and "Atelier" in seen.sheet.hook
     assert seen.sheet.notice.startswith("Indices à confirmer")
     assert ("Avis", "4 avis (rythme non disponible)") in seen.health
+
+
+def test_C56_unsure_company_leader_never_searched(campaign_db: Engine) -> None:
+    from prospection.storage.company_codec import encode_company
+    from tests.domain.test_company import LYON_SAS
+
+    [pid] = add(campaign_db, PLACE)
+    with campaign_db.begin() as conn:
+        conn.execute(prospects.update().values(
+            company_json=encode_company(LYON_SAS), registry_status="à confirmer"))  # fmt: skip
+    seen = card(campaign_db, pid, NOW, PARIS).insights
+    assert seen is not None and "DUPONT" not in seen.linkedin and "g%C3%A9rant" in seen.linkedin

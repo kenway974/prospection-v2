@@ -44,7 +44,7 @@ def test_C99_alert_when_a_format_changes(campaign_db: Engine) -> None:
     with campaign_db.connect() as conn:
         messages = sorted(a.message for a in unseen_alerts(conn))
     assert messages == [
-        "Vérification hebdomadaire · Google Maps : réponse inattendue (format changé ?)",
+        "Vérification hebdomadaire · Google Maps : aucun établissement lisible (format changé ?)",
         "Vérification hebdomadaire · Registre des entreprises : aucun résultat lisible",
     ]
 
@@ -57,3 +57,26 @@ def test_C99_refused_key_reported(campaign_db: Engine) -> None:
     assert any(
         m.startswith("Vérification hebdomadaire · Google Maps : Google refuse") for m in messages
     )
+
+
+def test_C99_passing_outage_retried_then_reported_if_it_lasts(campaign_db: Engine) -> None:
+    client, seen = fake_client(lambda r: httpx.Response(503, json={}))
+    weekly_api_check(campaign_db, BOX, fake_client(healthy)[0], PRICING, NOW)  # semaine 1 : ok
+    later = NOW + timedelta(days=7)
+    with campaign_db.begin() as conn:  # clé Google acceptée, le reste en panne
+        conn.exec_driver_sql("DELETE FROM api_keys")
+    assert weekly_api_check(campaign_db, BOX, client, PRICING, later)
+    with campaign_db.connect() as conn:
+        assert unseen_alerts(conn) == []  # une panne passagère ne dit rien…
+    assert not weekly_api_check(campaign_db, BOX, client, PRICING, later + timedelta(minutes=30))
+    assert weekly_api_check(campaign_db, BOX, client, PRICING, later + timedelta(hours=1))
+    with campaign_db.connect() as conn:
+        [alert] = unseen_alerts(conn)  # … mais deux de suite, si
+    assert "deux fois de suite" in alert.message and seen.requests
+
+
+def test_C99_refused_google_key_not_charged_again(campaign_db: Engine) -> None:
+    client, seen = fake_client(lambda r: httpx.Response(403, json={"error": {}}))
+    weekly_api_check(campaign_db, BOX, client, PRICING, NOW)
+    google = [r for r in seen.requests if r.url.host == "places.googleapis.com"]
+    assert len(google) == 1  # le test de la clé seulement, pas de page payée

@@ -1,31 +1,33 @@
 """RGPD : purge des prospects non retenus (C94) et suppression d'une entreprise (C95)."""
 
+from collections.abc import Sequence
 from datetime import datetime
+from typing import Any
 
 from sqlalchemy import Connection, delete, func, or_, select
 from sqlalchemy.dialects.postgresql import insert
 
 from prospection.domain.privacy import PURGEABLE, erasure_key
+from prospection.domain.trades import normalize
 from prospection.storage.schema_calls import prospect_actions, prospect_notes
 from prospection.storage.schema_campaigns import campaign_events, exclusion_names, prospects
 from prospection.storage.schema_followup import alerts
 
-ERASED = "erased"
+ERASED, BLACKLIST = "erased", "blacklist"
 _P = prospects.c
+_DELETED = (_P.id, _P.data_json["name"].astext, _P.campaign_id)
 
 
-def _forget(conn: Connection, rows: list[tuple[int, str]]) -> None:
-    """Alertes et lignes de journal qui citent ces prospects (nom, lien)."""
+def _forget(conn: Connection, rows: Sequence[Any]) -> None:
+    """Alertes et lignes de journal (de leurs campagnes seulement) qui citent ces prospects."""
     if not rows:
         return
-    links = [f"/prospects/{pid}" for pid, _ in rows]
+    links = [f"/prospects/{r[0]}" for r in rows]
     conn.execute(delete(alerts).where(alerts.c.link.in_(links)))
     e = campaign_events.c
-    names = {name for _, name in rows if name}
-    for name in names:
-        conn.execute(
-            delete(campaign_events).where(e.message.startswith(f"{name} : ", autoescape=True))
-        )
+    for name, campaign_id in {(r[1], r[2]) for r in rows if r[1]}:
+        named = e.message.startswith(f"{name} : ", autoescape=True)
+        conn.execute(delete(campaign_events).where(e.campaign_id == campaign_id, named))
 
 
 def purge_inactive(conn: Connection, cutoff: datetime) -> int:
@@ -43,16 +45,17 @@ def purge_inactive(conn: Connection, cutoff: datetime) -> int:
         delete(prospects).where(
             or_(_P.qualified.is_(False), _P.status.in_(PURGEABLE)), activity < cutoff,
             ~open_action,
-        ).returning(_P.id, _P.data_json["name"].astext)
+        ).returning(*_DELETED)
     ).all()  # fmt: skip
-    _forget(conn, [(r[0], r[1]) for r in rows])
+    _forget(conn, rows)
     conn.execute(delete(alerts).where(alerts.c.created_at < cutoff))
     return len(rows)
 
 
-def erase_company(conn: Connection, prospect_id: int) -> int:
+def erase_company(conn: Connection, prospect_id: int, keep_blacklist: bool = False) -> int:
     """Toutes les fiches de l'entreprise (même fiche Google ou même SIREN), dans toutes les
-    campagnes, puis une empreinte pour ne plus jamais la reprendre. Renvoie combien."""
+    campagnes, son entrée de liste noire (sauf si je la garde), puis une empreinte pour ne
+    plus jamais la reprendre. Renvoie combien de fiches."""
     row = conn.execute(
         select(_P.place_id, _P.company_json["siren"].astext).where(_P.id == prospect_id)
     ).first()
@@ -64,10 +67,12 @@ def erase_company(conn: Connection, prospect_id: int) -> int:
     if siren:
         same += [_P.company_json["siren"].astext == siren, _P.place_id == f"siren:{siren}"]
         keys.add(erasure_key(f"siren:{siren}"))
-    rows = conn.execute(
-        delete(prospects).where(or_(*same)).returning(_P.id, _P.data_json["name"].astext)
-    ).all()
-    _forget(conn, [(r[0], r[1]) for r in rows])
+    rows = conn.execute(delete(prospects).where(or_(*same)).returning(*_DELETED)).all()
+    _forget(conn, rows)
+    names = {normalize(r[1]) for r in rows if r[1]}
+    if names and not keep_blacklist:
+        e = exclusion_names.c
+        conn.execute(delete(exclusion_names).where(e.kind == BLACKLIST, e.name_norm.in_(names)))
     values = [{"kind": ERASED, "name_norm": key, "name": "(entreprise supprimée)"} for key in keys]
     conn.execute(insert(exclusion_names).values(values).on_conflict_do_nothing())
     return len(rows)

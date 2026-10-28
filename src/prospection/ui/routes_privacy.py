@@ -53,8 +53,10 @@ def erase_page(request: Request, prospect_id: int, engine: Engine = ENGINE) -> R
 
 
 @router.post("/prospects/{prospect_id}/supprimer")
-def erase(prospect_id: int, engine: Engine = ENGINE) -> Response:
-    count = erase_company(engine, prospect_id)
+def erase(
+    prospect_id: int, garder: str = Form("", max_length=5), engine: Engine = ENGINE
+) -> Response:
+    count = erase_company(engine, prospect_id, keep_blacklist=garder == "on")
     if not count:
         raise HTTPException(status_code=404)
     return RedirectResponse(f"/reglages/confidentialite?supprime={count}", status_code=303)

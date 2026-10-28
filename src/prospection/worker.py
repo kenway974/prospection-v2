@@ -45,7 +45,9 @@ class Worker:
         self.now, self.sites, self.mail_lookup = now, sites, mail_lookup
         self.timezone = timezone
         self.next_mail_check = datetime.min.replace(tzinfo=UTC)
-        self.reminders, self.periodic = regular_jobs(engine, box, client, pricing, timezone, backup)
+        self.reminders, self.periodic = regular_jobs(
+            engine, box, client, pricing, timezone, backup, now()
+        )
         self.worker_id = uuid.uuid4().hex
 
     def work_once(self) -> bool:
@@ -54,7 +56,8 @@ class Worker:
         Vrai si travail. Les campagnes avancent ainsi à tour de rôle, et un arrêt
         (SIGTERM d'un déploiement) n'attend jamais plus d'une page.
         """
-        self.reminders.maybe_run(self.now())  # C108 : à la minute près, même en pleine campagne
+        for job in (self.reminders, *self.periodic):  # même en pleine campagne
+            job.maybe_run(self.now())
         if run_due_schedule(self.engine, self.now(), self.timezone):  # C77
             return True
         campaign_id = claim_next(self.engine, self.now(), self.worker_id)
@@ -71,16 +74,13 @@ class Worker:
         return True
 
     def _between_campaigns(self) -> bool:
-        """Rien à chercher : envois CRM, registre, mises à jour, travaux réguliers, index CRM,
-        serveurs mail."""
+        """Rien à chercher : envois CRM, registre, mises à jour, serveurs mail."""
         if send_pending(self.engine, self.box, self.client, self.now()) > 0:
             return True
         if enrich_new_prospects(self.engine, self.client, self.now()) > 0:
             return True
         if refresh_next(self.engine, self.box, self.client, self.pricing, self.now()):  # C76
             return True
-        for job in self.periodic:
-            job.maybe_run(self.now())
         if self.mail_lookup is None or self.now() < self.next_mail_check:
             return False
         checked = check_mail_domains(self.engine, self.now(), self.mail_lookup)

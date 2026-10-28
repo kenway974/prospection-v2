@@ -1,5 +1,6 @@
 """Enregistrer une page de résultats Google (C38, C39, C41, C13)."""
 
+import dataclasses
 import logging
 from datetime import datetime
 
@@ -17,6 +18,7 @@ from prospection.domain.departments import postal_department
 from prospection.domain.foreign_zones import known_region, postal_region
 from prospection.domain.geo import distance_m
 from prospection.domain.place import Place
+from prospection.domain.privacy import is_erased
 from prospection.domain.site_criteria import needs_site
 from prospection.domain.territories import same_country
 from prospection.domain.trades import Trade, find_trade, load_trades
@@ -79,6 +81,8 @@ def save_page(
         campaign = load_campaign(conn, campaign_id)
         criteria = campaign.request.criteria
         exclusions = load_exclusions(conn)
+        kept = [p for p in page.places if not is_erased(p.place_id, exclusions.erased)]
+        page = dataclasses.replace(page, places=kept)  # C95 : jamais réenregistrée
         known = known_places(conn, campaign_id, [p.place_id for p in page.places])
     verdicts = _free_verdicts(page, step, trade, criteria, exclusions)
     to_read = [p for p in page.places if p.place_id not in known

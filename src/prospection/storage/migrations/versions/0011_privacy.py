@@ -13,10 +13,14 @@ def upgrade() -> None:
     op.add_column("app_settings", sa.Column("api_checked_at", sa.DateTime(timezone=True)))
     op.add_column("app_settings", sa.Column("backup_at", sa.DateTime(timezone=True)))
     op.add_column("app_settings", sa.Column("backup_error", sa.Text))
+    op.add_column(  # pannes passagères de suite à la vérification des API
+        "app_settings",
+        sa.Column("api_failures", sa.SmallInteger, nullable=False, server_default="0"),
+    )
 
 
 def downgrade() -> None:
-    for name in ("backup_error", "backup_at", "api_checked_at"):
+    for name in ("api_failures", "backup_error", "backup_at", "api_checked_at"):
         op.drop_column("app_settings", name)
     op.drop_column("app_settings", "purge_months")
 

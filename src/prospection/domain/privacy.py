@@ -19,6 +19,10 @@ def purge_cutoff(now: datetime, months: int) -> datetime:
     return now.replace(year=year, month=month + 1, day=day)
 
 
+def is_erased(identifier: str, erased: frozenset[str]) -> bool:
+    return bool(erased) and erasure_key(identifier) in erased
+
+
 def erasure_key(identifier: str) -> str:
     """Empreinte d'un identifiant (fiche Google, « siren:… ») : l'entreprise n'est plus jamais
     reprise, sans garder son identifiant lisible."""

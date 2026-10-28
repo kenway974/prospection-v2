@@ -16,6 +16,20 @@ def claim_api_check(conn: Connection, now: datetime, every: timedelta) -> bool:
     return conn.execute(query.returning(_S.id)).first() is not None
 
 
+def note_api_outage(conn: Connection, retry_at: datetime, every: timedelta) -> int:
+    """Panne passagère : nouvel essai à `retry_at` ; renvoie combien de suite (1, 2…)."""
+    row = conn.execute(
+        update(app_settings).where(_S.id == 1)
+        .values(api_failures=_S.api_failures + 1, api_checked_at=retry_at - every)
+        .returning(_S.api_failures)
+    ).one()  # fmt: skip
+    return int(row[0])
+
+
+def reset_api_outages(conn: Connection) -> None:
+    conn.execute(update(app_settings).where(_S.id == 1).values(api_failures=0))
+
+
 def last_backup(conn: Connection) -> tuple[datetime | None, str | None]:
     row = conn.execute(select(_S.backup_at, _S.backup_error).where(_S.id == 1)).one()
     return row.backup_at, row.backup_error

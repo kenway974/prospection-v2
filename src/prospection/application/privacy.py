@@ -42,10 +42,10 @@ def purge(engine: Engine, now: datetime) -> int:
     return count
 
 
-def erase_company(engine: Engine, prospect_id: int) -> int:
+def erase_company(engine: Engine, prospect_id: int, keep_blacklist: bool = False) -> int:
     """Toutes ses données, dans toutes les campagnes ; elle ne sera plus jamais reprise."""
     with engine.begin() as conn:
-        return store.erase_company(conn, prospect_id)
+        return store.erase_company(conn, prospect_id, keep_blacklist)
 
 
 def company_name(engine: Engine, prospect_id: int) -> str | None:

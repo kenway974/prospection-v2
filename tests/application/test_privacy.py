@@ -76,3 +76,48 @@ def test_C95_erase_everything_about_a_company(campaign_db: Engine) -> None:
         exclusions = load_exclusions(conn)
     assert len(exclusions.erased) == 1 and "p1" not in next(iter(exclusions.erased))
     assert erase_company(campaign_db, 999) == 0
+
+
+def test_C95_blacklist_entry_erased_unless_kept_and_other_journals_untouched(
+    campaign_db: Engine,
+) -> None:
+    from prospection.storage.exclusions import personal_lists, save_blacklist
+
+    first = add(campaign_db, _place(1))[0]
+    add(campaign_db, dataclasses.replace(_place(3), name="Commerce 1"))  # homonyme ailleurs
+    with campaign_db.begin() as conn:
+        save_blacklist(conn, ["Commerce 1", "Autre"])
+        conn.exec_driver_sql(
+            "INSERT INTO campaign_events (campaign_id, at, level, message) "
+            "VALUES (2, now(), 'info', 'Commerce 1 : Site ajouté')"
+        )
+    erase_company(campaign_db, first)
+    with campaign_db.connect() as conn:
+        assert personal_lists(conn)[1] == ["Autre"]
+        kept = ("SELECT count(*) FROM campaign_events "
+                "WHERE campaign_id = 2 AND message LIKE 'Commerce%%'")  # fmt: skip
+        assert conn.exec_driver_sql(kept).scalar_one() == 1  # l'homonyme garde son journal
+    add(campaign_db, _place(4))
+    with campaign_db.connect() as conn:
+        other = conn.exec_driver_sql("SELECT id FROM prospects WHERE place_id = 'p4'").scalar_one()
+    with campaign_db.begin() as conn:
+        save_blacklist(conn, ["Commerce 4"])
+    erase_company(campaign_db, other, keep_blacklist=True)
+    with campaign_db.connect() as conn:
+        assert personal_lists(conn)[1] == ["Commerce 4"]
+
+
+def test_C94_exported_and_excluded_with_open_action_are_kept(campaign_db: Engine) -> None:
+    [exported] = add(campaign_db, _place(1))
+    with campaign_db.begin() as conn:
+        conn.exec_driver_sql("UPDATE prospects SET status = 'exporté'")
+        insert_prospect(conn, 1, _place(2), "x", Verdict(False, ("Avec site",), ()), NOW)
+        excluded = conn.exec_driver_sql(
+            "SELECT id FROM prospects WHERE place_id = 'p2'"
+        ).scalar_one()
+        conn.exec_driver_sql(
+            "INSERT INTO prospect_actions (prospect_id, kind, due_date, created_at) "
+            "VALUES (%(id)s, 'rappeler', '2027-01-01', %(at)s)",
+            {"id": excluded, "at": NOW},
+        )
+    assert purge(campaign_db, LATER) == 0 and exported

@@ -31,3 +31,18 @@ def test_C100_only_when_configured() -> None:
         assert start_monitoring("https://cle@o1.ingest.sentry.io/1", "worker")
     options = init.call_args.kwargs
     assert options["send_default_pii"] is False and options["include_local_variables"] is False
+
+
+def test_C100_postgres_detail_with_row_values_is_cut() -> None:
+    raw = ('(psycopg.errors.NotNullViolation) null value in column "status"\n'
+           "DETAIL:  Failing row contains (12, Boulangerie Martin, 0612345678).")  # fmt: skip
+    clean = scrub({"exception": {"values": [{"value": raw}]}}, {})
+    value = clean["exception"]["values"][0]["value"]
+    assert value == '(psycopg.errors.NotNullViolation) null value in column "status"'
+    unique = "duplicate key value violates unique constraint Key (kind, name_norm)=(x, martin)"
+    assert (
+        "martin"
+        not in scrub({"exception": {"values": [{"value": unique}]}}, {})["exception"]["values"][0][
+            "value"
+        ]
+    )

@@ -6,10 +6,12 @@ from typing import Any
 
 import sentry_sdk
 
-_CUT = ("[SQL:", "[parameters:")
+_CUT = ("\n", "DETAIL:", "Key (", "[SQL:", "[parameters:")
 
 
 def _short(text: str) -> str:
+    """Première ligne seulement : le DETAIL de PostgreSQL cite la ligne fautive (nom,
+    téléphone…), les valeurs SQL aussi."""
     for marker in _CUT:
         text = text.split(marker, 1)[0]
     return text.strip()[:300]

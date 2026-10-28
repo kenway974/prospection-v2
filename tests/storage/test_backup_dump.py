@@ -30,3 +30,16 @@ def test_C91_restore_is_tested(engine: Engine, database_url: str) -> None:
         with server.connect() as conn:
             conn.execute(text(f'DROP DATABASE "{name}" WITH (FORCE)'))
         server.dispose()
+
+
+def test_C91_failed_restore_changes_nothing(engine: Engine, database_url: str) -> None:
+    import pytest
+
+    from prospection.storage.backup_dump import BackupFailed
+
+    with engine.connect() as conn:
+        before = conn.execute(text("SELECT count(*) FROM alembic_version")).scalar_one()
+    with pytest.raises(BackupFailed):
+        restore_database(database_url, b"pas une sauvegarde")
+    with engine.connect() as conn:
+        assert conn.execute(text("SELECT count(*) FROM alembic_version")).scalar_one() == before

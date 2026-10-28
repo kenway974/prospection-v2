@@ -1,9 +1,11 @@
 """Sauvegarde quotidienne de la base (C91) : copie chiffrée (clé ENCRYPTION_KEY) déposée sur
-un stockage compatible S3 ; un fichier par jour du mois, donc environ 30 jours gardés."""
+un stockage compatible S3 ; 30 emplacements tournants, donc exactement 30 jours gardés."""
 
+import logging
+import threading
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import httpx
 from cryptography.fernet import Fernet
@@ -14,7 +16,9 @@ from prospection.storage.alerts import add_alert
 from prospection.storage.backup_dump import BackupFailed, dump_database
 from prospection.storage.maintenance import last_backup, record_backup
 
-EVERY = timedelta(hours=23)  # une fois par jour, sans dériver d'une heure chaque jour
+logger = logging.getLogger(__name__)
+
+KEPT_DAYS = 30
 
 
 @dataclass(frozen=True)
@@ -26,7 +30,8 @@ class BackupTarget:
 
 
 def backup_name(now: datetime) -> str:
-    return f"prospection-{now:%d}.dump.chiffre"
+    """Le même nom revient tous les 30 jours : la copie d'il y a 30 jours est remplacée."""
+    return f"prospection-{now.date().toordinal() % KEPT_DAYS:02d}.dump.chiffre"
 
 
 def daily_backup(
@@ -36,7 +41,7 @@ def daily_backup(
     """Vrai si une sauvegarde a été tentée ; un échec est gardé et signalé par une alerte."""
     with engine.connect() as conn:
         done_at, _ = last_backup(conn)
-    if done_at is not None and now - done_at < EVERY:
+    if done_at is not None and done_at.date() == now.date():  # une par jour (UTC)
         return False
     try:
         data = Fernet(encryption_key.encode()).encrypt(dump())
@@ -69,10 +74,22 @@ def backup_job(
     """Travail régulier de la tâche de fond, si le stockage est configuré ; sinon rien."""
     if target is None:
         return None
-    configured = target
+    configured, running = target, threading.Lock()
+
+    def work(now: datetime) -> None:
+        try:
+            dump = lambda: dump_database(database_url)  # noqa: E731
+            daily_backup(engine, configured, encryption_key, dump, client, now)
+        except Exception:
+            logger.exception("Sauvegarde en échec")
+        finally:
+            running.release()
 
     def run(now: datetime) -> object:
-        dump = lambda: dump_database(database_url)  # noqa: E731
-        return daily_backup(engine, configured, encryption_key, dump, client, now)
+        """Dans un fil à part : pg_dump peut durer, les rappels ne doivent pas attendre."""
+        if not running.acquire(blocking=False):
+            return False
+        threading.Thread(target=work, args=(now,), name="sauvegarde", daemon=True).start()
+        return True
 
     return run

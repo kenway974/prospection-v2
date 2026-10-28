@@ -56,6 +56,7 @@ app_settings = Table(
     Column("reminder_hour", SmallInteger, nullable=False, server_default="8"),
     Column("purge_months", SmallInteger, nullable=False, server_default="6"),  # C94
     Column("api_checked_at", DateTime(timezone=True)),  # C99
+    Column("api_failures", SmallInteger, nullable=False, server_default="0"),
     Column("backup_at", DateTime(timezone=True)),
     Column("backup_error", Text),  # C91
     CheckConstraint("id = 1", name="app_settings_single_row"),

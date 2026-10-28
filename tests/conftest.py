@@ -65,12 +65,14 @@ def campaign_db(engine: Engine) -> Iterator[Engine]:
     store_key(engine, CAMPAIGN_BOX, Service.GOOGLE, "AIza-test", CAMPAIGN_NOW)
     yield engine
     with engine.begin() as conn:
-        conn.exec_driver_sql(f"TRUNCATE {CAMPAIGN_TABLES}, crm_index RESTART IDENTITY CASCADE")
+        conn.exec_driver_sql(
+            f"TRUNCATE {CAMPAIGN_TABLES}, crm_index, exclusion_names RESTART IDENTITY CASCADE"
+        )
         conn.exec_driver_sql(
             "UPDATE app_settings SET google_budget_cents = NULL, crm = 'none', "
             "notion_database_id = NULL, notion_database_title = NULL, reminder_minutes = 15, "
             "reminder_hour = 8, purge_months = 6, api_checked_at = NULL, backup_at = NULL, "
-            "backup_error = NULL"
+            "backup_error = NULL, api_failures = 0"
         )
 
 

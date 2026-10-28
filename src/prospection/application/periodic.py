@@ -38,18 +38,21 @@ class Periodic:
 
 def regular_jobs(
     engine: Engine, box: SecretBox, client: httpx.Client, pricing: Pricing, timezone: str,
-    backup: Callable[[datetime], object] | None,
+    backup: Callable[[datetime], object] | None, start: datetime,
 ) -> tuple[Periodic, list[Periodic]]:  # fmt: skip
-    """Rappels (chaque minute, même en pleine campagne) ; les autres, entre deux campagnes."""
+    """Rappels (chaque minute) et travaux réguliers ; tous tournent même en pleine campagne.
+    Purge, vérification et sauvegarde attendent 5 min après le démarrage (pas de rafale à
+    chaque déploiement)."""
+    later = start + timedelta(minutes=5)
     reminders = Periodic(
         "rappels", timedelta(minutes=1), lambda now: remind_due_actions(engine, now, timezone)
     )  # C108
     jobs = [
         Periodic("index du CRM", timedelta(hours=1),
                  lambda now: refresh_crm_index(engine, box, client, now)),  # C32
-        Periodic("purge RGPD", timedelta(hours=6), lambda now: purge(engine, now)),  # C94
+        Periodic("purge RGPD", timedelta(hours=6), lambda now: purge(engine, now), later),  # C94
         Periodic("vérification des API", timedelta(hours=1),
-                 lambda now: weekly_api_check(engine, box, client, pricing, now)),  # C99
-        *([Periodic("sauvegarde", timedelta(hours=1), backup)] if backup else []),  # C91
+                 lambda now: weekly_api_check(engine, box, client, pricing, now), later),  # C99
+        *([Periodic("sauvegarde", timedelta(hours=1), backup, later)] if backup else []),  # C91
     ]  # fmt: skip
     return reminders, jobs

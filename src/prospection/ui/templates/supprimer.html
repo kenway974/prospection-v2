@@ -4,5 +4,8 @@
 <a href="/prospects/{{ id }}" class="back">{{ name }}</a>
 <h1 class="large-title">Supprimer ses données</h1>
 <p>Toutes les fiches de « {{ name }} » seront supprimées, dans toutes les campagnes : coordonnées, notes, actions, alertes. L'entreprise ne sera plus jamais reprise par une recherche. C'est définitif.</p>
-<form method="post" action="/prospects/{{ id }}/supprimer"><button type="submit" class="button-danger">Supprimer définitivement</button></form>
+<form method="post" action="/prospects/{{ id }}/supprimer" class="group form">
+  <label class="choice"><input type="checkbox" name="garder"> Garder son nom dans ma liste noire, s'il y est</label>
+  <button type="submit" class="button-danger">Supprimer définitivement</button>
+</form>
 {% endblock %}

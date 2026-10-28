@@ -8,6 +8,7 @@ from sqlalchemy import make_url
 
 DUMP_TIMEOUT = 600
 UNKNOWN_TO_OLDER = (b"SET transaction_timeout",)  # réglages récents émis par pg_dump 17+
+RESTRICT = b"\n\\restrict "  # protection contre les méta-commandes psql (début de ligne)
 
 
 class BackupFailed(Exception):
@@ -49,11 +50,13 @@ def restore_database(database_url: str, data: bytes) -> None:
     """Remplace le contenu de la base par la copie, en une seule transaction (tout ou rien).
     La copie est d'abord convertie en SQL, sans les réglages qu'un serveur plus ancien ne
     connaît pas (pg_restore 17 vers PostgreSQL 16 : « transaction_timeout »).
-    Sécurité (méta-commandes psql, CVE-2025-8714) : seule une copie authentifiée par
-    ENCRYPTION_KEY arrive ici, les noms d'objets viennent de nos migrations, et pg_restore
-    / psql ≥ 17.6 encadrent le script de « \\restrict »."""
+    Sécurité (méta-commandes psql, CVE-2025-8714) : le script doit être encadré par
+    « \\restrict » (pg_restore 16.10 / 17.6 ou plus), qui interdit toute méta-commande ;
+    sinon la restauration est refusée."""
     script = _run(["pg_restore", "--clean", "--if-exists", "--no-owner", "--no-privileges",
                    "--file=-"], None, data)  # fmt: skip
+    if RESTRICT not in b"\n" + script:
+        raise BackupFailed("pg_restore trop ancien : installez la version 16.10 ou 17.6 au moins")
     psql = ["psql", "--quiet", "--no-psqlrc", "--single-transaction", "-v", "ON_ERROR_STOP=1"]
     _run(psql, database_url, for_older_servers(script))
 

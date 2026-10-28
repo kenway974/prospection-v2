@@ -51,3 +51,14 @@ def test_C91_copy_from_newer_client_restores_on_older_server() -> None:
 
     script = b"SET statement_timeout = 0;\nSET transaction_timeout = 0;\nCREATE TABLE t ();\n"
     assert for_older_servers(script) == b"SET statement_timeout = 0;\nCREATE TABLE t ();\n"
+
+
+def test_C91_script_without_psql_protection_is_refused(monkeypatch: object) -> None:
+    import pytest
+
+    from prospection.storage import backup_dump
+
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setattr(backup_dump, "_run", lambda command, url, data=None: b"CREATE TABLE t ();\n")
+        with pytest.raises(backup_dump.BackupFailed, match="trop ancien"):
+            backup_dump.restore_database("postgresql+psycopg://u:p@h/b", b"copie")

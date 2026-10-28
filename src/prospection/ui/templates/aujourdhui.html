@@ -18,6 +18,14 @@
   </div>
   <h1 class="large-title">Aujourd'hui</h1>
 </header>
+{% if alerts %}
+<h2 class="section-header">Alertes</h2>
+<ul class="group" aria-live="polite">{% for alert in alerts %}<li class="row">
+  <a class="link-row" href="{{ alert.link }}"><span>{{ alert.message }}</span></a>
+  <form method="post" action="/alertes/{{ alert.id }}/vu"><button type="submit" class="chip" aria-label="Vu : {{ alert.message }}">Vu</button></form>
+</li>{% endfor %}</ul>
+{% if alerts | length > 1 %}<form method="post" action="/alertes/vu"><button type="submit" class="button-secondary">Tout marquer comme vu</button></form>{% endif %}
+{% endif %}
 {% if finished %}
 <form method="post" action="/actions/{{ finished }}/rouvrir" class="notice row" role="status"><span>Action terminée.</span><button type="submit" class="chip">Annuler</button></form>
 {% endif %}

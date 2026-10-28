@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Campagnes programmées · Prospection{% endblock %}
+{% block content %}
+<a href="/recherche" class="back">Recherche</a>
+<h1 class="large-title">Programmées</h1>
+<p class="empty">Un modèle relancé chaque semaine (par exemple chaque lundi : les créations de la semaine). Une alerte dit combien d'entreprises sont nouvelles, ou pourquoi la campagne a échoué.</p>
+{% if rows %}<ul class="group">{% for id, name, day, hour, next in rows %}
+  <li class="row"><span>{{ name }}<br><span class="secondary">Chaque {{ day }} à {{ hour }} h · prochaine : {{ next }}</span></span>
+    <form method="post" action="/programmes/{{ id }}/supprimer"><button type="submit" class="chip" aria-label="Supprimer la programmation {{ name }}">Supprimer</button></form></li>
+{% endfor %}</ul>{% endif %}
+{% if models %}
+<form method="post" action="/programmes" class="group form">
+  <label for="modele">Modèle</label>
+  <select id="modele" name="modele">{% for name in models %}<option>{{ name }}</option>{% endfor %}</select>
+  <label for="jour">Jour</label>
+  <select id="jour" name="jour">{% for n, day in days %}<option value="{{ n }}">{{ day | capitalize }}</option>{% endfor %}</select>
+  <label for="heure">Heure (0 à 23)</label>
+  <input id="heure" name="heure" inputmode="numeric" value="7">
+  {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+  <button type="submit" class="button-primary">Programmer</button>
+</form>
+{% else %}<p class="notice">Enregistrez d'abord un modèle depuis Recherche (champ « Enregistrer comme modèle »).</p>{% endif %}
+{% endblock %}

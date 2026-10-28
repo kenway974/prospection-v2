@@ -32,9 +32,11 @@ class Event:
 
 
 def create_campaign(
-    conn: Connection, request: CampaignRequest, steps: Sequence[StepSpec], now: datetime
-) -> int:
-    values = {"name": request.name, "request_json": encode_request(request), "status": "queued"}
+    conn: Connection, request: CampaignRequest, steps: Sequence[StepSpec], now: datetime,
+    schedule_id: int | None = None,
+) -> int:  # fmt: skip
+    values = {"name": request.name, "request_json": encode_request(request), "status": "queued",
+              "schedule_id": schedule_id}  # fmt: skip
     counters = {"found": 0, "excluded": 0, "qualified": 0, "cost_cents": 0}
     campaign_id = int(
         conn.execute(
@@ -110,3 +112,10 @@ def recent_events(conn: Connection, campaign_id: int, limit: int) -> list[Event]
 def recent_campaigns(conn: Connection, limit: int) -> list[Campaign]:
     query = select(campaigns.c.id).order_by(campaigns.c.created_at.desc()).limit(limit)
     return [load_campaign(conn, campaign_id) for campaign_id in conn.scalars(query)]
+
+
+def schedule_of(conn: Connection, campaign_id: int) -> int | None:
+    """Programmation qui a lancé la campagne (C77), s'il y en a une."""
+    query = select(campaigns.c.schedule_id).where(campaigns.c.id == campaign_id)
+    value = conn.execute(query).scalar_one_or_none()
+    return None if value is None else int(value)

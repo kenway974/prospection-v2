@@ -40,3 +40,9 @@ def list_templates(conn: Connection) -> list[Template]:
     t = campaign_templates.c
     rows = conn.execute(select(t.name, t.request_json).order_by(t.name))
     return [Template(r.name, decode_request(r.request_json)) for r in rows]
+
+
+def load_template(conn: Connection, name: str) -> Template | None:
+    t = campaign_templates.c
+    row = conn.execute(select(t.name, t.request_json).where(t.name == name)).first()
+    return Template(row.name, decode_request(row.request_json)) if row else None

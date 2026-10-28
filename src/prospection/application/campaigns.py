@@ -78,9 +78,12 @@ def build_steps(request: CampaignRequest, now: datetime | None = None) -> list[S
     return registry + (google if GOOGLE in request.sources else [])
 
 
-def create_campaign(engine: Engine, request: CampaignRequest, now: datetime) -> int:
+def create_campaign(
+    engine: Engine, request: CampaignRequest, now: datetime, schedule_id: int | None = None
+) -> int:
     with engine.begin() as conn:
-        campaign_id = store_campaign(conn, request, build_steps(request, now), now)
+        steps = build_steps(request, now)
+        campaign_id = store_campaign(conn, request, steps, now, schedule_id)
         add_event(conn, campaign_id, now, "info", "Campagne créée, en attente de démarrage")
     return campaign_id
 

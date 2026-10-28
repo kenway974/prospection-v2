@@ -15,6 +15,7 @@
 <section class="group form" aria-labelledby="titre-modeles">
   <h2 class="row-title" id="titre-modeles">Modèles</h2>
   <ul class="chips">{% for t in templates %}<li><a class="chip" href="/recherche?modele={{ t.name | urlencode }}">{{ t.name }}</a></li>{% endfor %}</ul>
+  <a class="chip" href="/programmes">Programmer chaque semaine</a>
 </section>
 {% endif %}
 <form method="post" action="/recherche" class="stack" hx-post="/recherche/estimation" hx-trigger="change, load" hx-target="#estimation" hx-swap="innerHTML">

@@ -22,7 +22,7 @@
   <input type="hidden" name="statut" value="{{ status or '' }}"><input type="hidden" name="q" value="{{ query }}"><input type="hidden" name="tri" value="{{ sort }}">
   <button type="submit" class="button-primary">Démarrer la session d'appel</button>
 </form>
-<ul class="group">{% for r in rows %}{% set s = summaries.get(r.id) %}<li><a class="row link-row" href="/prospects/{{ r.id }}"><span>{{ r.data.name }}<br><span class="secondary">{{ r.data.address }}</span>{% if s %}<br><span class="secondary">{{ s.reason }}{% if s.flagged %} · à vérifier{% endif %}</span>{% endif %}</span><span class="secondary">{% if s %}<strong class="score" aria-label="Score d'opportunité {{ s.score }} sur 100">{{ s.score }}</strong><br>{% endif %}{{ r.status }}</span></a></li>{% endfor %}</ul>
+<ul class="group">{% for r in rows %}{% set s = summaries.get(r.id) %}<li><a class="row link-row" href="/prospects/{{ r.id }}"><span>{{ r.data.name }}<br><span class="secondary">{{ r.data.address }}</span>{% if s %}<br><span class="secondary">{{ s.reason }}{% if s.flagged %} · à vérifier{% endif %}</span>{% endif %}</span><span class="secondary">{% if s %}<strong class="score">{{ s.score }}</strong><span class="visually-hidden"> sur 100, score d'opportunité</span><br>{% endif %}{{ r.status }}</span></a></li>{% endfor %}</ul>
 {% else %}
 <p class="empty">Aucun prospect ne correspond. Changez la recherche ou le filtre.</p>
 {% endif %}

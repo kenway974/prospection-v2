@@ -20,11 +20,13 @@ def test_C57_C58_list_shows_score_and_reason_and_sorts_by_score(
     [pid] = add(campaign_db, dataclasses.replace(PLACE, review_count=4))
     page = text(client.get("/prospects?tri=score"))
     assert "Score (meilleures d'abord)" in page and "sans site, 4 avis, mobile" in page
-    assert "Score d'opportunité 75 sur 100" in page
+    assert '<span class="visually-hidden"> sur 100, score d\'opportunité</span>' in page
+    assert 'aria-label="Score' not in page  # un <strong> n'annonce pas son aria-label
     card = text(client.get(f"/prospects/{pid}"))
     assert "Détail du score (75/100)" in card and "Très peu d'avis Google (4) : +20" in card
     assert "Téléphone" in card and "sûr" in card
     assert "Téléphone (fiche Google)" in card and "mobile" in card
+    assert card.count("06 12 34 56 78") == 1  # une seule fois, au même format
     assert 'href="https://www.linkedin.com/search/results/people/?keywords=' in card
 
 

@@ -36,7 +36,7 @@ def test_C57_C60_card_explains_the_score_and_confidence(campaign_db: Engine) -> 
     seen = shown.insights
     assert seen is not None and seen.score == 75
     assert ("Très peu d'avis Google (4)", 20) in seen.score_details
-    assert ("Téléphone", "+33612345678", "sûr") in seen.confidence
+    assert ("06 12 34 56 78", "mobile", "fiche Google", "sûr") in seen.phones
 
 
 def test_C59_doubtful_email_flagged(campaign_db: Engine) -> None:
@@ -66,8 +66,8 @@ def test_C55_C56_phones_typed_and_leader_search_link(campaign_db: Engine) -> Non
             registry_status="sûr"))  # fmt: skip
     seen = card(campaign_db, pid, NOW, PARIS).insights
     assert seen is not None
-    assert seen.phones == [("06 12 34 56 78", "mobile", "fiche Google"),
-                           ("04 78 12 34 56", "fixe", "site")]  # fmt: skip
+    assert seen.phones == [("06 12 34 56 78", "mobile", "fiche Google", "sûr"),
+                           ("04 78 12 34 56", "fixe", "site", "probable")]  # fmt: skip
     assert "keywords=Marie+DUPONT+Atelier" in seen.linkedin
 
 

@@ -6,6 +6,7 @@ import threading
 from datetime import timedelta
 
 import httpx
+import pytest
 from sqlalchemy import Engine, text
 
 from prospection.application.campaign_queue import claim_next
@@ -111,3 +112,28 @@ def test_rule_3_end_to_end_worker_never_asks_the_real_dns() -> None:
 
     assert mail_lookup_for("http://127.0.0.1:8099") is None
     assert mail_lookup_for(None) is mail_server
+
+
+def test_C53_idle_mail_check_at_most_every_ten_minutes(
+    campaign_db: Engine, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Rien à vérifier : la recherche de domaines n'est pas relancée à chaque pause."""
+    import prospection.worker as worker_module
+
+    calls: list[object] = []
+    clock = [NOW]
+
+    def counting(*args: object) -> int:
+        calls.append(args)
+        return 0
+
+    monkeypatch.setattr(worker_module, "check_mail_domains", counting)
+    client, _ = fake_client(pages())
+    worker = Worker(campaign_db, BOX, client, PRICING, now=lambda: clock[0],
+                    mail_lookup=lambda d: "mx")  # fmt: skip
+    worker.work_once()
+    worker.work_once()
+    assert len(calls) == 1
+    clock[0] = NOW + timedelta(minutes=11)
+    worker.work_once()
+    assert len(calls) == 2

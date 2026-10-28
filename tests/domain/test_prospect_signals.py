@@ -65,8 +65,8 @@ def test_C60_confidence_of_each_information() -> None:
     found = SiteReport("retrouvé", "https://atelier.fr", audit=GOOD)
     lines = dict((label, level) for label, _, level in
                  confidence(signals_of(place, found, LYON_SAS, "sûr", (), TODAY)))  # fmt: skip
-    assert lines == {"Téléphone": "sûr", "Site": "probable", "Entreprise": "sûr",
-                     "Dirigeant": "sûr"}  # fmt: skip
+    assert lines == {"Site": "probable", "Entreprise": "sûr", "Dirigeant": "sûr"}
+    # le téléphone a sa fiabilité sur sa propre ligne (une seule fois sur la fiche)
     doubtful = SiteReport("aucun", probable="https://atelier.fr")
     unsure_signals = signals_of(place, doubtful, None, "à confirmer", (), TODAY)
     unsure = {label: level for label, _, level in confidence(unsure_signals)}

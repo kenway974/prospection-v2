@@ -30,9 +30,7 @@ def reason(s: Signals) -> str:
 
 def confidence(s: Signals) -> list[tuple[str, str, str]]:
     """(information, valeur, sûr / probable / à vérifier), pour ce qui est connu."""
-    lines = []
-    if s.place.phone:
-        lines.append(("Téléphone", s.place.phone, SURE))
+    lines = []  # téléphones : fiabilité sur leur propre ligne (prospect_view)
     if s.place.website:
         lines.append(("Site", s.place.website, SURE))
     elif s.site and s.site.url:

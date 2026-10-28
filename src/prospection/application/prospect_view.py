@@ -24,7 +24,7 @@ from prospection.domain.email_check import (
 )
 from prospection.domain.health import health_lines
 from prospection.domain.opportunity import opportunity
-from prospection.domain.qualification import CHECK, LIKELY, confidence, reason
+from prospection.domain.qualification import CHECK, LIKELY, SURE, confidence, reason
 from prospection.domain.signals import Signals, signals_of
 from prospection.storage.campaign_codec import decode_place
 from prospection.storage.prospect_list import ProspectRow
@@ -49,7 +49,7 @@ class Insights:
     confidence: list[tuple[str, str, str]]
     flags: list[str]
     emails: list[tuple[str, str, str]]  # adresse, statut, raison
-    phones: list[tuple[str, str, str]]  # numéro, mobile ou fixe, source (C55)
+    phones: list[tuple[str, str, str, str]]  # numéro, mobile ou fixe, source, fiabilité
     linkedin: str  # recherche du dirigeant (C56)
     sheet: CallSheet  # accroche et douleurs (C110, C111)
     health: list[tuple[str, str]]  # indices de santé (C112)
@@ -98,17 +98,18 @@ def insights(row: ProspectRow, servers: dict[str, str], today: date) -> Insights
                     _linkedin(row, s), call_sheet(s, trade), health_lines(s))  # fmt: skip
 
 
-def _phones(row: ProspectRow, s: Signals) -> list[tuple[str, str, str]]:
+def _phones(row: ProspectRow, s: Signals) -> list[tuple[str, str, str, str]]:
     """Chaque numéro une fois, avec sa source : fiche Google, contact saisi, site."""
     found = [(s.place.phone, "fiche Google"), (row.contact[1], "contact")]
     found += [
         (p, "site") for p in (row.site.contacts.phones if row.site and row.site.contacts else ())
     ]
-    seen: dict[str, tuple[str, str, str]] = {}
+    seen: dict[str, tuple[str, str, str, str]] = {}
     for number, source in found:
         if number and (key := normalized(number, s.place.country)) not in seen:
-            seen[key] = (national(number, s.place.country), phone_kind(number, s.place.country),
-                         source)  # fmt: skip
+            kind = phone_kind(number, s.place.country)
+            level = LIKELY if source == "site" else SURE  # site : lu, pas déclaré
+            seen[key] = (national(number, s.place.country), kind, source, level)
     return list(seen.values())
 
 

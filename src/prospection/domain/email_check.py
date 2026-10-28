@@ -45,6 +45,11 @@ class EmailCheck:
     generic: bool = False
 
 
+def is_email(address: str) -> bool:
+    """Syntaxe d'un email (en minuscules), la même partout : saisie, site, fiche."""
+    return len(address) <= 254 and _EMAIL.fullmatch(address) is not None
+
+
 def email_domain(email: str) -> str | None:
     address = email.strip().lower()
     return address.rsplit("@", 1)[1] if _EMAIL.fullmatch(address) else None
@@ -68,7 +73,7 @@ def check_email(email: str, mail_server: str | None) -> EmailCheck:
     address = email.strip().lower()
     if not address:
         return EmailCheck(email, INVALID, "adresse vide")
-    if len(address) > 254 or not _EMAIL.fullmatch(address):
+    if not is_email(address):
         return EmailCheck(email, INVALID, "syntaxe incorrecte")
     local, domain = address.rsplit("@", 1)
     base = local.split("+", 1)[0]

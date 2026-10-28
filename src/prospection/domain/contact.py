@@ -1,10 +1,10 @@
 """Contact saisi sur la fiche : dirigeant, mobile, email (C105)."""
 
-import re
-
 import phonenumbers
 
-_EMAIL = re.compile(r"[^@\s]{1,64}@[^@\s]+\.[^@\s]{2,}")
+from prospection.domain.email_check import is_email
+from prospection.domain.phones import parse_phone
+
 BAD_PHONE = "Numéro invalide : vérifiez-le, ou écrivez-le avec l'indicatif (+33…)."
 BAD_EMAIL = "Adresse email invalide : vérifiez-la."
 
@@ -16,13 +16,10 @@ class InvalidContact(ValueError):
 
 
 def _phone(text: str, country: str) -> str | None:
-    try:
-        parsed = phonenumbers.parse(text, country)
-    except phonenumbers.NumberParseException:
-        return None
-    if not phonenumbers.is_valid_number(parsed):
-        return None
-    return phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164)
+    parsed = parse_phone(text, country)
+    return (
+        phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164) if parsed else None
+    )
 
 
 def clean_contact(
@@ -39,7 +36,7 @@ def clean_contact(
         if clean_mobile is None:
             errors["mobile"] = BAD_PHONE
     clean_email = email.strip().lower() or None
-    if clean_email and (len(clean_email) > 254 or not _EMAIL.fullmatch(clean_email)):
+    if clean_email and not is_email(clean_email):
         errors["email"] = BAD_EMAIL
     if errors:
         raise InvalidContact(errors)

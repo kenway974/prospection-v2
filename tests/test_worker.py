@@ -102,3 +102,12 @@ def test_C53_idle_worker_checks_mail_servers(campaign_db: Engine) -> None:
     worker = Worker(campaign_db, BOX, client, PRICING, now=lambda: NOW, mail_lookup=lookup)
     assert worker.work_once() is True and len(asked) == 3
     assert worker.work_once() is False
+
+
+def test_rule_3_end_to_end_worker_never_asks_the_real_dns() -> None:
+    """En bout en bout (faux services), la vérification des serveurs mail est coupée."""
+    from prospection.sources.mail_domain import mail_server
+    from prospection.worker import mail_lookup_for
+
+    assert mail_lookup_for("http://127.0.0.1:8099") is None
+    assert mail_lookup_for(None) is mail_server

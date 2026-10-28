@@ -28,3 +28,12 @@ def test_C56_without_leader_the_role_is_searched() -> None:
 def test_leader_name_without_role_and_companies_skipped() -> None:
     assert leader_name(("Marie DUPONT (Présidente)", "HOLDING M (Associé)")) == "Marie DUPONT"
     assert leader_name(()) is None
+
+
+def test_C55_type_and_reason_always_agree() -> None:
+    """Une seule lecture du numéro : « mobile » dans la raison et la ligne téléphone concordent."""
+    from prospection.domain.phones import is_mobile
+
+    for number, country in (("0470 12 34 56", "BE"), ("+352 621 123 456", "LU"),
+                            ("0692 12 34 56", "FR"), ("04 78 12 34 56", "FR")):  # fmt: skip
+        assert (phone_kind(number, country) == "mobile") == is_mobile(number, country), number

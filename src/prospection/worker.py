@@ -20,6 +20,7 @@ from prospection.application.mail_check import check_mail_domains
 from prospection.application.registry_enrich import enrich_new_prospects
 from prospection.application.site_verdict import SiteChecker, skip_sites
 from prospection.domain.google_cost import Pricing, load_pricing
+from prospection.sources.mail_domain import mail_server
 from prospection.storage.secret_box import SecretBox
 
 logger = logging.getLogger("prospection.worker")
@@ -69,13 +70,17 @@ class Worker:
                 stop.wait(idle_seconds)
 
 
+def mail_lookup_for(test_services_url: str | None) -> Callable[[str], str | None] | None:
+    """Vrai DNS en production ; aucun en bout en bout (faux services, règle 3)."""
+    return None if test_services_url else mail_server
+
+
 def main() -> None:  # pragma: no cover (point d'entrée, testé en bout en bout)
     from prospection.application.site_check import check_site
     from prospection.config import load_settings
     from prospection.domain.place import Place
     from prospection.domain.site_report import SiteReport
     from prospection.http_client import make_client
-    from prospection.sources.mail_domain import mail_server
     from prospection.sources.safe_network import make_web_client
     from prospection.storage.db import make_engine
 
@@ -92,7 +97,8 @@ def main() -> None:  # pragma: no cover (point d'entrée, testé en bout en bout
 
     with make_client(settings.test_services_url) as client, web:
         engine = make_engine(settings.database_url)
-        worker = Worker(engine, box, client, load_pricing(), sites=sites, mail_lookup=mail_server)
+        lookup = mail_lookup_for(settings.test_services_url)
+        worker = Worker(engine, box, client, load_pricing(), sites=sites, mail_lookup=lookup)
         logger.info("Tâche de fond démarrée")
         worker.run_forever(stop)
 

@@ -32,9 +32,10 @@ def _choices(statut: str, tri: str) -> tuple[str | None, str]:
 def prospects_page(
     request: Request, statut: str = "", q: str = "", tri: str = "",
     engine: Engine = Depends(get_engine), now: datetime = Depends(get_now),  # noqa: B008
+    settings: Settings = Depends(get_settings),  # noqa: B008
 ) -> Response:  # fmt: skip
     (status, sort), query = _choices(statut, tri), q[:100]
-    listing = prospect_list(engine, status, query, sort, now)
+    listing = prospect_list(engine, status, query, sort, now, settings.timezone)
     context = {
         "tab": "prospects", "rows": listing.rows, "counts": listing.counts,
         "total": sum(listing.counts.values()), "statuses": STATUSES, "status": status,
@@ -48,10 +49,11 @@ def session_start(
     statut: str = Form("", max_length=30), q: str = Form("", max_length=200),
     tri: str = Form("", max_length=20),
     engine: Engine = Depends(get_engine), now: datetime = Depends(get_now),  # noqa: B008
+    settings: Settings = Depends(get_settings),  # noqa: B008
 ) -> Response:  # fmt: skip
     """Démarre une session sur la liste affichée ; sa file ne bouge plus ensuite (C109)."""
     (status, sort), query = _choices(statut, tri), q[:100]
-    first = start_session(engine, status, query, sort, now)
+    first = start_session(engine, status, query, sort, now, settings.timezone)
     if first is None:
         return RedirectResponse(f"/prospects?{list_query(status, query, sort)}", status_code=303)
     return RedirectResponse(f"/prospects/{first}?session=1", status_code=303)

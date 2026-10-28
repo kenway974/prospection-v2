@@ -7,7 +7,11 @@ placeholder_domains: [example.com, example.org, example.net, exemple.com, exempl
                       domaine.com, email.com, test.com, votresite.com, yourdomain.com, sentry.io,
                       wixpress.com]
 generic_local: [contact, info, infos, hello, bonjour, accueil, admin, office, commercial,
-                direction, secretariat, service, support, sales, team, devis, reservation]
+                direction, secretariat, service, support, sales, team, devis, reservation, rh,
+                compta, comptabilite, facturation, recrutement, boutique, magasin, agence,
+                atelier, gerance, administration, entreprise]
+# « email@ » et « nom@ » restent factices : ce sont les exemples des formulaires (« votre
+# email »), pas de vraies adresses.
 typos:
   gmial.com: gmail.com
   gmal.com: gmail.com

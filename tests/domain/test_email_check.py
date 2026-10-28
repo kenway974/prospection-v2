@@ -35,6 +35,21 @@ def test_C54_generic_or_named() -> None:
     assert check_email("contact@martin.fr", "mx").generic
     assert check_email("Info+devis@martin.fr", "mx").generic
     assert not check_email("jean.martin@martin.fr", "mx").generic
+    for local in ("rh", "compta", "comptabilite", "facturation", "recrutement", "boutique"):
+        assert check_email(f"{local}@martin.fr", "mx").generic, local
+
+
+def test_one_email_syntax_everywhere() -> None:
+    """Une adresse acceptée à la saisie n'est jamais « syntaxe incorrecte » sur la fiche."""
+    from prospection.domain.contact import InvalidContact, clean_contact
+
+    for odd in ("jean@martin", "jean martin@martin.fr", "jean@@martin.fr", "a@b.c"):
+        try:
+            clean_contact("", "", odd, "FR")
+        except InvalidContact:
+            continue
+        raise AssertionError(f"{odd} accepté à la saisie")
+    assert clean_contact("", "", "Jean.Martin@Martin.fr", "FR")[2] == "jean.martin@martin.fr"
 
 
 def test_domain_of_an_email() -> None:

@@ -89,3 +89,16 @@ def test_C56_unsure_company_leader_never_searched(campaign_db: Engine) -> None:
             company_json=encode_company(LYON_SAS), registry_status="à confirmer"))  # fmt: skip
     seen = card(campaign_db, pid, NOW, PARIS).insights
     assert seen is not None and "DUPONT" not in seen.linkedin and "g%C3%A9rant" in seen.linkedin
+
+
+def test_C59_C60_list_flags_doubtful_email_and_email_confidence(campaign_db: Engine) -> None:
+    [pid] = add(campaign_db, PLACE)
+    site = SiteReport("fiche Google", "https://atelier.fr",
+                      contacts=Contacts(("contact@atelier.fr",), (), ()))  # fmt: skip
+    with campaign_db.begin() as conn:
+        conn.execute(prospects.update().values(site_json=encode_site(site)))
+        save_mail_server(conn, "atelier.fr", "aucun", NOW)
+    listing = prospect_list(campaign_db, None, "", "trouves", NOW)
+    assert listing.summaries[pid].flagged
+    seen = card(campaign_db, pid, NOW, PARIS).insights
+    assert seen is not None and ("Email", "contact@atelier.fr", "à vérifier") in seen.confidence

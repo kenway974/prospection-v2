@@ -11,7 +11,7 @@ from prospection.application.prospect_view import (
     SCORE,
     Insights,
     Summary,
-    by_score,
+    all_domains,
     emails_of,
     insights,
     summarize,
@@ -62,32 +62,42 @@ def clean_query(query: str) -> str:
     return without_controls(query)[:100]
 
 
-def _rows(
+def _listed(
     conn: Connection, status: str | None, query: str, sort: str, today: date
-) -> list[ProspectRow]:
-    """Tri « score » calculé ici (le score se recalcule à l'affichage, C57)."""
-    if sort == SCORE:
-        return by_score(store.prospect_rows(conn, status, query, "trouves"), today)
-    return store.prospect_rows(conn, status, query, sort)
+) -> tuple[list[ProspectRow], dict[int, Summary]]:
+    """Lignes et résumés, chaque score calculé une seule fois ; tri « score » ici (C57)."""
+    rows = store.prospect_rows(conn, status, query, "trouves" if sort == SCORE else sort)
+    servers = mail_servers(conn, all_domains(rows))
+    summaries = {r.id: summarize(r, today, servers) for r in rows}
+    if sort == SCORE:  # meilleures d'abord ; à score égal, l'ordre de la recherche
+        rows = sorted(rows, key=lambda r: -summaries[r.id].score)
+    return rows, summaries
+
+
+def _today(now: datetime | None, timezone: str) -> date:
+    """Même date que la fiche : celle du fuseau du propriétaire (C57, seuils d'ancienneté)."""
+    return (now or datetime.now(UTC)).astimezone(ZoneInfo(timezone)).date()
 
 
 def prospect_list(
-    engine: Engine, status: str | None, query: str, sort: str, now: datetime | None = None
-) -> ProspectList:
-    today = (now or datetime.now(UTC)).date()
+    engine: Engine, status: str | None, query: str, sort: str, now: datetime | None = None,
+    timezone: str = "Europe/Paris",
+) -> ProspectList:  # fmt: skip
     with engine.connect() as conn:
-        rows = _rows(conn, status, clean_query(query), sort, today)
+        rows, summaries = _listed(conn, status, clean_query(query), sort, _today(now, timezone))
         counts = store.status_counts(conn, clean_query(query))
-    return ProspectList(rows, counts, {r.id: summarize(r, today) for r in rows})
+    return ProspectList(rows, counts, summaries)
 
 
 def start_session(
-    engine: Engine, status: str | None, query: str, sort: str, now: datetime
-) -> int | None:
+    engine: Engine, status: str | None, query: str, sort: str, now: datetime,
+    timezone: str = "Europe/Paris",
+) -> int | None:  # fmt: skip
     """Fige la file affichée et renvoie le premier prospect à appeler (C109)."""
     with engine.begin() as conn:
         if sort == SCORE:
-            queue = [r.id for r in _rows(conn, status, clean_query(query), sort, now.date())]
+            rows, _ = _listed(conn, status, clean_query(query), sort, _today(now, timezone))
+            queue = [r.id for r in rows]
         else:
             queue = store.prospect_ids(conn, status, clean_query(query), sort)
         store.start_session(conn, queue, now)

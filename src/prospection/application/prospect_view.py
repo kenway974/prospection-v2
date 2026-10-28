@@ -13,14 +13,24 @@ from prospection.domain.call_links import (
     phone_kind,
 )
 from prospection.domain.call_sheet import CallSheet, call_sheet
-from prospection.domain.email_check import DOUBTFUL, INVALID, check_email, email_domain
+from prospection.domain.email_check import (
+    DOUBTFUL,
+    INVALID,
+    UNCHECKED,
+    VALID,
+    EmailCheck,
+    check_email,
+    email_domain,
+)
 from prospection.domain.health import health_lines
 from prospection.domain.opportunity import opportunity
-from prospection.domain.qualification import confidence, reason
+from prospection.domain.qualification import CHECK, LIKELY, confidence, reason
 from prospection.domain.signals import Signals, signals_of
 from prospection.storage.campaign_codec import decode_place
 from prospection.storage.prospect_list import ProspectRow
 
+# C60 : un email avec serveur mail est probable (personne ne garantit qu'il est lu)
+EMAIL_LEVELS = {VALID: LIKELY, DOUBTFUL: CHECK, INVALID: CHECK, UNCHECKED: CHECK}
 SCORE = "score"  # tri de la liste : meilleures opportunités d'abord
 
 
@@ -51,14 +61,23 @@ def signals_for(row: ProspectRow, today: date) -> Signals:
                       flags, today)  # fmt: skip
 
 
-def summarize(row: ProspectRow, today: date) -> Summary:
+def _email_checks(row: ProspectRow, servers: dict[str, str]) -> list[EmailCheck]:
+    return [check_email(e, servers.get(email_domain(e) or "")) for e in emails_of(row)]
+
+
+def _doubts(checks: list[EmailCheck]) -> list[str]:
+    return [f"Email {c.email} : {c.reason}" for c in checks if c.status in (DOUBTFUL, INVALID)]
+
+
+def summarize(row: ProspectRow, today: date, servers: dict[str, str]) -> Summary:
+    """Le drapeau de la liste dit la même chose que la fiche (emails douteux compris)."""
     s = signals_for(row, today)
-    return Summary(opportunity(s)[0], reason(s), bool(row.to_check))
+    flagged = bool(row.to_check or _doubts(_email_checks(row, servers)))
+    return Summary(opportunity(s)[0], reason(s), flagged)
 
 
-def by_score(rows: list[ProspectRow], today: date) -> list[ProspectRow]:
-    """Meilleures opportunités d'abord ; à score égal, l'ordre de la recherche."""
-    return sorted(rows, key=lambda r: -summarize(r, today).score)
+def all_domains(rows: list[ProspectRow]) -> list[str]:
+    return list({d for r in rows for e in emails_of(r) if (d := email_domain(e))})
 
 
 def emails_of(row: ProspectRow) -> list[str]:
@@ -70,12 +89,12 @@ def insights(row: ProspectRow, servers: dict[str, str], today: date) -> Insights
     """`servers` : serveur mail connu de chaque domaine (vérifié par la tâche de fond)."""
     s = signals_for(row, today)
     score, details = opportunity(s)
-    checks = [check_email(e, servers.get(email_domain(e) or "")) for e in emails_of(row)]
+    checks = _email_checks(row, servers)
     emails = [(c.email, c.status, c.reason) for c in checks]
-    doubts = [f"Email {c.email} : {c.reason}" for c in checks if c.status in (DOUBTFUL, INVALID)]
-    flags = [*row.to_check, *doubts]
+    flags = [*row.to_check, *_doubts(checks)]
     trade = row.keywords[0] if row.keywords else ""
-    return Insights(score, details, reason(s), confidence(s), flags, emails, _phones(row, s),
+    trust = [*confidence(s), *(("Email", c.email, EMAIL_LEVELS[c.status]) for c in checks)]
+    return Insights(score, details, reason(s), trust, flags, emails, _phones(row, s),
                     _linkedin(row, s), call_sheet(s, trade), health_lines(s))  # fmt: skip
 
 

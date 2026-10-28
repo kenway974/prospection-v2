@@ -7,6 +7,7 @@
   <a class="button-secondary" href="/campagnes/{{ id }}/export.xlsx">Excel</a>
   <a class="button-secondary" href="/campagnes/{{ id }}/export.csv">CSV prospects</a>
   <a class="button-secondary" href="/campagnes/{{ id }}/export.csv?liste=exclus">CSV exclus</a>
+  <a class="button-secondary" href="/campagnes/{{ id }}/journal">Journal</a>
 </div>
 {% include "_progress.html" %}
 {% if refresh and state.status == "done" and refresh.places %}

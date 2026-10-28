@@ -13,12 +13,14 @@ from prospection.ui import (
     routes_calls,
     routes_campaign,
     routes_crm,
+    routes_dashboard,
     routes_exclusions,
     routes_export,
     routes_field,
     routes_followup,
     routes_health,
     routes_pages,
+    routes_privacy,
     routes_prospects,
     routes_search,
     routes_settings,
@@ -43,7 +45,8 @@ def create_app(settings: Settings, engine: Engine) -> FastAPI:
     modules = (
         routes_health, routes_auth, routes_pages, routes_settings, routes_crm, routes_budget,
         routes_exclusions, routes_search, routes_campaign, routes_prospects, routes_calls,
-        routes_export, routes_field, routes_followup,
+        routes_export, routes_field, routes_followup, routes_dashboard,
+        routes_privacy,
     )  # fmt: skip
     for module in modules:
         app.include_router(module.router)

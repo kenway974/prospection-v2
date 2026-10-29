@@ -41,6 +41,7 @@ def prospects_page(
         "sources": listing.sources, "source_labels": SOURCES, "campaigns": listing.campaigns,
         "scope": listing.scope, "here": scope_params(listing.scope),
         "deleted": max(supprime, 0), "any_prospect": listing.any_prospect,
+        "groups": listing.groups,
     }  # fmt: skip
     return templates.TemplateResponse(request, "prospects.html", context)
 

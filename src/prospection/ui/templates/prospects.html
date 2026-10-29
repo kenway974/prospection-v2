@@ -38,7 +38,9 @@
 <form id="selection" method="post" action="/prospects/selection"><input type="hidden" name="origine" value="{{ here.origine }}"><input type="hidden" name="campagne" value="{{ here.campagne }}"></form>
 <label class="choice" id="tout-cocher-ligne" hidden><input type="checkbox" id="tout-cocher"> Tout cocher</label>
 <button type="submit" form="selection" class="button-danger">Supprimer les prospects cochés</button>
-<ul class="group">{% for r in rows %}{% set s = summaries.get(r.id) %}<li class="row select-row"><label class="check"><input type="checkbox" name="id" value="{{ r.id }}" form="selection"><span class="visually-hidden">Cocher {{ r.data.name }}</span></label><a class="link-row" href="/prospects/{{ r.id }}"><span>{{ r.data.name }}<br><span class="secondary">{{ r.data.address }}</span>{% if s %}<br><span class="secondary">{{ s.reason }}{% if s.flagged %} · à vérifier{% endif %}</span>{% endif %}</span><span class="secondary">{% if s %}<strong class="score">{{ s.score }}</strong><span class="visually-hidden"> sur 100, score d'opportunité</span><br>{% endif %}{{ r.status }}</span></a></li>{% endfor %}</ul>
+{% for name, group_rows in groups %}<h2 class="group-title">{{ name }} · {{ group_rows | length }}</h2>
+<ul class="group">{% for r in group_rows %}{% set s = summaries.get(r.id) %}<li class="row select-row"><label class="check"><input type="checkbox" name="id" value="{{ r.id }}" form="selection"><span class="visually-hidden">Cocher {{ r.data.name }}</span></label><a class="link-row" href="/prospects/{{ r.id }}"><span>{{ r.data.name }}<br><span class="secondary">{{ r.data.address }}</span>{% if s %}<br><span class="secondary">{{ s.reason }}{% if s.flagged %} · à vérifier{% endif %}</span>{% endif %}</span><span class="secondary">{% if s %}<strong class="score">{{ s.score }}</strong><span class="visually-hidden"> sur 100, score d'opportunité</span><br>{% endif %}{{ r.status }}</span></a></li>{% endfor %}</ul>
+{% endfor %}
 {% elif total or query or status %}
 <p class="empty">Aucun prospect ne correspond. Changez la recherche ou le filtre.</p>
 {% else %}

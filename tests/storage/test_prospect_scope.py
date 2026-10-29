@@ -8,9 +8,10 @@ from sqlalchemy import Connection
 from prospection.domain.criteria import Verdict
 from prospection.domain.prospect_source import CALLS, FIELD, Scope
 from prospection.storage.campaigns import create_campaign
-from prospection.storage.prospect_list import prospect_ids, source_counts, status_counts
+from prospection.storage.prospect_list import source_counts, status_counts
 from prospection.storage.prospect_scope import campaign_choices
 from prospection.storage.prospects import insert_prospect
+from tests.storage.test_call_tracking import prospect_ids
 from tests.storage.test_campaigns import NOW, PLACE, REQUEST, STEPS
 
 

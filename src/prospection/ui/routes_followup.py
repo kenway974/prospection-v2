@@ -38,26 +38,36 @@ def all_seen(engine: Engine = ENGINE, now: datetime = NOW) -> Response:
     return RedirectResponse("/", status_code=303)
 
 
-def _reminders(request: Request, engine: Engine, error: str | None, code: int) -> Response:
-    minutes, hour = reminder_settings(engine)
-    context = {"tab": "", "minutes": minutes, "hour": hour, "error": error}
+def _reminders(
+    request: Request, engine: Engine, settings: Settings, error: str | None, code: int,
+    reached: int | None = None,
+) -> Response:  # fmt: skip
+    minutes, hour, calm_from, calm_to = reminder_settings(engine)
+    keys = settings.vapid_keys()
+    context = {"tab": "", "minutes": minutes, "hour": hour, "calm_from": calm_from,
+               "calm_to": calm_to, "error": error, "reached": reached,
+               "vapid_public": keys.public_key if keys else None}  # fmt: skip
     return templates.TemplateResponse(request, "reglages_rappels.html", context, status_code=code)
 
 
 @router.get("/reglages/rappels", response_class=HTMLResponse)
-def reminders_page(request: Request, engine: Engine = ENGINE) -> Response:
-    return _reminders(request, engine, None, 200)
+def reminders_page(
+    request: Request, essai: int | None = None, engine: Engine = ENGINE,
+    settings: Settings = SETTINGS,
+) -> Response:  # fmt: skip
+    return _reminders(request, engine, settings, None, 200, essai)
 
 
 @router.post("/reglages/rappels")
 def save_reminders(
     request: Request, minutes: str = Form("", max_length=5), heure: str = Form("", max_length=5),
-    engine: Engine = ENGINE,
+    calme_debut: str = Form("21", max_length=5), calme_fin: str = Form("8", max_length=5),
+    engine: Engine = ENGINE, settings: Settings = SETTINGS,
 ) -> Response:  # fmt: skip
     try:
-        change_reminders(engine, minutes, heure)
+        change_reminders(engine, minutes, heure, calme_debut, calme_fin)
     except InvalidReminders as error:
-        return _reminders(request, engine, str(error), 400)
+        return _reminders(request, engine, settings, str(error), 400)
     return RedirectResponse("/reglages/rappels", status_code=303)
 
 

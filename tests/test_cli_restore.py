@@ -41,3 +41,9 @@ def test_C91_nothing_changes_without_confirmation(
     assert "Rien n'a été changé" in capsys.readouterr().out
     assert restore_backup(str(copy), ask=lambda _: "RESTAURER") == 1  # base injoignable
     assert "base inchangée" in capsys.readouterr().out
+
+
+def test_vapid_keys_generated_for_railway(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["generate-vapid-keys"]) == 0
+    out = capsys.readouterr().out
+    assert "VAPID_PUBLIC_KEY=" in out and "VAPID_PRIVATE_KEY=" in out

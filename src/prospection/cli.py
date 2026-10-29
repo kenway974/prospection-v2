@@ -41,6 +41,17 @@ def generate_encryption_key() -> int:
     return 0
 
 
+def generate_vapid_keys() -> int:
+    from prospection.sources.web_push import generate_vapid_keys as new_keys
+
+    private, public = new_keys()
+    print("Notifications : collez ces valeurs dans Railway (les deux services) :")
+    print(f"VAPID_PUBLIC_KEY={public}")
+    print(f"VAPID_PRIVATE_KEY={private}")
+    print("VAPID_SUBJECT=mailto:votre@adresse.fr")
+    return 0
+
+
 def restore_backup(path: str, ask: Callable[[str], str] = input) -> int:
     """C91 : remplace le contenu de la base par une sauvegarde déchiffrée."""
     from prospection.application.backup import read_backup
@@ -69,12 +80,14 @@ def main(argv: list[str]) -> int:
         return restore_backup(argv[1])
     if argv == ["migrate"]:
         return migrate()
+    if argv == ["generate-vapid-keys"]:
+        return generate_vapid_keys()
     if argv == ["generate-encryption-key"]:
         return generate_encryption_key()
     if argv != ["hash-password"]:
         print(
             "Usage : python -m prospection.cli hash-password | migrate | "
-            "generate-encryption-key | restore-backup <fichier>"
+            "generate-encryption-key | generate-vapid-keys | restore-backup <fichier>"
         )
         return 2
     first = getpass("Mot de passe : ")

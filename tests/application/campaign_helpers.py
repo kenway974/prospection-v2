@@ -18,7 +18,7 @@ PRICING = Pricing(free_per_month=1000, usd_per_1000=Decimal("35"), eur_per_usd=D
 LYON = CityZone("Lyon", "69123", 45.76, 4.83)
 TABLES = (
     "campaigns, campaign_steps, prospects, google_usage, campaign_events, api_keys, mail_domains, "
-    "alerts, campaign_schedules, campaign_templates"
+    "alerts, campaign_schedules, campaign_templates, push_subscriptions"
 )
 
 

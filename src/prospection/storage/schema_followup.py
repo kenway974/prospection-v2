@@ -21,6 +21,14 @@ alerts = Table(
     Column("key", Text, nullable=False, unique=True), Column("kind", Text, nullable=False),
     Column("message", Text, nullable=False), Column("link", Text, nullable=False),
     Column("created_at", TS, nullable=False), Column("seen_at", TS),
+    Column("pushed_at", TS),  # envoyée sur le téléphone (ou abandonnée)
+)  # fmt: skip
+
+push_subscriptions = Table(
+    "push_subscriptions", metadata,
+    Column("id", BigInteger, primary_key=True, autoincrement=True),
+    Column("endpoint", Text, nullable=False, unique=True), Column("p256dh", Text, nullable=False),
+    Column("auth", Text, nullable=False), Column("created_at", TS, nullable=False),
 )  # fmt: skip
 
 campaign_schedules = Table(

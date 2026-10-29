@@ -45,3 +45,55 @@ if (positionButton && navigator.geolocation) {
     }, { enableHighAccuracy: true, timeout: 10000 });
   });
 }
+
+// Notifications sur ce téléphone (Web Push) : abonnement avec l'accord de l'utilisateur.
+var pushButton = document.getElementById("notifications-activer");
+if (pushButton) {
+  var pushState = document.getElementById("notifications-etat");
+  var pushOff = document.getElementById("notifications-couper");
+  var keyBytes = function (base64) {
+    var padded = (base64 + "===".slice((base64.length + 3) % 4)).replace(/-/g, "+").replace(/_/g, "/");
+    return Uint8Array.from(atob(padded), function (c) { return c.charCodeAt(0); });
+  };
+  var post = function (path, body) {
+    return fetch(path, { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body), credentials: "same-origin" });
+  };
+  var show = function (subscribed, text) {
+    pushState.textContent = text;
+    pushButton.hidden = subscribed;
+    pushOff.hidden = !subscribed;
+  };
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+    show(false, "Ce navigateur ne reçoit pas de notifications (sur iPhone : installez d'abord l'app sur l'écran d'accueil).");
+    pushButton.hidden = true;
+  } else {
+    navigator.serviceWorker.ready.then(function (registration) {
+      registration.pushManager.getSubscription().then(function (current) {
+        show(Boolean(current), current ? "Notifications activées sur ce téléphone." : "Notifications désactivées sur ce téléphone.");
+      });
+      pushButton.addEventListener("click", function () {
+        Notification.requestPermission().then(function (choice) {
+          if (choice !== "granted") {
+            show(false, "Notifications refusées : autorisez-les dans les réglages du navigateur.");
+            return null;
+          }
+          return registration.pushManager.subscribe({ userVisibleOnly: true,
+            applicationServerKey: keyBytes(pushButton.dataset.vapidKey) })
+            .then(function (subscription) { return post("/notifications/abonnement", subscription.toJSON()); })
+            .then(function (response) {
+              show(response.ok, response.ok ? "Notifications activées sur ce téléphone." : "Abonnement refusé : réessayez.");
+            });
+        }).catch(function () { show(false, "Activation impossible : réessayez avec du réseau."); });
+      });
+      pushOff.addEventListener("click", function () {
+        registration.pushManager.getSubscription().then(function (current) {
+          if (!current) { show(false, "Notifications désactivées sur ce téléphone."); return null; }
+          return post("/notifications/desabonnement", { endpoint: current.endpoint })
+            .then(function () { return current.unsubscribe(); })
+            .then(function () { show(false, "Notifications désactivées sur ce téléphone."); });
+        });
+      });
+    });
+  }
+}

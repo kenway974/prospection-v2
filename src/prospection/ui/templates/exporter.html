@@ -19,7 +19,7 @@
   {% for r in rows %}{% set s = summaries.get(r.id) %}
   <label class="choice"><input type="checkbox" name="ids" value="{{ r.id }}"{% if not (s and s.flagged) %} checked{% endif %}> {{ r.data.name }}{% if s %} · {{ s.score }}{% if s.flagged %} · à vérifier{% endif %}{% endif %}</label>
   {% endfor %}
-  <button type="submit" class="button-primary"{% if not ready %} disabled{% endif %}>Exporter</button>
+  <button type="submit" class="button-primary" data-attente="Envoi vers Notion…"{% if not ready %} disabled{% endif %}>Exporter</button>
 </form>
 {% else %}
 <p class="empty">Aucun prospect intéressé à envoyer pour l'instant.</p>

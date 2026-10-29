@@ -5,6 +5,7 @@ gardées : une règle changée s'applique aussitôt à tous les prospects."""
 from dataclasses import dataclass
 from datetime import date
 
+from prospection.domain.audit_recap import audit_recap
 from prospection.domain.call_links import (
     leader_name,
     linkedin_search,
@@ -39,6 +40,7 @@ class Summary:
     score: int
     reason: str
     flagged: bool
+    audit: str | None = None  # résultat de l'audit du site en une ligne (C136)
 
 
 @dataclass(frozen=True)
@@ -53,6 +55,7 @@ class Insights:
     linkedin: str  # recherche du dirigeant (C56)
     sheet: CallSheet  # accroche et douleurs (C110, C111)
     health: list[tuple[str, str]]  # indices de santé (C112)
+    audit: str | None = None  # résultat de l'audit du site en une ligne (C136)
 
 
 def signals_for(row: ProspectRow, today: date) -> Signals:
@@ -73,7 +76,7 @@ def summarize(row: ProspectRow, today: date, servers: dict[str, str]) -> Summary
     """Le drapeau de la liste dit la même chose que la fiche (emails douteux compris)."""
     s = signals_for(row, today)
     flagged = bool(row.to_check or _doubts(_email_checks(row, servers)))
-    return Summary(opportunity(s)[0], reason(s), flagged)
+    return Summary(opportunity(s)[0], reason(s), flagged, audit_recap(row.site))
 
 
 def all_domains(rows: list[ProspectRow]) -> list[str]:
@@ -95,7 +98,8 @@ def insights(row: ProspectRow, servers: dict[str, str], today: date) -> Insights
     trade = row.keywords[0] if row.keywords else ""
     trust = [*confidence(s), *(("Email", c.email, EMAIL_LEVELS[c.status]) for c in checks)]
     return Insights(score, details, reason(s), trust, flags, emails, _phones(row, s),
-                    _linkedin(row, s), call_sheet(s, trade), health_lines(s))  # fmt: skip
+                    _linkedin(row, s), call_sheet(s, trade), health_lines(s),
+                    audit_recap(row.site))  # fmt: skip
 
 
 def _phones(row: ProspectRow, s: Signals) -> list[tuple[str, str, str, str]]:

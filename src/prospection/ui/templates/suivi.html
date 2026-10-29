@@ -16,7 +16,7 @@
   {% if refresh.running %}<p role="status">Mise à jour en cours : {{ refresh.pending }} fiches restantes. Les changements arrivent dans les événements.</p>
   {% else %}
   <p class="secondary">Relit chez Google les {{ refresh.places }} fiches retenues (fermetures, sites, téléphones). {% if refresh.cost.paid_cents %}Coût au pire : {{ refresh_cost }}.{% else %}Dans le quota gratuit.{% endif %}</p>
-  {% if refresh.cost.fits %}<form method="post" action="/campagnes/{{ id }}/mettre-a-jour"><button type="submit" class="button-secondary">Mettre à jour les {{ refresh.places }} fiches</button></form>
+  {% if refresh.cost.fits %}<form method="post" action="/campagnes/{{ id }}/mettre-a-jour"><button type="submit" class="button-secondary" data-attente="Mise à jour en cours…">Mettre à jour les {{ refresh.places }} fiches</button></form>
   {% else %}<p class="notice">Plafond insuffisant : relevez-le dans Réglages → Budget Google.</p>{% endif %}
   {% endif %}
 </section>

@@ -116,6 +116,9 @@ Ajouter ou retirer un comportement = modifier ce fichier (avec l'accord du propr
 - C129 Je coche plusieurs prospects dans la liste (ou tous) et je les supprime en une fois, après une page de confirmation ; je peux demander qu'ils ne soient plus jamais repris *(demandé le 29/10/2026)*
 - C130 Lancer une campagne (ou envoyer un formulaire) n'affiche jamais « Quitter le site ? » ; seule une note ou une saisie de fiche pas encore enregistrée prévient *(demandé le 29/10/2026)*
 - C133 Dans chaque onglet, la liste est rangée par campagne (un titre par campagne, la plus récente d'abord) ; la session d'appel suit le même ordre *(demandé le 29/10/2026)*
+- C134 Le choix de la ville propose les communes pendant la frappe (« Recherche des villes… » pendant l'attente) ; la commune choisie reste seule à l'écran *(demandé le 29/10/2026)*
+- C135 Pendant une action longue (lancer une campagne, chercher sur le terrain, ouvrir la session, exporter, supprimer), le bouton affiche un petit cercle qui tourne et dit ce qui se passe ; un deuxième appui n'envoie rien *(demandé le 29/10/2026)*
+- C136 Chaque prospect affiche un résumé de l'audit de son site en une ligne (principaux problèmes, lenteur sur mobile), dans la liste et en haut de la fiche *(demandé le 29/10/2026)*
 
 ## 7. Envoi au CRM
 - C67 Relecture avant l'envoi : je retire un prospect d'un clic (les « à vérifier » sont décochés par défaut) ; l'envoi se fait seulement quand j'appuie sur Exporter

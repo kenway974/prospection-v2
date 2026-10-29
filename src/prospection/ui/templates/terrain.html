@@ -26,7 +26,7 @@
   {% for key, message in errors.items() if key not in ("adresse", "rayon", "avis_max", "nombre") %}<p class="error" role="alert">{{ message }}</p>{% endfor %}
   <label class="choice"><input type="checkbox" name="sans_site"{% if values.get('sans_site') == 'on' %} checked{% endif %}> Sans site seulement</label>
   <label class="choice"><input type="checkbox" name="ouvert" value="1"{% if values.get('ouvert') == '1' %} checked{% endif %}> Ouverts maintenant (filtre de la tournée)</label>
-  <button type="submit" class="button-primary">Chercher autour</button>
+  <button type="submit" class="button-primary" data-attente="Recherche en cours…">Chercher autour</button>
   <p class="secondary">Même budget Google que les campagnes ; la recherche tourne sur le serveur.</p>
 </form>
 {% endblock %}

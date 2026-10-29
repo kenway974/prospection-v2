@@ -22,6 +22,7 @@ FAKED_HOSTS = frozenset(
         "api.insee.fr",
         "api.notion.com",
         "api-adresse.data.gouv.fr",
+        "www.googleapis.com",  # PageSpeed Insights
     }
 )
 

@@ -1,14 +1,14 @@
 {% macro error(name) %}{% if errors.get(name) %}<p class="error" id="erreur-{{ name }}" role="alert">{{ errors[name] }}</p>{% endif %}{% endmacro %}
 {% macro invalid(name) %}{% if errors.get(name) %} aria-invalid="true" aria-describedby="erreur-{{ name }}"{% endif %}{% endmacro %}
 <section id="suivi" class="stack">
-<form method="post" action="/prospects/{{ p.id }}/resultat" class="group form" hx-post="/prospects/{{ p.id }}/resultat" hx-target="#suivi" hx-swap="outerHTML">
+<form method="post" action="/prospects/{{ p.id }}/resultat" class="group form" hx-post="/prospects/{{ p.id }}/resultat" data-garde hx-target="#suivi" hx-swap="outerHTML">
   <fieldset class="choices">
     <legend class="row-title">Résultat de l'appel</legend>
     <div class="chips">{% for s in results %}<button type="submit" class="chip" name="statut" value="{{ s }}" aria-pressed="{{ 'true' if p.status == s else 'false' }}">{{ s | capitalize }}</button>{% endfor %}</div>
   </fieldset>
   {{ error("status") }}
 </form>
-<form method="post" action="/prospects/{{ p.id }}/action" class="group form" hx-post="/prospects/{{ p.id }}/action" hx-trigger="change, submit" hx-target="#suivi" hx-swap="outerHTML">
+<form method="post" action="/prospects/{{ p.id }}/action" class="group form" hx-post="/prospects/{{ p.id }}/action" data-garde hx-trigger="change, submit" hx-target="#suivi" hx-swap="outerHTML">
   <h2 class="row-title">Prochaine action</h2>
   {% if card.proposal and not card.action %}<p class="secondary">Proposée : vérifiez, puis enregistrez.</p>{% endif %}
   <label for="type">Action</label>

@@ -13,10 +13,12 @@ function showSaveError(kind) {
 document.addEventListener("htmx:sendError", function () { showSaveError("offline"); });
 document.addEventListener("htmx:responseError", function () { showSaveError("server"); });
 
-// Une saisie pas encore enregistrée n'est jamais perdue sans prévenir.
+// Une saisie pas encore enregistrée n'est jamais perdue sans prévenir (C106).
+// Seules les fiches marquées data-garde comptent (note, contact, action) : lancer une
+// campagne ou envoyer un formulaire n'affiche jamais « Quitter le site ? » (C130).
 var unsaved = new Set();
 document.addEventListener("input", function (event) {
-  var form = event.target.closest && event.target.closest("form[hx-post]");
+  var form = event.target.closest && event.target.closest("form[hx-post][data-garde]");
   if (form) { unsaved.add(form.getAttribute("hx-post")); }
 });
 document.addEventListener("htmx:afterRequest", function (event) {
@@ -25,6 +27,9 @@ document.addEventListener("htmx:afterRequest", function (event) {
     showSaveError(null);
     unsaved.delete(event.detail.elt.getAttribute("hx-post"));
   }
+});
+document.addEventListener("submit", function (event) {
+  if (!event.defaultPrevented) { unsaved.clear(); }  // vrai envoi : la page change exprès
 });
 window.addEventListener("beforeunload", function (event) {
   if (unsaved.size) { event.preventDefault(); }

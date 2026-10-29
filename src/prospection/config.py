@@ -11,6 +11,7 @@ from pydantic_settings import BaseSettings
 
 if TYPE_CHECKING:
     from prospection.application.backup import BackupTarget
+    from prospection.sources.web_push import VapidKeys
 
 LOCAL_HOSTS = ("127.0.0.1", "localhost")
 
@@ -33,6 +34,10 @@ class Settings(BaseSettings):
     backup_s3_access_key: SecretStr | None = None
     backup_s3_secret_key: SecretStr | None = None
     backup_s3_region: str = "auto"
+    # Notifications sur le téléphone : python -m prospection.cli generate-vapid-keys
+    vapid_public_key: str | None = None
+    vapid_private_key: SecretStr | None = None
+    vapid_subject: str | None = None  # mailto:vous@exemple.fr
 
     @field_validator("backup_s3_url")
     @classmethod
@@ -50,6 +55,31 @@ class Settings(BaseSettings):
         access, secret = self.backup_s3_access_key, self.backup_s3_secret_key
         return BackupTarget(self.backup_s3_url, access.get_secret_value(),
                             secret.get_secret_value(), self.backup_s3_region)  # fmt: skip
+
+    def vapid_keys(self) -> "VapidKeys | None":
+        """Clés des notifications, si elles sont toutes définies."""
+        from prospection.sources.web_push import VapidKeys
+
+        if not (self.vapid_public_key and self.vapid_private_key and self.vapid_subject):
+            return None
+        private = self.vapid_private_key.get_secret_value()
+        return VapidKeys(private, self.vapid_public_key, self.vapid_subject)
+
+    @field_validator("vapid_private_key")
+    @classmethod
+    def _vapid_key_is_readable(cls, value: SecretStr | None) -> SecretStr | None:
+        from prospection.sources.web_push import check_private_key
+
+        if value is not None:
+            check_private_key(value.get_secret_value())  # mal copiée : refus au démarrage
+        return value
+
+    @field_validator("vapid_subject")
+    @classmethod
+    def _vapid_subject_is_contact(cls, subject: str | None) -> str | None:
+        if subject is not None and not subject.startswith(("mailto:", "https://")):
+            raise ValueError("mailto:vous@exemple.fr attendu")
+        return subject
 
     @field_validator("app_password_hash")
     @classmethod

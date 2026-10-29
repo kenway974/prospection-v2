@@ -19,7 +19,8 @@ def dismiss(engine: Engine, now: datetime, alert_id: int | None = None) -> None:
         mark_seen(conn, now, alert_id)
 
 
-def reminder_settings(engine: Engine) -> tuple[int, int]:
+def reminder_settings(engine: Engine) -> tuple[int, int, int, int]:
+    """Minutes avant, heure du matin, début et fin des heures calmes."""
     with engine.connect() as conn:
-        settings = load_app_settings(conn)
-    return settings.reminder_minutes, settings.reminder_hour
+        s = load_app_settings(conn)
+    return s.reminder_minutes, s.reminder_hour, s.quiet_start, s.quiet_end

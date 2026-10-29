@@ -30,3 +30,20 @@ def test_C77_C78_C108_worker_runs_schedules_and_reminders(campaign_db: Engine) -
     worker.work_once()
     with campaign_db.connect() as conn:
         assert {a.kind for a in unseen_alerts(conn)} == {"nouveaux", "relance"}
+
+
+def test_worker_pushes_new_alerts_to_the_phone(campaign_db: Engine) -> None:
+    import httpx
+
+    from prospection.application.push import push_job
+    from prospection.storage.alerts import add_alert
+    from tests.application.test_push import KEYS, phone_subscribed
+
+    phone_subscribed(campaign_db)
+    with campaign_db.begin() as conn:
+        add_alert(conn, "r1", "relance", "Rappeler · Atelier · 14:30", "/prospects/1", NOW)
+    sent, seen = fake_client(lambda r: httpx.Response(201))
+    worker = Worker(campaign_db, BOX, sent, PRICING, now=lambda: NOW, timezone="UTC",
+                    push=push_job(KEYS, campaign_db, sent, "UTC"))  # fmt: skip
+    worker.work_once()
+    assert [r.url.host for r in seen.requests] == ["fcm.googleapis.com"]

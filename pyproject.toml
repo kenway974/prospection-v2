@@ -17,6 +17,7 @@ dependencies = [
     "psycopg[binary]>=3.3.6",
     "pydantic-settings>=2.16.1",
     "python-multipart>=0.0.32",
+    "pywebpush>=2",
     "pyyaml>=6.0.3",
     "sentry-sdk>=2",
     "sqlalchemy>=2.1.6",
@@ -61,6 +62,10 @@ select = ["E", "F", "I", "UP", "B", "S", "SIM", "RUF"]
 strict = true
 files = ["src", "tests", "scripts"]
 mypy_path = "src"
+
+[[tool.mypy.overrides]]  # bibliothèques Web Push sans annotations de types
+module = ["pywebpush", "py_vapid", "http_ece"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

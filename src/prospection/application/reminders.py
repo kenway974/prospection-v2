@@ -45,11 +45,17 @@ def _number(text: str) -> int:
     return int(clean) if clean.isascii() and clean.isdigit() else -1
 
 
-def change_reminders(engine: Engine, minutes: str, hour: str) -> None:
+def change_reminders(
+    engine: Engine, minutes: str, hour: str, quiet_start: str = "21", quiet_end: str = "8"
+) -> None:
+    """Délais des rappels et heures calmes des notifications (début = fin : aucune)."""
     lead, morning = _number(minutes), _number(hour)
+    calm = (_number(quiet_start), _number(quiet_end))
     if lead not in MINUTES_RANGE:
         raise InvalidReminders("Choisissez entre 0 et 240 minutes.")
     if morning not in HOURS_RANGE:
-        raise InvalidReminders("Choisissez une heure entre 0 et 23.")
+        raise InvalidReminders("Heure du rappel : choisissez entre 0 et 23.")
+    if not all(h in HOURS_RANGE for h in calm):
+        raise InvalidReminders("Heures calmes : choisissez un début et une fin entre 0 et 23.")
     with engine.begin() as conn:
-        save_reminders(conn, lead, morning)
+        save_reminders(conn, lead, morning, *calm)

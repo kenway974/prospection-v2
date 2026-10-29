@@ -72,7 +72,7 @@ def campaign_db(engine: Engine) -> Iterator[Engine]:
             "UPDATE app_settings SET google_budget_cents = NULL, crm = 'none', "
             "notion_database_id = NULL, notion_database_title = NULL, reminder_minutes = 15, "
             "reminder_hour = 8, purge_months = 6, api_checked_at = NULL, backup_at = NULL, "
-            "backup_error = NULL, api_failures = 0"
+            "backup_error = NULL, api_failures = 0, quiet_start = 21, quiet_end = 8"
         )
 
 

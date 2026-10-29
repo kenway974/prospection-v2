@@ -3,12 +3,27 @@
 {% block content %}
 <a href="/reglages" class="back">Réglages</a>
 <h1 class="large-title">Rappels</h1>
-<p class="empty">Avant chaque relance, une alerte apparaît sur l'écran Aujourd'hui (et plus tard sur le téléphone).</p>
+<p class="empty">Avant chaque relance, une alerte apparaît sur l'écran Aujourd'hui et, si vous les activez, en notification sur ce téléphone.</p>
+<section class="group form" aria-labelledby="titre-notifications">
+  <h2 class="row-title" id="titre-notifications">Notifications sur ce téléphone</h2>
+  {% if vapid_public %}
+  <p class="secondary" id="notifications-etat" role="status">Vérification…</p>
+  <button type="button" class="button-primary" id="notifications-activer" data-vapid-key="{{ vapid_public }}" hidden>Activer les notifications</button>
+  <button type="button" class="button-secondary" id="notifications-couper" hidden>Couper les notifications</button>
+  <form method="post" action="/notifications/essai"><button type="submit" class="button-secondary">Envoyer une notification d'essai</button></form>
+  {% if reached is not none %}<p role="status">{% if reached %}Notification envoyée à {{ reached }} téléphone{{ "s" if reached > 1 }}.{% else %}Aucun téléphone n'a reçu la notification : activez-les d'abord sur ce téléphone.{% endif %}</p>{% endif %}
+  {% else %}<p class="notice">Notifications non configurées : générez les clés (python -m prospection.cli generate-vapid-keys) et ajoutez-les dans Railway (voir le guide de déploiement).</p>{% endif %}
+</section>
 <form method="post" action="/reglages/rappels" class="group form">
   <label for="minutes">Minutes avant une action avec heure (0 à 240)</label>
   <input id="minutes" name="minutes" inputmode="numeric" value="{{ minutes }}">
   <label for="heure">Heure du rappel pour les actions du jour sans heure (0 à 23)</label>
   <input id="heure" name="heure" inputmode="numeric" value="{{ hour }}">
+  <label for="calme_debut">Heures calmes : début (0 à 23)</label>
+  <input id="calme_debut" name="calme_debut" inputmode="numeric" value="{{ calm_from }}">
+  <label for="calme_fin">Heures calmes : fin (0 à 23)</label>
+  <input id="calme_fin" name="calme_fin" inputmode="numeric" value="{{ calm_to }}">
+  <p class="secondary">Pendant les heures calmes, seules les relances sont notifiées ; le reste attend le matin. Même heure au début et à la fin : pas d'heures calmes.</p>
   {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
   <button type="submit" class="button-primary">Enregistrer</button>
 </form>

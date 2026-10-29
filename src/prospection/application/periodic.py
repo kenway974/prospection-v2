@@ -39,6 +39,7 @@ class Periodic:
 def regular_jobs(
     engine: Engine, box: SecretBox, client: httpx.Client, pricing: Pricing, timezone: str,
     backup: Callable[[datetime], object] | None, start: datetime,
+    push: Callable[[datetime], object] | None = None,
 ) -> tuple[Periodic, list[Periodic]]:  # fmt: skip
     """Rappels (chaque minute) et travaux réguliers ; tous tournent même en pleine campagne.
     Purge, vérification et sauvegarde attendent 5 min après le démarrage (pas de rafale à
@@ -54,5 +55,6 @@ def regular_jobs(
         Periodic("vérification des API", timedelta(hours=1),
                  lambda now: weekly_api_check(engine, box, client, pricing, now), later),  # C99
         *([Periodic("sauvegarde", timedelta(hours=1), backup, later)] if backup else []),  # C91
+        *([Periodic("notifications", timedelta(seconds=20), push)] if push else []),
     ]  # fmt: skip
     return reminders, jobs

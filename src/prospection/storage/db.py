@@ -57,6 +57,8 @@ app_settings = Table(
     Column("purge_months", SmallInteger, nullable=False, server_default="6"),  # C94
     Column("api_checked_at", DateTime(timezone=True)),  # C99
     Column("api_failures", SmallInteger, nullable=False, server_default="0"),
+    Column("quiet_start", SmallInteger, nullable=False, server_default="21"),  # Web Push
+    Column("quiet_end", SmallInteger, nullable=False, server_default="8"),
     Column("backup_at", DateTime(timezone=True)),
     Column("backup_error", Text),  # C91
     CheckConstraint("id = 1", name="app_settings_single_row"),

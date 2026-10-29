@@ -22,6 +22,7 @@ from prospection.application.campaign_step import run_step
 from prospection.application.crm_export import send_pending
 from prospection.application.mail_check import check_mail_domains
 from prospection.application.periodic import regular_jobs
+from prospection.application.push import push_job
 from prospection.application.registry_enrich import enrich_new_prospects
 from prospection.application.schedules import run_due_schedule
 from prospection.application.site_verdict import SiteChecker, skip_sites
@@ -40,13 +41,14 @@ class Worker:
         sites: SiteChecker = skip_sites,
         mail_lookup: Callable[[str], str | None] | None = None, timezone: str = "Europe/Paris",
         backup: Callable[[datetime], object] | None = None,
+        push: Callable[[datetime], object] | None = None,
     ) -> None:  # fmt: skip
         self.engine, self.box, self.client, self.pricing = engine, box, client, pricing
         self.now, self.sites, self.mail_lookup = now, sites, mail_lookup
         self.timezone = timezone
         self.next_mail_check = datetime.min.replace(tzinfo=UTC)
         self.reminders, self.periodic = regular_jobs(
-            engine, box, client, pricing, timezone, backup, now()
+            engine, box, client, pricing, timezone, backup, now(), push
         )
         self.worker_id = uuid.uuid4().hex
 
@@ -130,11 +132,11 @@ def main() -> None:  # pragma: no cover (point d'entrée, testé en bout en bout
     with make_client(settings.test_services_url) as client, web:
         engine = make_engine(settings.database_url)
         lookup = mail_lookup_for(settings.test_services_url)
+        key = settings.encryption_key.get_secret_value()
+        backup = backup_job(settings.backup_target(), key, settings.database_url, engine, client)
+        push = push_job(settings.vapid_keys(), engine, client, settings.timezone)
         worker = Worker(engine, box, client, load_pricing(), sites=sites, mail_lookup=lookup,
-                        timezone=settings.timezone,
-                        backup=backup_job(settings.backup_target(), settings.encryption_key
-                                          .get_secret_value(), settings.database_url, engine,
-                                          client))  # fmt: skip
+                        timezone=settings.timezone, backup=backup, push=push)  # fmt: skip
         logger.info("Tâche de fond démarrée")
         worker.run_forever(stop)
 

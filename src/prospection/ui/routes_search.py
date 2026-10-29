@@ -86,6 +86,9 @@ def communes(
     pays: str = "FR",
     client: httpx.Client = Depends(get_http_client),  # noqa: B008
 ) -> Response:
+    if len(ville.strip()) < 2:  # une lettre : rien à proposer, aucun appel au service
+        context: dict[str, object] = {"choices": [], "problem": "Tapez au moins 2 lettres."}
+        return tpl.TemplateResponse(request, "_communes.html", context)
     result = find_city(client, ville, pays)
     choices = [(commune_value(c), choice_label(c)) for c in result.choices]
     context = {"choices": choices, "problem": result.problem}

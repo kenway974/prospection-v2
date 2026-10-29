@@ -6,6 +6,7 @@ import struct
 from fastapi.testclient import TestClient
 
 from prospection.ui.paths import STATIC_DIR
+from prospection.ui.static_version import static_version
 
 
 def png_size(data: bytes) -> tuple[int, int]:
@@ -49,5 +50,8 @@ def test_C116_service_worker_served_at_root_without_session(client: TestClient) 
 
 
 def test_C116_service_worker_is_registered_by_external_script(client: TestClient) -> None:
-    assert '<script src="/static/app.js" defer></script>' in client.get("/connexion").text
+    page = client.get("/connexion").text
+    version = static_version()
+    assert f'<script src="/static/app.js?v={version}" defer></script>' in page
+    assert f'<script src="/static/notifications.js?v={version}" defer></script>' in page
     assert "serviceWorker.register" in client.get("/static/app.js").text

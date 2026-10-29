@@ -35,6 +35,7 @@ class ProspectRow:
     company: Company | None = None
     registry_status: str | None = None
     site: SiteReport | None = None
+    campaign_id: int | None = None  # pour ranger la liste par campagne (C133)
 
 
 @dataclass(frozen=True)
@@ -65,7 +66,7 @@ def _filters(status: str | None, query: str, scope: Scope = ALL) -> list[ColumnE
 _COLUMNS = (
     _P.id, _P.data_json, _P.keywords, _P.status, _P.to_check, _P.contact_name,
     _P.contact_mobile, _P.contact_email, _P.company_json, _P.registry_status,
-    _P.site_json,
+    _P.site_json, _P.campaign_id,
 )  # fmt: skip
 
 
@@ -74,7 +75,7 @@ def _row(r: Row[Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any]) -> Prosp
     site = decode_site(r.site_json) if r.site_json else None
     contact = (r.contact_name, r.contact_mobile, r.contact_email)
     return ProspectRow(r.id, r.data_json, list(r.keywords), r.status, list(r.to_check), contact,
-                       company, r.registry_status, site)  # fmt: skip
+                       company, r.registry_status, site, r.campaign_id)  # fmt: skip
 
 
 def prospect_rows(
@@ -82,13 +83,6 @@ def prospect_rows(
 ) -> list[ProspectRow]:
     where = _filters(status, query, scope)
     return [_row(r) for r in conn.execute(select(*_COLUMNS).where(*where).order_by(*SORTS[sort]))]
-
-
-def prospect_ids(
-    conn: Connection, status: str | None, query: str, sort: str, scope: Scope = ALL
-) -> list[int]:
-    where = _filters(status, query, scope)
-    return [int(r.id) for r in conn.execute(select(_P.id).where(*where).order_by(*SORTS[sort]))]
 
 
 def load_prospect(conn: Connection, prospect_id: int) -> ProspectRow | None:

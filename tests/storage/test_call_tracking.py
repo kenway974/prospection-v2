@@ -8,6 +8,7 @@ from sqlalchemy import Connection, text
 from sqlalchemy.exc import IntegrityError
 
 from prospection.domain.criteria import Verdict
+from prospection.domain.prospect_source import ALL, Scope
 from prospection.storage.call_tracking import (
     add_note,
     agenda_items,
@@ -22,7 +23,7 @@ from prospection.storage.campaigns import create_campaign
 from prospection.storage.prospect_list import (
     load_session,
     move_session,
-    prospect_ids,
+    prospect_rows,
     start_session,
     status_counts,
 )
@@ -30,6 +31,12 @@ from prospection.storage.prospects import insert_prospect
 from tests.storage.test_campaigns import NOW, PLACE, REQUEST, STEPS
 
 QUALIFIED = Verdict(True, (), ())
+
+
+def prospect_ids(
+    conn: Connection, status: str | None, query: str, sort: str, scope: Scope = ALL
+) -> list[int]:
+    return [r.id for r in prospect_rows(conn, status, query, sort, scope)]
 
 
 def prospects(conn: Connection, *names: str) -> list[int]:

@@ -25,3 +25,14 @@ def test_C52_site_block_shown_and_escaped(client: TestClient, campaign_db: Engin
     raw = client.get(f"/prospects/{pid}").text
     assert "40/100" in raw and "<script>alert(1)</script>" not in raw
     assert "&lt;script&gt;" in raw
+
+
+def test_C136_audit_recap_in_list_and_on_card(client: TestClient, campaign_db: Engine) -> None:
+    [pid] = add(campaign_db, PLACE)
+    audit = Audit(40, ("Pas de HTTPS", "<b>Pas adapté</b> au mobile"), "Wix", False, False, False)
+    report = SiteReport("fiche Google", "https://martin.fr", audit=audit)
+    with campaign_db.begin() as conn:
+        conn.execute(prospects.update().values(site_json=encode_site(report)))
+    recap = "Audit : pas de HTTPS · &lt;b&gt;Pas adapté&lt;/b&gt; au mobile"
+    assert recap in client.get("/prospects").text
+    assert recap in client.get(f"/prospects/{pid}").text

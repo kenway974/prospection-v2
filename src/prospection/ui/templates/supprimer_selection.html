@@ -11,6 +11,6 @@
   {% for id, name in chosen %}<input type="hidden" name="id" value="{{ id }}">{% endfor %}
   <input type="hidden" name="origine" value="{{ origine }}"><input type="hidden" name="campagne" value="{{ campagne }}">
   <label class="choice"><input type="checkbox" name="jamais"> Ne plus jamais les reprendre dans une recherche (supprime aussi leurs autres fiches, dans toutes les campagnes)</label>
-  <button type="submit" class="button-danger">Supprimer définitivement</button>
+  <button type="submit" class="button-danger" data-attente="Suppression…">Supprimer définitivement</button>
 </form>
 {% endblock %}

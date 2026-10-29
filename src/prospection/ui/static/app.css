@@ -121,3 +121,18 @@ details.row summary { min-height: 44px; display: flex; align-items: center; curs
 .check input { width: 22px; height: 22px; margin: 0; accent-color: var(--ocean); }
 .select-row > .link-row { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .select-row > .link-row > :first-child { flex: 1; }
+/* Liste rangée par campagne (C133). */
+.group-title { margin: 8px 4px -8px; font-size: 15px; font-weight: 600; color: var(--secondary); }
+/* Action longue (C135) : petit cercle qui tourne dans le bouton occupé. */
+button[aria-busy="true"] { cursor: progress; opacity: 0.85; }
+button[aria-busy="true"]::before { content: ""; width: 16px; height: 16px; margin-right: 8px;
+  flex: none; border: 2px solid currentColor; border-right-color: transparent;
+  border-radius: 50%; animation: tourne 0.8s linear infinite; }
+@keyframes tourne { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { button[aria-busy="true"]::before { animation: none; } }
+/* « Recherche des villes… » : seulement pendant sa propre requête, pas pendant l'estimation
+   du formulaire (sinon la liste bouge sous le doigt, C134). */
+#communes-attente.htmx-indicator { display: none; }
+#communes-attente.htmx-request { display: block; }
+.chip[aria-busy="true"]::before { content: none; }  /* les puces ne bougent pas sous le doigt */
+[hidden] { display: none !important; }  /* « hidden » gagne toujours sur display: flex */

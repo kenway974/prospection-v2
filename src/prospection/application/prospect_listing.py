@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
+from itertools import groupby
 from zoneinfo import ZoneInfo
 
 from sqlalchemy import Connection, Engine
@@ -24,6 +25,7 @@ class ProspectList:
     campaigns: list[tuple[int, str, int]] = field(default_factory=list)  # de cette origine
     scope: Scope = ALL  # celle appliquée : une campagne d'une autre origine est ignorée
     any_prospect: bool = False  # au moins un prospect, recherche et filtres mis à part
+    groups: list[tuple[str, list[ProspectRow]]] = field(default_factory=list)  # par campagne
 
 
 def clean_query(query: str) -> str:
@@ -40,6 +42,23 @@ def _listed(
     if sort == SCORE:  # meilleures d'abord ; à score égal, l'ordre de la recherche
         rows = sorted(rows, key=lambda r: -summaries[r.id].score)
     return rows, summaries
+
+
+def _grouped(
+    rows: list[ProspectRow], campaigns: list[tuple[int, str, int]]
+) -> list[tuple[str, list[ProspectRow]]]:
+    """Par campagne, la plus récente d'abord ; dans chaque campagne, le tri choisi (C133)."""
+    other = (len(campaigns), "Autre campagne")
+    rank = {c[0]: (i, c[1]) for i, c in enumerate(campaigns)}
+
+    def key(row: ProspectRow) -> tuple[int, int]:
+        return rank.get(row.campaign_id or 0, other)[0], row.campaign_id or 0
+
+    ordered = sorted(rows, key=key)  # stable : le tri choisi est gardé dans chaque campagne
+    return [
+        (rank.get(cid or 0, other)[1], list(group))
+        for cid, group in groupby(ordered, key=lambda r: r.campaign_id)
+    ]
 
 
 def _today(now: datetime | None, timezone: str) -> date:
@@ -60,7 +79,9 @@ def prospect_list(
         counts = store.status_counts(conn, query, scope)
         sources = store.source_counts(conn, query)
         any_prospect = bool(sources) or bool(store.source_counts(conn, ""))
-    return ProspectList(rows, counts, summaries, sources, campaigns, scope, any_prospect)
+    groups = _grouped(rows, campaigns)
+    rows = [r for _, group in groups for r in group]
+    return ProspectList(rows, counts, summaries, sources, campaigns, scope, any_prospect, groups)
 
 
 def _checked(scope: Scope, campaigns: list[tuple[int, str, int]]) -> Scope:
@@ -74,14 +95,13 @@ def start_session(
     engine: Engine, status: str | None, query: str, sort: str, now: datetime,
     timezone: str = "Europe/Paris", scope: Scope = ALL,
 ) -> int | None:  # fmt: skip
-    """Fige la file affichée et renvoie le premier prospect à appeler (C109)."""
+    """Fige la file affichée (même ordre que la liste) et renvoie le premier prospect à
+    appeler (C109, C133)."""
     query = clean_query(query)
     with engine.begin() as conn:
-        scope = _checked(scope, campaign_choices(conn, scope.source) if scope.source else [])
-        if sort == SCORE:
-            rows, _ = _listed(conn, status, query, sort, _today(now, timezone), scope)
-            queue = [r.id for r in rows]
-        else:
-            queue = store.prospect_ids(conn, status, query, sort, scope)
+        campaigns = campaign_choices(conn, scope.source) if scope.source else []
+        scope = _checked(scope, campaigns)
+        rows, _ = _listed(conn, status, query, sort, _today(now, timezone), scope)
+        queue = [r.id for _, group in _grouped(rows, campaigns) for r in group]
         store.start_session(conn, queue, now)
     return queue[0] if queue else None

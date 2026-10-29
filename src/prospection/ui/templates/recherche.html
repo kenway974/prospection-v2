@@ -54,7 +54,8 @@
     </select>
     <label for="ville">Ville</label>
     <input id="ville" name="ville" value="{{ values.get('ville', '') }}" placeholder="Saint-Denis" autocomplete="off"
-           hx-get="/recherche/communes" hx-trigger="change" hx-target="#communes" hx-swap="innerHTML" hx-include="this, #pays">
+           hx-get="/recherche/communes" hx-trigger="input changed delay:400ms" hx-target="#communes" hx-swap="innerHTML" hx-include="this, #pays" hx-indicator="#communes-attente" hx-sync="this:replace">
+    <p id="communes-attente" class="htmx-indicator secondary">Recherche des villes…</p>
     <div id="communes" aria-live="polite">
       {% if values.get('commune') %}<label class="choice"><input type="radio" name="commune" value="{{ values.commune }}" checked> {{ values.get('ville', '') }}</label>{% endif %}
     </div>
@@ -96,7 +97,7 @@
     {{ error("modele") }}
   </section>
   <p id="estimation" class="secondary" role="status"></p>
-  <button type="submit" class="button-primary">Lancer</button>
+  <button type="submit" class="button-primary" data-attente="Lancement de la campagne…">Lancer</button>
   <p class="secondary">Vous pouvez fermer l'app : la recherche continue sur le serveur.</p>
 </form>
 {% endblock %}

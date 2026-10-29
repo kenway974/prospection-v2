@@ -14,9 +14,11 @@ from prospection.domain.sectors import load_sectors
 from prospection.http_client import make_client
 from prospection.storage.secret_box import SecretBox
 from prospection.ui.paths import TEMPLATES_DIR
+from prospection.ui.static_version import static_version
 
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
 templates.env.globals["sector_groups"] = load_sectors()  # menu « Secteur » (C132)
+templates.env.globals["static_version"] = static_version()  # nouveau fichier = nouvelle adresse
 
 
 def get_now() -> datetime:

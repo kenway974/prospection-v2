@@ -11,6 +11,7 @@
 <p class="secondary">{{ p.keywords | join(", ") }} · {{ p.data.address }}</p>
 {% set seen = card.insights %}
 {% if seen %}<p><strong class="score">{{ seen.score }}/100</strong> <span class="secondary">{{ seen.reason }}</span></p>{% endif %}
+{% if seen and seen.audit %}<p class="secondary">{{ seen.audit }} <a href="#titre-site">Voir le détail du site</a></p>{% endif %}
 {% if seen and seen.flags %}<p class="notice">À vérifier : {{ seen.flags | join(" ; ") }}</p>{% endif %}
 <div class="links">
   {% if card.tel %}<a class="button-primary" href="tel:{{ card.tel }}">Appeler</a>{% endif %}

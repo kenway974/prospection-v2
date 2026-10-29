@@ -115,3 +115,14 @@ def test_C120_search_without_result_keeps_the_form(client: TestClient, campaign_
     _campaign(campaign_db, "Cuisinistes Lyon", "Cuisines Martin")
     page = text(client.get("/prospects", params={"q": "introuvable"}))
     assert "Aucun prospect ne correspond" in page and 'id="q"' in page
+
+
+def test_C133_list_shows_one_block_per_campaign(client: TestClient, campaign_db: Engine) -> None:
+    _campaign(campaign_db, "Cuisinistes Lyon", "Cuisines Martin")
+    _campaign(campaign_db, "Cuisinistes Paris", "Cuisines Durand")
+    page = text(client.get("/prospects"))
+    paris, lyon = (
+        page.index('<h2 class="group-title">Cuisinistes Paris · 1</h2>'),
+        page.index('<h2 class="group-title">Cuisinistes Lyon · 1</h2>'),
+    )
+    assert paris < page.index("Cuisines Durand") < lyon < page.index("Cuisines Martin")

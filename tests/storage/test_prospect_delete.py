@@ -3,8 +3,9 @@
 from sqlalchemy import Connection, func, select
 
 from prospection.storage.privacy import delete_prospects, erased_keys
-from prospection.storage.prospect_list import load_session, prospect_ids, start_session
+from prospection.storage.prospect_list import load_session, start_session
 from prospection.storage.schema_campaigns import prospects
+from tests.storage.test_call_tracking import prospect_ids
 from tests.storage.test_call_tracking import prospects as add_prospects
 from tests.storage.test_campaigns import NOW
 

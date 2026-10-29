@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict, model_validator
 
 from prospection.domain.page_speed import is_slow
 from prospection.domain.signals import Signals
+from prospection.domain.site_audit import LEGACY_GA
 
 
 class Conditions(BaseModel):
@@ -29,6 +30,7 @@ class Conditions(BaseModel):
     probable_site: bool | None = None  # site du même nom trouvé, homonyme possible
     site_down: bool | None = None  # site de la fiche Google injoignable ou illisible
     slow_site: bool | None = None  # lent sur mobile, mesuré par Google PageSpeed
+    dead_analytics: bool | None = None  # ancien Google Analytics, arrêté en 2023
 
     @model_validator(mode="after")
     def _not_empty(self) -> "Conditions":
@@ -55,6 +57,7 @@ class _Facts:
     probable_site: bool
     site_down: bool
     slow_site: bool | None
+    dead_analytics: bool | None
 
 
 def _facts(s: Signals) -> _Facts:
@@ -66,6 +69,7 @@ def _facts(s: Signals) -> _Facts:
         bool(seo.problems) if seo else None, s.place.review_count, s.place.rating,
         s.age_days, not s.place.opening_hours, bool(s.site and s.site.probable), s.site_down,
         is_slow(s.site.speed) if s.site and s.site.speed else None,
+        (LEGACY_GA in audit.problems) if audit else None,
     )  # fmt: skip
 
 
@@ -75,7 +79,8 @@ def matches(when: Conditions, s: Signals) -> bool:
              (when.no_form, f.no_form), (when.no_https, f.no_https),
              (when.not_mobile, f.not_mobile), (when.seo_missing, f.seo_missing),
              (when.no_hours, f.no_hours), (when.probable_site, f.probable_site),
-             (when.site_down, f.site_down), (when.slow_site, f.slow_site)]  # fmt: skip
+             (when.site_down, f.site_down), (when.slow_site, f.slow_site),
+             (when.dead_analytics, f.dead_analytics)]  # fmt: skip
     if any(wanted is not None and actual != wanted for wanted, actual in flags):
         return False
     bounds: list[tuple[float | None, float | None, Callable[[float, float], bool]]] = [

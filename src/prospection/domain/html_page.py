@@ -19,8 +19,10 @@ class Page:
     title: str
     metas: dict[str, str]  # nom (en minuscules) → contenu
     h1: tuple[str, ...]
-    forms: int
-    email_inputs: int
+    forms: int  # formulaires de contact : un champ email ou message, ni recherche ni connexion
+    email_inputs: int  # champs email hors formulaire (formulaires construits en JavaScript)
+    h1_count: int
+    images: int
     links: tuple[str, ...]
     image_alts: tuple[str, ...]
     sources: tuple[str, ...]  # adresses des scripts, images et feuilles de style
@@ -33,6 +35,8 @@ class _Reader(HTMLParser):
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
         self.title, self.forms, self.email_inputs, self.size = "", 0, 0, 0
+        self.h1_count = self.images = 0
+        self.form: set[str] | None = None  # champs du formulaire en cours
         self.metas: dict[str, str] = {}
         self.h1: list[str] = []
         self.links: list[str] = []
@@ -48,9 +52,13 @@ class _Reader(HTMLParser):
         if tag == "meta" and a.get("name") and len(self.metas) < MAX_ITEMS:
             self.metas.setdefault(a["name"].lower(), a.get("content", "")[:500])
         elif tag == "form":
-            self.forms += 1
-        elif tag == "input" and a.get("type", "").lower() == "email":
-            self.email_inputs += 1
+            self.form = {"search"} if a.get("role", "").lower() == "search" else set()
+        elif tag in ("input", "textarea"):
+            self._field(tag, a)
+        if tag == "h1":
+            self.h1_count += 1
+        if tag == "img":
+            self.images += 1
         elif tag == "a" and a.get("href") and len(self.links) < MAX_ITEMS:
             self.links.append(a["href"][:500])
         if tag == "img" and a.get("alt") and len(self.alts) < MAX_ITEMS:
@@ -59,9 +67,23 @@ class _Reader(HTMLParser):
         if src and len(self.sources) < MAX_ITEMS:
             self.sources.append(src[:500])
 
+    def _field(self, tag: str, a: dict[str, str]) -> None:
+        kind = "textarea" if tag == "textarea" else a.get("type", "text").lower()
+        if self.form is None:
+            self.email_inputs += kind == "email"
+        else:
+            self.form.add(kind)
+
     def handle_endtag(self, tag: str) -> None:
         if self.depth.get(tag):
             self.depth[tag] -= 1
+        if tag == "form" and self.form is not None:
+            contact = self.form & {"email", "tel", "textarea"} and not self.form & {
+                "password",
+                "search",
+            }
+            self.forms += bool(contact)
+            self.form = None
 
     def handle_data(self, data: str) -> None:
         if any(self.depth[t] for t in _HIDDEN):
@@ -84,5 +106,6 @@ def parse_page(html: str) -> Page:
     h1 = tuple(t for t in (" ".join(h.split()) for h in reader.h1) if t)
     return Page(
         html, " ".join(reader.title.split())[:MAX_TITLE], reader.metas, h1, reader.forms,
-        reader.email_inputs, tuple(reader.links), tuple(reader.alts), tuple(reader.sources), text,
+        reader.email_inputs, reader.h1_count, reader.images, tuple(reader.links),
+        tuple(reader.alts), tuple(reader.sources), text,
     )  # fmt: skip

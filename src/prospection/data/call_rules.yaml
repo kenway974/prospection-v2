@@ -5,7 +5,8 @@
 # Une règle dont une variable est inconnue pour ce prospect ne s'affiche pas.
 # Conditions : has_site, found_site, probable_site, site_down, site_score_max, no_form,
 # no_https, not_mobile, seo_missing, reviews_max, reviews_min, rating_max,
-# created_within_days, no_hours, slow_site (lent sur mobile, mesuré par Google).
+# created_within_days, no_hours, slow_site (lent sur mobile, mesuré par Google),
+# dead_analytics (ancien Google Analytics, arrêté en 2023).
 # Formulez des indices (« peut-être », « sans doute », « semble »), jamais des certitudes :
 # ils se confirment pendant l'appel (un test le vérifie).
 rules:
@@ -41,6 +42,12 @@ rules:
     pains:
       - "Site lent sur mobile : une partie des visiteurs repart sans doute avant de le voir"
       - "Google met peut-être moins en avant un site lent dans ses résultats"
+  - id: statistiques_arretees
+    priority: 72
+    when: {dead_analytics: true}
+    hook: "Le site de {nom} semble encore utiliser l'ancien Google Analytics, arrêté en 2023 : vous n'avez sans doute plus aucune statistique de visites."
+    pains:
+      - "Sans statistiques, il est sans doute impossible de savoir combien de clients viennent du site"
   - id: site_faible
     priority: 75
     when: {site_score_max: 59}

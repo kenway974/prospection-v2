@@ -8,6 +8,8 @@ YOUNG_REASON_DAYS = 3 * 365
 
 def _site_words(s: Signals) -> str:
     audit = s.audit
+    if s.site and s.site.parked:  # dit tel quel : c'est l'accroche de l'appel (C131)
+        return "page en construction"
     if not s.has_site:
         return "sans site"
     if audit is None:

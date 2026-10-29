@@ -3,6 +3,7 @@
 Hypothèse (écrite, à valider) : sans site lisible (aucun site, ou site injoignable), un
 établissement n'est jamais écarté par ces critères : le besoin est encore plus fort.
 Un site retrouvé (absent de la fiche Google) compte pour « avec site » / « sans site ».
+Une page « en construction » de l'hébergeur compte pour « sans site » (C131).
 """
 
 from prospection.domain.criteria import Criteria
@@ -19,6 +20,10 @@ _PROBLEMS = (
 
 def site_reasons(report: SiteReport, criteria: Criteria) -> list[str]:
     reasons = []
+    if report.parked:
+        if criteria.website == "with":
+            reasons.append("Sans site (page en construction)")
+        return reasons
     if criteria.website == "without" and report.origin == "retrouvé":
         reasons.append("Avec site (retrouvé)")
     if criteria.website == "with" and report.url is None and report.origin == "aucun":

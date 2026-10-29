@@ -33,6 +33,7 @@ Ajouter ou retirer un comportement = modifier ce fichier (avec l'accord du propr
 - C123 Un établissement situé hors du pays ou de la province / du canton choisi est exclu « Hors zone » *(validé le 25/10/2026)*
 - C124 Les numéros belges, suisses, luxembourgeois et monégasques sont reconnus (mobile ou fixe) *(validé le 25/10/2026)*
 - C126 Vitesse du site sur mobile mesurée par Google PageSpeed Insights (note, temps d'affichage, problèmes principaux) ; un site lent compte dans le score et donne une accroche *(validé le 29/10/2026)*
+- C131 Une page « en construction » de l'hébergeur compte comme « sans site » : gardée avec « Sans site seulement » (la fiche Google indique un site, il est lu pour le savoir), écartée avec « Avec site seulement », et mentionnée telle quelle (« page en construction ») *(validé le 29/10/2026)*
 - C125 Entreprises récemment créées hors de France : registre officiel du pays quand il est ouvert (Belgique : BCE ; Suisse : Zefix) ; sinon l'app dit que cette source n'existe pas pour ce pays *(validé le 25/10/2026)*
 
 ## 3. Critères de qualification

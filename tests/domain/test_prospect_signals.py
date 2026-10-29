@@ -98,3 +98,11 @@ def test_C59_C60_unsure_company_never_used_as_if_sure() -> None:
 def test_C93_non_diffusible_company_never_reaches_the_signals() -> None:
     hidden = dataclasses.replace(LYON_SAS, diffusible=False)
     assert signals_of(PLACE, None, hidden, "sûr", (), TODAY).company is None
+
+
+def test_C131_placeholder_page_named_as_such() -> None:
+    place = dataclasses.replace(PLACE, review_count=2, phone=None, website="https://a.fr")
+    parked = SiteReport("fiche Google", problem="Page en construction", parked=True)
+    assert (
+        reason(signals_of(place, parked, None, None, (), TODAY)) == "page en construction, 2 avis"
+    )

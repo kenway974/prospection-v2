@@ -77,6 +77,7 @@ Chaque semaine, la tâche de fond vérifie aussi les vraies API (clés acceptée
 Chaque clé est chiffrée en base et ne s'affiche plus jamais. Le bouton « Tester » vérifie qu'elle marche (appel gratuit).
 
 - **Google Maps** : [Google Cloud Console](https://console.cloud.google.com/) → créer un projet → activer **« Places API (New) »** et la facturation → Identifiants → Créer une clé API. Conseillé : restreindre la clé à « Places API (New) ».
+- **Vitesse mobile des sites (facultatif)** : dans le même projet Google Cloud, activer aussi **« PageSpeed Insights API »** (gratuite) et l'autoriser sur la clé. La tâche de fond mesure alors le site de chaque prospect retenu (note sur 100, temps d'affichage, problèmes principaux), visible dans « Le site » de la fiche ; un site lent compte dans le score et donne une accroche « Pour l'appel ».
 - **Notion** : [notion.so/profile/integrations](https://www.notion.so/profile/integrations) → Nouvelle intégration interne → copier le **secret**. Puis, dans Notion, ouvrir la base **Prospects v2** (page DEV → 11. Prospection v2 (CRM)) → menu ••• → Connexions → ajouter l'intégration.
 - **Sirène (INSEE)** : [portail-api.insee.fr](https://portail-api.insee.fr/) → créer un compte et une application → s'abonner à l'**API Sirene** → copier la clé d'API.
 

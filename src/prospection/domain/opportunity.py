@@ -5,6 +5,7 @@ la v2 : une entreprise récemment créée compte en plus ; chaque point « à v�
 score. Chaque ligne du détail est affichée telle quelle.
 """
 
+from prospection.domain.page_speed import is_slow
 from prospection.domain.signals import Signals, months
 
 NO_SITE, WEAK_FACTOR, NO_FORM, FOUND_SITE, SITE_DOWN = 55, 0.5, 15, 5, 40
@@ -12,6 +13,7 @@ FEW_REVIEWS = ((10, 20, "Très peu d'avis Google"), (30, 10, "Peu d'avis Google"
 MANY_REVIEWS, MANY_POINTS = 100, -10
 SOLID, SOLID_REVIEWS, SOLID_RATING, SOLID_SITE = -40, 50, 4.5, 80
 NO_PHONE, YOUNG, YOUNG_DAYS, FLAG = -25, 10, 365, -5
+SLOW_SITE = 15
 CHAIN, CHAIN_FLAG = -20, "Nom proche de l'enseigne"
 
 
@@ -26,6 +28,8 @@ def _site(s: Signals) -> list[tuple[str, int]]:
         lines.append((f"Site à améliorer (qualité {audit.score}/100)", weak))
     if audit and not audit.contact_form:
         lines.append(("Pas de formulaire de contact", NO_FORM))
+    if s.site and is_slow(s.site.speed) and s.site.speed:
+        lines.append((f"Site lent sur mobile (Google : {s.site.speed.score}/100)", SLOW_SITE))
     if s.site and s.site.origin == "retrouvé":
         lines.append(("Site absent de la fiche Google", FOUND_SITE))
     return lines

@@ -13,6 +13,7 @@ from prospection.application.api_watch import weekly_api_check
 from prospection.application.crm_index import refresh_crm_index
 from prospection.application.privacy import purge
 from prospection.application.reminders import remind_due_actions
+from prospection.application.speed_check import speed_job
 from prospection.domain.google_cost import Pricing
 from prospection.storage.secret_box import SecretBox
 
@@ -56,5 +57,6 @@ def regular_jobs(
                  lambda now: weekly_api_check(engine, box, client, pricing, now), later),  # C99
         *([Periodic("sauvegarde", timedelta(hours=1), backup, later)] if backup else []),  # C91
         *([Periodic("notifications", timedelta(seconds=20), push)] if push else []),
+        Periodic("vitesse des sites", timedelta(minutes=1), speed_job(engine, box, client), later),
     ]  # fmt: skip
     return reminders, jobs

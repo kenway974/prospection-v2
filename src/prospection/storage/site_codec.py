@@ -4,6 +4,7 @@ import logging
 from dataclasses import asdict
 from typing import Any
 
+from prospection.domain.page_speed import PageSpeed
 from prospection.domain.site_audit import Audit
 from prospection.domain.site_contacts import Contacts
 from prospection.domain.site_report import SiteReport
@@ -33,4 +34,9 @@ def _decode(data: dict[str, Any]) -> SiteReport:
         LocalSeo(seo["trade"], seo["city"], tuple(seo["problems"])) if seo else None,
         Contacts(*(tuple(contacts[k]) for k in ("emails", "phones", "social")))
         if contacts else None,
+        decode_speed(data["speed"]) if data.get("speed") else None,
     )  # fmt: skip
+
+
+def decode_speed(data: dict[str, Any]) -> PageSpeed:
+    return PageSpeed(int(data["score"]), data.get("display_ms"), tuple(data.get("issues", ())))

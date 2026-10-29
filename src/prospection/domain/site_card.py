@@ -4,6 +4,7 @@ from urllib.parse import urlsplit
 
 import phonenumbers
 
+from prospection.domain.page_speed import issue_labels, speed_line
 from prospection.domain.place import web_link
 from prospection.domain.site_report import SiteReport
 
@@ -39,6 +40,10 @@ def site_lines(report: SiteReport | None) -> list[tuple[str, str]]:
         lines.append(
             ("SEO local", " ; ".join(report.seo.problems) or "métier et ville bien placés")
         )
+    if report.speed:
+        lines.append(("Vitesse mobile (Google)", speed_line(report.speed)))
+        if issues := issue_labels(report.speed):
+            lines.append(("À améliorer", " ; ".join(issues)))
     contacts = report.contacts
     if contacts and contacts.emails:
         lines.append(("Emails", ", ".join(contacts.emails)))

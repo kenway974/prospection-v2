@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 from typing import Literal
 
+from prospection.domain.page_speed import PageSpeed
 from prospection.domain.site_audit import Audit
 from prospection.domain.site_contacts import Contacts
 from prospection.domain.site_seo import LocalSeo
@@ -19,3 +20,4 @@ class SiteReport:
     audit: Audit | None = None
     seo: LocalSeo | None = None
     contacts: Contacts | None = None
+    speed: PageSpeed | None = None  # vitesse mobile mesurée par Google, plus tard

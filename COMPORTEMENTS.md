@@ -33,6 +33,7 @@ Ajouter ou retirer un comportement = modifier ce fichier (avec l'accord du propr
 - C123 Un établissement situé hors du pays ou de la province / du canton choisi est exclu « Hors zone » *(validé le 25/10/2026)*
 - C124 Les numéros belges, suisses, luxembourgeois et monégasques sont reconnus (mobile ou fixe) *(validé le 25/10/2026)*
 - C126 Vitesse du site sur mobile mesurée par Google PageSpeed Insights (note, temps d'affichage, problèmes principaux) ; un site lent compte dans le score et donne une accroche *(validé le 29/10/2026)*
+- C131 Une page « en construction » de l'hébergeur compte comme « sans site » : gardée avec « Sans site seulement » (la fiche Google indique un site, il est lu pour le savoir), écartée avec « Avec site seulement », et mentionnée telle quelle (« page en construction ») *(validé le 29/10/2026)*
 - C125 Entreprises récemment créées hors de France : registre officiel du pays quand il est ouvert (Belgique : BCE ; Suisse : Zefix) ; sinon l'app dit que cette source n'existe pas pour ce pays *(validé le 25/10/2026)*
 
 ## 3. Critères de qualification
@@ -109,6 +110,10 @@ Ajouter ou retirer un comportement = modifier ce fichier (avec l'accord du propr
 - C66 Je retrouve les exports des campagnes passées
 - C118 L'export fichier d'une campagne ne change aucun statut de prospect
 - C120 La liste des prospects se cherche (nom, ville, métier) et se filtre par statut, avec le nombre de prospects par statut
+- C127 Les prospects trouvés sur le terrain sont séparés des prospects à appeler (recherche sur Internet) : deux onglets, chacun avec sa liste, ses compteurs et sa session d'appel *(demandé le 29/10/2026)*
+- C128 La liste des prospects se filtre par campagne (chaque campagne avec son nombre de prospects, la plus récente d'abord) *(demandé le 29/10/2026)*
+- C129 Je coche plusieurs prospects dans la liste (ou tous) et je les supprime en une fois, après une page de confirmation ; je peux demander qu'ils ne soient plus jamais repris *(demandé le 29/10/2026)*
+- C130 Lancer une campagne (ou envoyer un formulaire) n'affiche jamais « Quitter le site ? » ; seule une note ou une saisie de fiche pas encore enregistrée prévient *(demandé le 29/10/2026)*
 
 ## 7. Envoi au CRM
 - C67 Relecture avant l'envoi : je retire un prospect d'un clic (les « à vérifier » sont décochés par défaut) ; l'envoi se fait seulement quand j'appuie sur Exporter

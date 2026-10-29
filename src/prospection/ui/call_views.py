@@ -4,11 +4,24 @@ from urllib.parse import urlencode
 
 from prospection.application.prospect_card import Card
 from prospection.domain.call_status import ACTION_KINDS, CALL_RESULTS
+from prospection.domain.prospect_source import CALLS, SOURCES, Scope
 from prospection.ui.formatting import short_datetime
 
 
-def list_query(status: str | None, query: str, sort: str) -> str:
-    return urlencode({"statut": status or "", "q": query, "tri": sort})
+def list_scope(origine: str, campagne: str) -> Scope:
+    """Origine choisie (« à appeler » par défaut, C127) et campagne si l'identifiant est valide."""
+    valid = campagne.isascii() and campagne.isdigit() and len(campagne) < 19
+    campaign = int(campagne) if valid else None
+    return Scope(origine if origine in SOURCES else CALLS, campaign)
+
+
+def scope_params(scope: Scope) -> dict[str, str]:
+    """Paramètres d'adresse qui gardent l'origine et la campagne d'un filtre à l'autre."""
+    return {"origine": scope.source or CALLS, "campagne": str(scope.campaign_id or "")}
+
+
+def list_query(status: str | None, query: str, sort: str, scope: Scope) -> str:
+    return urlencode({"statut": status or "", "q": query, "tri": sort, **scope_params(scope)})
 
 
 def action_values(card: Card) -> dict[str, str]:

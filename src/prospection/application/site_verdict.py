@@ -2,7 +2,9 @@
 C39, C46, C47).
 
 La lecture est gratuite mais lente : seulement pour ce qui passe déjà les critères gratuits
-(ou n'est écarté que faute de site sur la fiche : il est peut-être retrouvé), en parallèle.
+(ou n'est écarté que faute de site sur la fiche : il est peut-être retrouvé ; ou seulement
+parce que la fiche indique un site : ce n'est peut-être qu'une page en construction, C131),
+en parallèle.
 """
 
 import logging
@@ -15,7 +17,7 @@ from prospection.domain.site_criteria import site_reasons
 from prospection.domain.site_report import SiteReport
 
 SiteChecker = Callable[[Place, tuple[str, ...]], SiteReport | None]
-NO_SITE_REASON = "Sans site"
+NO_SITE_REASON, WITH_SITE_REASON = "Sans site", "Avec site"
 PROBABLE = "Site probable, à confirmer (homonyme possible)"
 PARALLEL = 4
 logger = logging.getLogger(__name__)
@@ -27,7 +29,7 @@ def skip_sites(place: Place, keywords: tuple[str, ...]) -> SiteReport | None:
 
 
 def worth_reading(verdict: Verdict) -> bool:
-    return verdict.qualified or verdict.reasons == (NO_SITE_REASON,)
+    return verdict.qualified or verdict.reasons in ((NO_SITE_REASON,), (WITH_SITE_REASON,))
 
 
 def read_sites(
@@ -49,11 +51,14 @@ def read_sites(
 
 
 def with_site(verdict: Verdict, report: SiteReport | None, criteria: Criteria) -> Verdict:
-    """Verdict complété par le site ; un site retrouvé lève « Sans site »."""
+    """Verdict complété par le site ; un site retrouvé lève « Sans site », une page en
+    construction lève « Avec site » (C131)."""
     if report is None:
         return verdict
     found = report.url is not None
-    kept = [r for r in verdict.reasons if not (found and r == NO_SITE_REASON)]
+    lifted = {NO_SITE_REASON} if found else set()
+    lifted |= {WITH_SITE_REASON} if report.parked else set()
+    kept = [r for r in verdict.reasons if r not in lifted]
     reasons = tuple(dict.fromkeys([*kept, *site_reasons(report, criteria)]))
     to_check = (*verdict.to_check, *([PROBABLE] if report.probable else []))
     return Verdict(not reasons, reasons, to_check)

@@ -6,7 +6,7 @@ import httpx
 from sqlalchemy import Engine, text
 
 from prospection.application.campaigns import create_campaign, progress
-from prospection.application.prospect_card import prospect_list
+from prospection.application.prospect_listing import prospect_list
 from prospection.domain.campaign_request import CampaignRequest
 from prospection.domain.criteria import Criteria
 from tests.application.campaign_helpers import NOW

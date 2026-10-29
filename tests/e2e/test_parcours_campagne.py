@@ -1,6 +1,6 @@
 """Parcours d'une campagne Google Maps, de la clé aux prospects qualifiés.
 
-C10, C12, C19, C30, C33, C34, C38 : la tâche de fond interroge le faux Google
+C10, C12, C19, C30, C33, C34, C38, C130 : la tâche de fond interroge le faux Google
 (tests/e2e/fake_google.py) ; la liste noire écarte un des trois cuisinistes.
 """
 
@@ -12,6 +12,12 @@ from playwright.sync_api import Page, expect
 from tests.e2e.fake_google import FAKE_KEY
 
 pytestmark = pytest.mark.e2e
+# Quitter la page serait-il bloqué par « Quitter le site ? » (événement beforeunload) ?
+LEAVING = """() => {
+  const event = new Event("beforeunload", { cancelable: true });
+  window.dispatchEvent(event);
+  return event.defaultPrevented;
+}"""
 
 
 def _login(page: Page, base_url: str) -> None:
@@ -35,6 +41,7 @@ def test_campaign_from_key_to_qualified_prospects(page: Page, base_url: str) -> 
     page.get_by_label("Métiers").fill("cuisiniste")
     page.get_by_label("Départements, provinces ou cantons").fill("Rhône")
     page.get_by_label("Prospects qualifiés voulus").fill("2")
+    assert page.evaluate(LEAVING) is False  # C130 : pas de « Quitter le site ? »
     page.get_by_role("button", name="Lancer").click()
 
     progress = page.locator("#progression")
@@ -55,6 +62,7 @@ def test_C102_C107_C109_call_session_then_today(page: Page, base_url: str) -> No
     page.get_by_role("button", name="Enregistrer l'action").click()  # « Rappeler demain » proposé
     expect(page.locator("#suivi")).to_contain_text("Enregistré")
     page.get_by_label("Nouvelle note").fill("Rappeler après 14 h")
+    assert page.evaluate(LEAVING) is True  # C106 : une note pas encore ajoutée prévient
     page.get_by_role("button", name="Ajouter la note").click()
     expect(page.locator("#notes")).to_contain_text("Rappeler après 14 h")
     page.goto(f"{base_url}/")

@@ -1,15 +1,16 @@
-"""RGPD : purge des prospects non retenus (C94) et suppression d'une entreprise (C95)."""
+"""RGPD : purge des prospects non retenus (C94), suppression d'une entreprise (C95) ou d'une
+sélection de prospects (C129)."""
 
 from collections.abc import Sequence
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import Connection, delete, func, or_, select
+from sqlalchemy import Connection, delete, func, or_, select, update
 from sqlalchemy.dialects.postgresql import insert
 
 from prospection.domain.privacy import PURGEABLE, erasure_key
 from prospection.domain.trades import normalize
-from prospection.storage.schema_calls import prospect_actions, prospect_notes
+from prospection.storage.schema_calls import call_session, prospect_actions, prospect_notes
 from prospection.storage.schema_campaigns import campaign_events, exclusion_names, prospects
 from prospection.storage.schema_followup import alerts
 
@@ -19,9 +20,15 @@ _DELETED = (_P.id, _P.data_json["name"].astext, _P.campaign_id)
 
 
 def _forget(conn: Connection, rows: Sequence[Any]) -> None:
-    """Alertes et lignes de journal (de leurs campagnes seulement) qui citent ces prospects."""
+    """Alertes, lignes de journal (de leurs campagnes seulement) et place dans la session
+    d'appel figée : « Suivant » ne mène plus à une fiche supprimée."""
     if not rows:
         return
+    gone, s = {r[0] for r in rows}, call_session.c
+    queue = conn.scalar(select(s.queue).where(s.id == 1))
+    if queue:
+        kept = [i for i in queue if i not in gone]
+        conn.execute(update(call_session).where(s.id == 1).values(queue=kept))
     links = [f"/prospects/{r[0]}" for r in rows]
     conn.execute(delete(alerts).where(alerts.c.link.in_(links)))
     e = campaign_events.c
@@ -75,6 +82,22 @@ def erase_company(conn: Connection, prospect_id: int, keep_blacklist: bool = Fal
         conn.execute(delete(exclusion_names).where(e.kind == BLACKLIST, e.name_norm.in_(names)))
     values = [{"kind": ERASED, "name_norm": key, "name": "(entreprise supprimée)"} for key in keys]
     conn.execute(insert(exclusion_names).values(values).on_conflict_do_nothing())
+    return len(rows)
+
+
+def prospect_names(conn: Connection, prospect_ids: Sequence[int]) -> list[tuple[int, str]]:
+    """Prospects retenus qui existent encore parmi ces identifiants, dans l'ordre de la liste."""
+    rows = conn.execute(
+        select(_P.id, _P.data_json["name"].astext)
+        .where(_P.id.in_(prospect_ids), _P.qualified.is_(True)).order_by(_P.created_at, _P.id)
+    )  # fmt: skip
+    return [(int(i), name or "Sans nom") for i, name in rows]
+
+
+def delete_prospects(conn: Connection, prospect_ids: Sequence[int]) -> int:
+    """Ces prospects, leurs notes, actions et alertes ; une recherche pourra les reprendre."""
+    rows = conn.execute(delete(prospects).where(_P.id.in_(prospect_ids)).returning(*_DELETED)).all()
+    _forget(conn, rows)
     return len(rows)
 
 

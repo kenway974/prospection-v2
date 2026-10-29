@@ -10,6 +10,8 @@ from prospection.application.campaigns import progress
 from prospection.application.field_tour import FieldSearch, field_tour, mark_stop, start_field
 from prospection.application.prospect_card import card
 from prospection.domain.criteria import Verdict
+from prospection.domain.prospect_source import CALLS, FIELD
+from prospection.storage.prospect_scope import campaign_choices
 from prospection.storage.prospects import insert_prospect
 from tests.application.campaign_helpers import NOW
 from tests.application.test_call_tracking import PARIS
@@ -97,3 +99,11 @@ def test_C114_tour_only_for_field_searches(campaign_db: Engine) -> None:
     campaign_id = create_campaign(campaign_db, request(), NOW)
     with pytest.raises(UnknownCampaign):
         field_tour(campaign_db, campaign_id, NOW, PARIS, open_only=False)
+
+
+def test_C127_field_search_is_a_field_campaign(campaign_db: Engine) -> None:
+    campaign_id = with_stops(campaign_db)
+    with campaign_db.connect() as conn:
+        [(shown, name, count)] = campaign_choices(conn, FIELD)
+        assert (shown, count) == (campaign_id, 3) and name.startswith("Terrain · ")
+        assert campaign_choices(conn, CALLS) == []

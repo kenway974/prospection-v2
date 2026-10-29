@@ -1,27 +1,22 @@
-"""Liste des prospects, session d'appel et fiche (C61, C103, C109, C120)."""
+"""Fiche d'un prospect, à sa place dans la session d'appel (C103, C109)."""
 
 import re
 from dataclasses import dataclass, field
-from datetime import UTC, date, datetime
+from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import Connection, Engine
+from sqlalchemy import Engine
 
 from prospection.application.prospect_view import (
-    SCORE,
     Insights,
-    Summary,
-    all_domains,
     emails_of,
     insights,
-    summarize,
 )
 from prospection.domain.call_status import proposed_action
 from prospection.domain.company_card import registry_lines
 from prospection.domain.email_check import email_domain
 from prospection.domain.place import web_link
 from prospection.domain.site_card import site_lines, site_links
-from prospection.domain.text import without_controls
 from prospection.storage import prospect_list as store
 from prospection.storage.call_tracking import Action, Note, notes, open_action
 from prospection.storage.crm_exports import crm_link
@@ -31,13 +26,6 @@ from prospection.storage.prospect_list import ProspectRow
 
 class UnknownProspect(LookupError):
     """Aucun prospect qualifié avec cet identifiant."""
-
-
-@dataclass(frozen=True)
-class ProspectList:
-    rows: list[ProspectRow]
-    counts: dict[str, int]
-    summaries: dict[int, Summary] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -58,52 +46,6 @@ class Card:
     site_links: list[tuple[str, str]] = field(default_factory=list)
     insights: Insights | None = None  # score, raison, drapeaux, confiance, emails
     crm_url: str | None = None  # fiche créée dans le CRM (C72)
-
-
-def clean_query(query: str) -> str:
-    return without_controls(query)[:100]
-
-
-def _listed(
-    conn: Connection, status: str | None, query: str, sort: str, today: date
-) -> tuple[list[ProspectRow], dict[int, Summary]]:
-    """Lignes et résumés, chaque score calculé une seule fois ; tri « score » ici (C57)."""
-    rows = store.prospect_rows(conn, status, query, "trouves" if sort == SCORE else sort)
-    servers = mail_servers(conn, all_domains(rows))
-    summaries = {r.id: summarize(r, today, servers) for r in rows}
-    if sort == SCORE:  # meilleures d'abord ; à score égal, l'ordre de la recherche
-        rows = sorted(rows, key=lambda r: -summaries[r.id].score)
-    return rows, summaries
-
-
-def _today(now: datetime | None, timezone: str) -> date:
-    """Même date que la fiche : celle du fuseau du propriétaire (C57, seuils d'ancienneté)."""
-    return (now or datetime.now(UTC)).astimezone(ZoneInfo(timezone)).date()
-
-
-def prospect_list(
-    engine: Engine, status: str | None, query: str, sort: str, now: datetime | None = None,
-    timezone: str = "Europe/Paris",
-) -> ProspectList:  # fmt: skip
-    with engine.connect() as conn:
-        rows, summaries = _listed(conn, status, clean_query(query), sort, _today(now, timezone))
-        counts = store.status_counts(conn, clean_query(query))
-    return ProspectList(rows, counts, summaries)
-
-
-def start_session(
-    engine: Engine, status: str | None, query: str, sort: str, now: datetime,
-    timezone: str = "Europe/Paris",
-) -> int | None:  # fmt: skip
-    """Fige la file affichée et renvoie le premier prospect à appeler (C109)."""
-    with engine.begin() as conn:
-        if sort == SCORE:
-            rows, _ = _listed(conn, status, clean_query(query), sort, _today(now, timezone))
-            queue = [r.id for r in rows]
-        else:
-            queue = store.prospect_ids(conn, status, clean_query(query), sort)
-        store.start_session(conn, queue, now)
-    return queue[0] if queue else None
 
 
 def tel_link(phone: object) -> str | None:

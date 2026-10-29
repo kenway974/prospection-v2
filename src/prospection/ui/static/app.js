@@ -13,10 +13,12 @@ function showSaveError(kind) {
 document.addEventListener("htmx:sendError", function () { showSaveError("offline"); });
 document.addEventListener("htmx:responseError", function () { showSaveError("server"); });
 
-// Une saisie pas encore enregistrée n'est jamais perdue sans prévenir.
+// Une saisie pas encore enregistrée n'est jamais perdue sans prévenir (C106).
+// Seules les fiches marquées data-garde comptent (note, contact, action) : lancer une
+// campagne ou envoyer un formulaire n'affiche jamais « Quitter le site ? » (C130).
 var unsaved = new Set();
 document.addEventListener("input", function (event) {
-  var form = event.target.closest && event.target.closest("form[hx-post]");
+  var form = event.target.closest && event.target.closest("form[hx-post][data-garde]");
   if (form) { unsaved.add(form.getAttribute("hx-post")); }
 });
 document.addEventListener("htmx:afterRequest", function (event) {
@@ -26,9 +28,23 @@ document.addEventListener("htmx:afterRequest", function (event) {
     unsaved.delete(event.detail.elt.getAttribute("hx-post"));
   }
 });
+document.addEventListener("submit", function (event) {
+  if (!event.defaultPrevented) { unsaved.clear(); }  // vrai envoi : la page change exprès
+});
 window.addEventListener("beforeunload", function (event) {
   if (unsaved.size) { event.preventDefault(); }
 });
+
+// Liste des prospects (C129) : tout cocher d'un geste avant de supprimer.
+var checkAll = document.getElementById("tout-cocher");
+if (checkAll) {
+  document.getElementById("tout-cocher-ligne").hidden = false;
+  checkAll.addEventListener("change", function () {
+    document.querySelectorAll('input[name="id"][form="selection"]').forEach(function (box) {
+      box.checked = checkAll.checked;
+    });
+  });
+}
 
 // Terrain (C113) : la position du téléphone, avec son accord, remplit le formulaire
 var positionButton = document.getElementById("ma-position");

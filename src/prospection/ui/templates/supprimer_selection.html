@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Supprimer · Prospection{% endblock %}
+{% block content %}
+<a href="{{ back }}" class="back">Prospects</a>
+{% set n = chosen | length %}
+<h1 class="large-title">Supprimer {{ n }} prospect{{ "s" if n > 1 }}</h1>
+<p>Ces prospects seront supprimés avec leurs notes, actions et alertes. C'est définitif.</p>
+{% if cut %}<p class="secondary" role="status">Seuls les {{ limit }} premiers prospects cochés sont supprimés à la fois : recommencez ensuite pour les suivants.</p>{% endif %}
+<ul class="group">{% for id, name in chosen %}<li class="row">{{ name }}</li>{% endfor %}</ul>
+<form method="post" action="/prospects/selection/supprimer" class="group form">
+  {% for id, name in chosen %}<input type="hidden" name="id" value="{{ id }}">{% endfor %}
+  <input type="hidden" name="origine" value="{{ origine }}"><input type="hidden" name="campagne" value="{{ campagne }}">
+  <label class="choice"><input type="checkbox" name="jamais"> Ne plus jamais les reprendre dans une recherche (supprime aussi leurs autres fiches, dans toutes les campagnes)</label>
+  <button type="submit" class="button-danger">Supprimer définitivement</button>
+</form>
+{% endblock %}

@@ -30,6 +30,7 @@ campaigns = Table(
     Column("schedule_id", BigInteger),  # campagne lancée par une programmation (C77)
     Column("scheduled", Boolean, nullable=False, server_default="false"),
     Column("refresh_running", Boolean, nullable=False, server_default="false"),  # C76
+    Column("kind", Text, nullable=False, server_default="appel"),  # appel ou terrain (C127)
 )  # fmt: skip
 
 campaign_steps = Table(

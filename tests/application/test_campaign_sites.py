@@ -6,7 +6,7 @@ from sqlalchemy import Engine
 
 from prospection.application.campaign_step import run_step
 from prospection.application.campaigns import create_campaign, progress
-from prospection.application.prospect_card import prospect_list
+from prospection.application.prospect_listing import prospect_list
 from prospection.domain.criteria import Criteria
 from prospection.domain.place import Place
 from prospection.domain.site_audit import Audit

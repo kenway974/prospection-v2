@@ -8,7 +8,8 @@ from sqlalchemy import Engine
 from prospection.application.api_keys import store_key
 from prospection.application.crm_export import export_report, queue_export, send_pending
 from prospection.application.crm_index import refresh_crm_index
-from prospection.application.prospect_card import card, prospect_list
+from prospection.application.prospect_card import card
+from prospection.application.prospect_listing import prospect_list
 from prospection.domain.crm_choice import Crm
 from prospection.domain.services import Service
 from prospection.storage.app_settings import save_crm

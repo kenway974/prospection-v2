@@ -8,7 +8,7 @@ import openpyxl
 from sqlalchemy import Engine
 
 from prospection.application.file_export import campaign_csv, campaign_xlsx
-from prospection.application.prospect_card import prospect_list
+from prospection.application.prospect_listing import prospect_list
 from prospection.domain.criteria import Verdict
 from prospection.storage.prospects import insert_prospect
 from tests.application.campaign_helpers import NOW

@@ -8,7 +8,8 @@ from sqlalchemy import Engine
 from prospection.application.api_keys import store_key
 from prospection.application.campaign_step import run_step
 from prospection.application.campaigns import create_campaign, progress
-from prospection.application.prospect_card import card, prospect_list
+from prospection.application.prospect_card import card
+from prospection.application.prospect_listing import prospect_list
 from prospection.domain.campaign_request import CampaignRequest, DepartmentZone
 from prospection.domain.criteria import Criteria
 from prospection.domain.services import Service

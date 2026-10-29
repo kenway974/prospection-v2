@@ -1,4 +1,4 @@
-"""Prospects qualifiés : recherche, tri, compteurs, session d'appel (C61, C109, C120)."""
+"""Prospects qualifiés : recherche, tri, compteurs, session d'appel (C61, C109, C120, C127)."""
 
 from dataclasses import dataclass
 from datetime import datetime
@@ -8,10 +8,12 @@ from sqlalchemy import ColumnElement, Connection, Row, func, or_, select, update
 from sqlalchemy.dialects.postgresql import insert
 
 from prospection.domain.company import Company
+from prospection.domain.prospect_source import ALL, Scope
 from prospection.domain.site_report import SiteReport
 from prospection.storage.company_codec import decode_company
+from prospection.storage.prospect_scope import scope_conditions
 from prospection.storage.schema_calls import call_session
-from prospection.storage.schema_campaigns import prospects
+from prospection.storage.schema_campaigns import campaigns, prospects
 from prospection.storage.site_codec import decode_site
 
 _P = prospects.c
@@ -46,8 +48,8 @@ def _like(text: str) -> str:
     return f"%{escaped}%"
 
 
-def _filters(status: str | None, query: str) -> list[ColumnElement[bool]]:
-    conditions: list[ColumnElement[bool]] = [_P.qualified.is_(True)]
+def _filters(status: str | None, query: str, scope: Scope = ALL) -> list[ColumnElement[bool]]:
+    conditions = [_P.qualified.is_(True), *scope_conditions(scope)]
     if status:
         conditions.append(_P.status == status)
     if query.strip():
@@ -68,29 +70,25 @@ _COLUMNS = (
 
 
 def _row(r: Row[Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any]) -> ProspectRow:
-    contact = (r.contact_name, r.contact_mobile, r.contact_email)
     company = decode_company(r.company_json) if r.company_json else None
-    return ProspectRow(
-        r.id,
-        r.data_json,
-        list(r.keywords),
-        r.status,
-        list(r.to_check),
-        contact,
-        company,
-        r.registry_status,
-        decode_site(r.site_json) if r.site_json else None,
-    )
+    site = decode_site(r.site_json) if r.site_json else None
+    contact = (r.contact_name, r.contact_mobile, r.contact_email)
+    return ProspectRow(r.id, r.data_json, list(r.keywords), r.status, list(r.to_check), contact,
+                       company, r.registry_status, site)  # fmt: skip
 
 
-def prospect_rows(conn: Connection, status: str | None, query: str, sort: str) -> list[ProspectRow]:
-    rows = conn.execute(select(*_COLUMNS).where(*_filters(status, query)).order_by(*SORTS[sort]))
-    return [_row(r) for r in rows]
+def prospect_rows(
+    conn: Connection, status: str | None, query: str, sort: str, scope: Scope = ALL
+) -> list[ProspectRow]:
+    where = _filters(status, query, scope)
+    return [_row(r) for r in conn.execute(select(*_COLUMNS).where(*where).order_by(*SORTS[sort]))]
 
 
-def prospect_ids(conn: Connection, status: str | None, query: str, sort: str) -> list[int]:
-    rows = conn.execute(select(_P.id).where(*_filters(status, query)).order_by(*SORTS[sort]))
-    return [int(r.id) for r in rows]
+def prospect_ids(
+    conn: Connection, status: str | None, query: str, sort: str, scope: Scope = ALL
+) -> list[int]:
+    where = _filters(status, query, scope)
+    return [int(r.id) for r in conn.execute(select(_P.id).where(*where).order_by(*SORTS[sort]))]
 
 
 def load_prospect(conn: Connection, prospect_id: int) -> ProspectRow | None:
@@ -100,12 +98,21 @@ def load_prospect(conn: Connection, prospect_id: int) -> ProspectRow | None:
     return _row(row) if row else None
 
 
-def status_counts(conn: Connection, query: str) -> dict[str, int]:
+def status_counts(conn: Connection, query: str, scope: Scope = ALL) -> dict[str, int]:
     """Par statut, parmi les prospects qui répondent à la recherche (C120)."""
-    rows = conn.execute(
-        select(_P.status, func.count()).where(*_filters(None, query)).group_by(_P.status)
-    )
+    where = _filters(None, query, scope)
+    rows = conn.execute(select(_P.status, func.count()).where(*where).group_by(_P.status))
     return {str(status): int(n) for status, n in rows}
+
+
+def source_counts(conn: Connection, query: str) -> dict[str, int]:
+    """Par origine (à appeler, Terrain), parmi les prospects qui répondent à la recherche."""
+    kind = campaigns.c.kind
+    rows = conn.execute(
+        select(kind, func.count()).join_from(prospects, campaigns, _P.campaign_id == campaigns.c.id)
+        .where(*_filters(None, query)).group_by(kind)
+    )  # fmt: skip
+    return {str(k): int(n) for k, n in rows}
 
 
 def load_session(conn: Connection) -> Session | None:

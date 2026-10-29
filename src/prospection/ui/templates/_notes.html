@@ -1,5 +1,5 @@
 <section id="notes" class="group">
-<form method="post" action="/prospects/{{ p.id }}/note" class="form" hx-post="/prospects/{{ p.id }}/note" hx-target="#notes" hx-swap="outerHTML">
+<form method="post" action="/prospects/{{ p.id }}/note" class="form" hx-post="/prospects/{{ p.id }}/note" data-garde hx-target="#notes" hx-swap="outerHTML">
   <label for="texte">Nouvelle note</label>
   <textarea id="texte" name="texte" maxlength="2000"{% if errors.get("note") %} aria-invalid="true" aria-describedby="erreur-note"{% endif %}>{{ note_text }}</textarea>
   {% if errors.get("note") %}<p class="error" id="erreur-note" role="alert">{{ errors["note"] }}</p>{% endif %}

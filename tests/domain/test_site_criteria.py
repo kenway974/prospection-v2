@@ -55,3 +55,9 @@ def test_C28_C29_choices_validated(criteria: Criteria, field: str) -> None:
     with pytest.raises(InvalidRequest) as error:
         validate_request(request)
     assert field in error.value.errors
+
+
+def test_C131_placeholder_page_counts_as_no_site() -> None:
+    parked = SiteReport("retrouvé", problem="Page en construction", parked=True)
+    assert site_reasons(parked, Criteria(website="without")) == []
+    assert site_reasons(parked, Criteria(website="with")) == ["Sans site (page en construction)"]

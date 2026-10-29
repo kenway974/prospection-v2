@@ -6,12 +6,8 @@ import pytest
 from sqlalchemy import Engine
 
 from prospection.application.call_actions import record_result, today_screen
-from prospection.application.prospect_card import (
-    UnknownProspect,
-    card,
-    prospect_list,
-    start_session,
-)
+from prospection.application.prospect_card import UnknownProspect, card
+from prospection.application.prospect_listing import prospect_list, start_session
 from tests.application.campaign_helpers import NOW
 from tests.application.test_call_tracking import PARIS, add
 from tests.storage.test_campaigns import PLACE

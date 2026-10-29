@@ -4,7 +4,7 @@ import httpx
 from sqlalchemy import Engine
 
 from prospection.application.campaigns import create_campaign, progress
-from prospection.application.prospect_card import prospect_list
+from prospection.application.prospect_listing import prospect_list
 from prospection.storage.google_usage import month_usage
 from tests.application.campaign_helpers import NOW
 from tests.application.test_registry_campaign import registry_request, run_all, with_insee_key

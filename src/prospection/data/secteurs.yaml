@@ -1,0 +1,150 @@
+# Secteurs (C132) : un choix remplit le champ « Métiers » avec tous ses mots-clés,
+# modifiables avant de lancer. 10 mots-clés au plus par secteur (limite du formulaire).
+# Source : prospection-bot/target_segments.py (version 530ba12), relu : mots trop vagues
+# retirés (« luxe », « artisan », « PME »…), secteurs sans vitrine Google Maps écartés
+# (startups, éditeurs SaaS, e-commerçants), chaînes (contrôle technique, centres auto) et
+# mots qui ramènent surtout des particuliers (RGPD : garde d'enfants, cours particuliers,
+# aide à domicile, locations saisonnières).
+- label: Artisans & BTP
+  sectors:
+    - id: btp
+      label: Artisans du bâtiment (tous corps)
+      keywords: [maçon, carreleur, peintre en bâtiment, plâtrier, menuisier, couvreur, charpentier, plaquiste, façadier, vitrier]
+    - id: plombiers_electriciens
+      label: Plombiers, électriciens, serruriers
+      keywords: [plombier, électricien, serrurier, plomberie chauffage, électricité générale, dépannage plomberie]
+    - id: cvc
+      label: Chauffage, climatisation
+      keywords: [chauffagiste, climatisation, pompe à chaleur, installateur climatisation, entreprise de chauffage, frigoriste]
+    - id: energies
+      label: Énergies renouvelables, isolation
+      keywords: [installateur photovoltaïque, panneaux solaires, isolation des combles, isolation thermique, borne de recharge électrique]
+    - id: garages
+      label: Garages, carrosseries
+      keywords: [garage automobile, carrosserie, mécanique auto, réparation automobile, garage indépendant]
+- label: Habitat & aménagement
+  sectors:
+    - id: cuisines_bains
+      label: Cuisinistes, salles de bain
+      keywords: [cuisiniste, cuisine sur mesure, salle de bain, aménagement salle de bain, dressing sur mesure]
+    - id: menuiseries
+      label: Fenêtres, vérandas, portails
+      keywords: [menuiserie aluminium, poseur de fenêtres, véranda, pergola, store et volet roulant, porte de garage, portail et clôture, ébéniste]
+    - id: paysagistes
+      label: Paysagistes, jardins
+      keywords: [paysagiste, entretien de jardin, élagueur, création de jardin, arrosage automatique, terrasse bois, jardinier]
+    - id: piscines
+      label: Piscinistes, spas
+      keywords: [pisciniste, construction piscine, entretien piscine, spa et jacuzzi, abri de piscine]
+    - id: renovation_deco
+      label: Rénovation, décoration
+      keywords: [entreprise de rénovation, architecte d'intérieur, décorateur d'intérieur, parquet, cheminée et poêle à bois, domotique]
+    - id: services_maison
+      label: Déménagement, nettoyage, services à domicile
+      keywords: [déménageur, entreprise de nettoyage, dératisation, ramonage, débarras, pressing]
+- label: Esthétique & bien-être
+  sectors:
+    - id: esthetique
+      label: Esthétique (beauté, ongles, maquillage)
+      keywords: [institut de beauté, onglerie, prothésiste ongulaire, maquilleuse, esthéticienne, centre d'épilation, extension de cils, salon de massage, institut spa, salon de tatouage]
+    - id: coiffure
+      label: Coiffeurs, barbiers
+      keywords: [salon de coiffure, coiffeur, barbier, coiffeur visagiste, salon de coiffure homme, coiffure à domicile]
+- label: Sport
+  sectors:
+    - id: sport
+      label: Sport, fitness, yoga, pilates
+      keywords: [salle de sport, coach sportif, studio pilates, studio yoga, crossfit, salle de musculation, club de boxe, salle d'escalade, club de sport]
+- label: Commerce
+  sectors:
+    - id: mode
+      label: Mode, bijoux, accessoires
+      keywords: [boutique de vêtements, prêt-à-porter, boutique de chaussures, bijouterie, boutique d'accessoires, maroquinerie, friperie, concept store, lingerie]
+    - id: cadeaux
+      label: Cadeaux, décoration, art
+      keywords: [boutique cadeaux, horloger, joaillerie, galerie d'art, antiquaire, parfumerie, art de la table, magasin de décoration]
+    - id: proximite
+      label: Commerces de proximité
+      keywords: [fleuriste, magasin de meubles, literie, cordonnerie, animalerie, librairie, magasin de jouets, quincaillerie]
+    - id: bouche
+      label: Épiceries fines, cavistes, métiers de bouche
+      keywords: [épicerie fine, caviste, fromagerie, chocolaterie, primeur, boucherie, charcuterie, poissonnerie, torréfacteur, épicerie bio]
+    - id: pharmacies
+      label: Pharmacies, parapharmacies
+      keywords: [pharmacie, parapharmacie, herboristerie, orthopédie, matériel médical]
+- label: Restauration
+  sectors:
+    - id: restaurants
+      label: Restaurants, brasseries
+      keywords: [restaurant, brasserie, bistrot, auberge, restaurant gastronomique, restaurant traditionnel, restaurant italien, table d'hôtes]
+    - id: boulangeries
+      label: Boulangeries, pâtisseries
+      keywords: [boulangerie, pâtisserie, boulangerie artisanale, chocolatier]
+    - id: cafes_bars
+      label: Cafés, bars
+      keywords: [café, bar, pub, bar à vins, salon de thé, bar à cocktails, bar à bières]
+    - id: rapide
+      label: Restauration rapide
+      keywords: [pizzeria, kebab, fast food, sushi, snack, burger, food truck, tacos, poke bowl]
+- label: Santé
+  sectors:
+    - id: medical
+      label: Cabinets médicaux, dentistes
+      keywords: [cabinet médical, dentiste, ophtalmologue, dermatologue, médecin généraliste, orthodontiste, kinésithérapeute, ostéopathe, cabinet infirmier]
+    - id: paramedical
+      label: Paramédical
+      keywords: [podologue, orthophoniste, chiropracteur, sage-femme, ergothérapeute, psychomotricien]
+    - id: opticiens_veto
+      label: Opticiens, audioprothésistes, vétérinaires
+      keywords: [opticien, audioprothésiste, vétérinaire, clinique vétérinaire]
+    - id: liberales
+      label: Thérapeutes, coachs, psychologues
+      keywords: [thérapeute, psychologue, naturopathe, sophrologue, diététicien, hypnothérapeute]
+- label: Immobilier & hébergement
+  sectors:
+    - id: immobilier
+      label: Agences immobilières, syndics
+      keywords: [agence immobilière, syndic de copropriété, gestion locative, administrateur de biens, mandataire immobilier, chasseur immobilier, promoteur immobilier]
+    - id: hotels
+      label: Hôtels, résidences
+      keywords: [hôtel, appart hôtel, hôtel restaurant, hôtel spa, hôtel de charme, résidence services]
+    - id: gites
+      label: Gîtes, chambres d'hôtes
+      keywords: [gîte, chambre d'hôtes, maison d'hôtes, hébergement insolite]
+- label: Tourisme, loisirs & événements
+  sectors:
+    - id: loisirs
+      label: Activités de loisirs
+      keywords: [escape game, accrobranche, parc de loisirs, laser game, bowling, karting, mini-golf]
+    - id: receptions
+      label: Salles de mariage, réceptions
+      keywords: [salle de mariage, salle de réception, lieu de réception, domaine de réception, salle de séminaire]
+    - id: evenementiel
+      label: Prestataires événementiels
+      keywords: [wedding planner, photographe de mariage, DJ mariage, location de matériel événementiel, animateur événementiel]
+    - id: campings
+      label: Campings, villages vacances
+      keywords: [camping, village vacances, glamping, parc résidentiel de loisirs]
+- label: Entreprises & formation
+  sectors:
+    - id: conseil
+      label: Cabinets de conseil, recrutement
+      keywords: [cabinet de conseil, cabinet de recrutement, bureau d'études, cabinet d'audit, société de conseil]
+    - id: juridique
+      label: Avocats, notaires, experts-comptables
+      keywords: [cabinet d'avocats, notaire, expert-comptable, huissier de justice, cabinet juridique]
+    - id: assurances
+      label: Courtiers, assurances, diagnostics
+      keywords: [courtier en crédit immobilier, courtier en assurance, agent général d'assurance, géomètre-expert, diagnostiqueur immobilier, conseiller en gestion de patrimoine]
+    - id: transport
+      label: Transport, logistique
+      keywords: [société de transport, transporteur routier, entreprise de logistique]
+    - id: coworking
+      label: Coworkings, centres d'affaires
+      keywords: [coworking, centre d'affaires, pépinière d'entreprises, bureau partagé]
+    - id: formation
+      label: Formation, auto-écoles, langues
+      keywords: [centre de formation, auto-école, organisme de formation, école de langues, école de musique, école de danse]
+    - id: enfance
+      label: Soutien scolaire, crèches
+      keywords: [centre de soutien scolaire, micro-crèche, crèche privée]

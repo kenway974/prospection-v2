@@ -11,8 +11,9 @@
   <label for="adresse">Ou une adresse</label>
   <input id="adresse" name="adresse" value="{{ values.get('adresse', '') }}" placeholder="12 rue de la République, Lyon" autocomplete="street-address">
   {{ error("adresse") }}
+  {% include "_secteur.html" %}
   <label for="metiers">Commerces cherchés</label>
-  <input id="metiers" name="metiers" value="{{ values.get('metiers', '') }}" placeholder="boulangerie, coiffeur">
+  <textarea id="metiers" name="metiers" rows="3" maxlength="700" placeholder="boulangerie, coiffeur">{{ values.get('metiers', '') }}</textarea>
   <label for="rayon">Rayon (km)</label>
   <input id="rayon" name="rayon" inputmode="numeric" value="{{ values.get('rayon', '1') }}">
   {{ error("rayon") }}

@@ -46,6 +46,21 @@ if (checkAll) {
   });
 }
 
+// Secteur (C132) : remplit le champ des métiers avec tous ses mots-clés, modifiables.
+var sectorMenu = document.getElementById("secteur");
+if (sectorMenu) {
+  sectorMenu.addEventListener("change", function (event) {
+    event.stopPropagation();  // le « change » du champ des métiers suffit (une seule estimation)
+    var chosen = sectorMenu.selectedOptions[0];
+    var trades = document.getElementById(sectorMenu.dataset.remplit);
+    if (!chosen || !chosen.dataset.metiers || !trades) { return; }
+    trades.value = chosen.dataset.metiers;
+    document.getElementById("secteur-etat").textContent =
+      "Métiers remplacés par ceux du secteur « " + chosen.textContent + " ».";
+    trades.dispatchEvent(new Event("change", { bubbles: true }));  // synonymes, estimation
+  });
+}
+
 // Terrain (C113) : la position du téléphone, avec son accord, remplit le formulaire
 var positionButton = document.getElementById("ma-position");
 if (positionButton && navigator.geolocation) {

@@ -1,10 +1,11 @@
 """Parcours d'une campagne Google Maps, de la clé aux prospects qualifiés.
 
-C10, C12, C19, C30, C33, C34, C38, C130 : la tâche de fond interroge le faux Google
+C10, C12, C19, C30, C33, C34, C38, C130, C132 : la tâche de fond interroge le faux Google
 (tests/e2e/fake_google.py) ; la liste noire écarte un des trois cuisinistes.
 """
 
 import os
+import re
 
 import pytest
 from playwright.sync_api import Page, expect
@@ -38,6 +39,8 @@ def test_campaign_from_key_to_qualified_prospects(page: Page, base_url: str) -> 
 
     page.goto(f"{base_url}/recherche")
     page.get_by_label("Nom de la campagne").fill("Cuisinistes Rhône")
+    page.get_by_label("Secteur d'activité").select_option(label="Sport, fitness, yoga, pilates")
+    expect(page.get_by_label("Métiers")).to_have_value(re.compile("^salle de sport, coach sportif"))
     page.get_by_label("Métiers").fill("cuisiniste")
     page.get_by_label("Départements, provinces ou cantons").fill("Rhône")
     page.get_by_label("Prospects qualifiés voulus").fill("2")

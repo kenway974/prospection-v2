@@ -10,11 +10,13 @@ from sqlalchemy import Engine
 
 from prospection.config import Settings
 from prospection.domain.google_cost import Pricing, load_pricing
+from prospection.domain.sectors import load_sectors
 from prospection.http_client import make_client
 from prospection.storage.secret_box import SecretBox
 from prospection.ui.paths import TEMPLATES_DIR
 
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
+templates.env.globals["sector_groups"] = load_sectors()  # menu « Secteur » (C132)
 
 
 def get_now() -> datetime:

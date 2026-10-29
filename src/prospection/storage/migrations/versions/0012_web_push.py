@@ -17,6 +17,7 @@ def upgrade() -> None:
         sa.Column("created_at", TS, nullable=False),
     )
     op.add_column("alerts", sa.Column("pushed_at", TS))
+    op.execute("UPDATE alerts SET pushed_at = created_at")  # pas de rafale au déploiement
     op.add_column(
         "app_settings",
         sa.Column("quiet_start", sa.SmallInteger, nullable=False, server_default="21"),

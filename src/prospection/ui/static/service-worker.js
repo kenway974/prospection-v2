@@ -57,11 +57,28 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const target = new URL(event.notification.data.url, self.location.origin).href;
+  const path = event.notification.data && event.notification.data.url;
+  const target = new URL(typeof path === "string" && path.startsWith("/") && !path.startsWith("//")
+    ? path : "/", self.location.origin).href;
   event.waitUntil(
-    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((windows) => {
+    self.clients.matchAll({ type: "window" }).then((windows) => {
       const open = windows.find((client) => client.url.startsWith(self.location.origin));
-      return open ? open.navigate(target).then((client) => client && client.focus()) : self.clients.openWindow(target);
+      if (!open) return self.clients.openWindow(target);
+      // Au premier plan d'abord (le droit expire vite), puis la bonne page ; sinon, nouvelle fenêtre.
+      return open.focus().then((client) => client.navigate(target))
+        .catch(() => self.clients.openWindow(target));
     })
+  );
+});
+
+// Le navigateur renouvelle l'abonnement : le nouveau est donné au serveur.
+self.addEventListener("pushsubscriptionchange", (event) => {
+  const options = event.oldSubscription && event.oldSubscription.options;
+  if (!options) return;
+  event.waitUntil(
+    self.registration.pushManager.subscribe(options).then((subscription) =>
+      fetch("/notifications/abonnement", { method: "POST", credentials: "same-origin",
+        headers: { "Content-Type": "application/json" }, body: JSON.stringify(subscription.toJSON()) })
+    )
   );
 });

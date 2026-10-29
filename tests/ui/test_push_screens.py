@@ -67,3 +67,19 @@ def test_quiet_hours_setting(client: TestClient) -> None:
     assert 'id="calme_debut" name="calme_debut" inputmode="numeric" value="22"' in page
     bad = client.post("/reglages/rappels", data={**form, "calme_fin": "30"}, headers=ORIGIN)
     assert bad.status_code == 400
+
+
+def test_huge_body_refused_before_reading_it(push_client: TestClient) -> None:
+    huge = b'{"endpoint": "' + b"x" * 10_000 + b'"}'
+    answer = push_client.post("/notifications/abonnement", content=huge, headers={
+        **ORIGIN, "Content-Type": "application/json"})  # fmt: skip
+    assert answer.status_code == 413
+    not_json = push_client.post("/notifications/abonnement", content=b"{", headers=ORIGIN)
+    assert not_json.status_code == 400
+
+
+def test_unreadable_vapid_key_refused_at_start(settings: Settings) -> None:
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):
+        Settings(**{**settings.model_dump(), "vapid_private_key": "mal copiée"})

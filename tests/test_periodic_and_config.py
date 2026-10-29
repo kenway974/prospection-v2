@@ -49,7 +49,10 @@ def test_C91_backup_only_when_fully_configured() -> None:
 
 def test_push_only_when_fully_configured() -> None:
     assert _settings().vapid_keys() is None
-    keys = _settings(vapid_public_key="pub", vapid_private_key="priv",
+    from prospection.sources.web_push import generate_vapid_keys
+
+    private, _ = generate_vapid_keys()
+    keys = _settings(vapid_public_key="pub", vapid_private_key=private,
                      vapid_subject="mailto:moi@example.fr").vapid_keys()  # fmt: skip
     assert keys is not None and keys.public_key == "pub"
     with pytest.raises(ValidationError):

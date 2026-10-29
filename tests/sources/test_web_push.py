@@ -17,7 +17,7 @@ from prospection.sources.web_push import (
     generate_vapid_keys,
     send_push,
 )
-from tests.fake_http import fake_client, timeout
+from tests.fake_http import fake_client, json_reply, timeout
 
 NOW = datetime(2026, 10, 29, 9, tzinfo=UTC)
 ENDPOINT = "https://fcm.googleapis.com/fcm/send/abc"
@@ -71,3 +71,24 @@ def test_expired_unknown_or_busy_service() -> None:
         send_push(fake_client(timeout)[0], ENDPOINT, p256dh, auth, b"x", keys(), NOW)
     with pytest.raises(PushGone):
         send_push(never, ENDPOINT, "pas-une-cle", auth, b"x", keys(), NOW)
+
+
+def test_refusals_sorted_and_secret_never_shown() -> None:
+    from prospection.sources.web_push import PushRejected, check_private_key
+
+    _, p256dh, auth, _ = phone()
+    vapid = keys()
+    for code, error in ((403, PushGone), (400, PushRejected), (413, PushRejected)):
+        with pytest.raises(error):
+            send_push(fake_client(json_reply(code, {}))[0], ENDPOINT, p256dh, auth, b"x", vapid,
+                      NOW)  # fmt: skip
+    busy = fake_client(lambda r: httpx.Response(503, headers={"Retry-After": "30"}))[0]
+    with pytest.raises(PushFailed) as failed:
+        send_push(busy, ENDPOINT, p256dh, auth, b"x", vapid, NOW)
+    assert failed.value.retry_after == 30
+    broken = VapidKeys("illisible", vapid.public_key, vapid.subject)
+    with pytest.raises(PushFailed, match="clé VAPID illisible"):
+        send_push(busy, ENDPOINT, p256dh, auth, b"x", broken, NOW)
+    assert vapid.private_key not in repr(vapid)
+    with pytest.raises(ValueError):
+        check_private_key("pas une clé")

@@ -8,12 +8,8 @@ import httpx
 import pytest
 from sqlalchemy import Engine
 
-from prospection.application.push import (
-    InvalidSubscription,
-    push_pending,
-    send_test,
-    subscribe,
-)
+from prospection.application.push import PushPaused, push_pending, send_test
+from prospection.application.push_subscriptions import InvalidSubscription, subscribe
 from prospection.sources.web_push import VapidKeys, generate_vapid_keys
 from prospection.storage.alerts import add_alert
 from prospection.storage.push import subscriptions
@@ -77,7 +73,8 @@ def test_gone_phone_forgotten_busy_service_retried(campaign_db: Engine) -> None:
     phone_subscribed(campaign_db)
     alert(campaign_db, "a1", "echec", DAY)
     busy = fake_client(lambda r: httpx.Response(503))[0]
-    assert push_pending(campaign_db, busy, KEYS, DAY, PARIS) == 0
+    with pytest.raises(PushPaused):  # service saturé : le passage s'arrête, rien de perdu
+        push_pending(campaign_db, busy, KEYS, DAY, PARIS)
     gone = fake_client(lambda r: httpx.Response(410))[0]
     assert push_pending(campaign_db, gone, KEYS, DAY + timedelta(minutes=1), PARIS) == 0
     with campaign_db.connect() as conn:

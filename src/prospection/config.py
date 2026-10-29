@@ -65,6 +65,15 @@ class Settings(BaseSettings):
         private = self.vapid_private_key.get_secret_value()
         return VapidKeys(private, self.vapid_public_key, self.vapid_subject)
 
+    @field_validator("vapid_private_key")
+    @classmethod
+    def _vapid_key_is_readable(cls, value: SecretStr | None) -> SecretStr | None:
+        from prospection.sources.web_push import check_private_key
+
+        if value is not None:
+            check_private_key(value.get_secret_value())  # mal copiée : refus au démarrage
+        return value
+
     @field_validator("vapid_subject")
     @classmethod
     def _vapid_subject_is_contact(cls, subject: str | None) -> str | None:

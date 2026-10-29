@@ -53,7 +53,9 @@ def change_reminders(
     calm = (_number(quiet_start), _number(quiet_end))
     if lead not in MINUTES_RANGE:
         raise InvalidReminders("Choisissez entre 0 et 240 minutes.")
-    if morning not in HOURS_RANGE or not all(h in HOURS_RANGE for h in calm):
-        raise InvalidReminders("Choisissez une heure entre 0 et 23.")
+    if morning not in HOURS_RANGE:
+        raise InvalidReminders("Heure du rappel : choisissez entre 0 et 23.")
+    if not all(h in HOURS_RANGE for h in calm):
+        raise InvalidReminders("Heures calmes : choisissez un début et une fin entre 0 et 23.")
     with engine.begin() as conn:
         save_reminders(conn, lead, morning, *calm)

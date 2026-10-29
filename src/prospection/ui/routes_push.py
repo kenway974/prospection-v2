@@ -1,41 +1,75 @@
 """Abonnement du téléphone aux notifications (Web Push) et notification d'essai."""
 
+import json
 from datetime import datetime
 from typing import Any
 
 import httpx
-from fastapi import APIRouter, Body, Depends
+from fastapi import APIRouter, Depends, Request
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse, RedirectResponse, Response
 from sqlalchemy import Engine
 
-from prospection.application.push import InvalidSubscription, send_test, subscribe, unsubscribe
+from prospection.application.push import send_test
+from prospection.application.push_subscriptions import (
+    InvalidSubscription,
+    subscribe,
+    unsubscribe,
+)
 from prospection.config import Settings
 from prospection.ui.deps import get_engine, get_http_client, get_now, get_settings
 from prospection.ui.session import require_session
 
 router = APIRouter(prefix="/notifications", dependencies=[Depends(require_session)])
 ENGINE = Depends(get_engine)
-BODY = Body(None)  # JSON envoyé par le navigateur, vérifié champ par champ
+MAX_BODY = 4096  # un abonnement fait moins de 1 Ko
+
+
+class _TooLarge(Exception):
+    pass
+
+
+async def _json(request: Request) -> Any:
+    """Corps JSON lu par morceaux, après la vérification de session, 4 Ko au plus."""
+    size = request.headers.get("content-length", "")
+    if size.isdigit() and int(size) > MAX_BODY:
+        raise _TooLarge
+    chunks, total = [], 0
+    async for chunk in request.stream():
+        total += len(chunk)
+        if total > MAX_BODY:
+            raise _TooLarge
+        chunks.append(chunk)
+    try:
+        return json.loads(b"".join(chunks) or b"null")
+    except ValueError:
+        return None
 
 
 @router.post("/abonnement")
-def add_phone(
-    body: Any = BODY,
+async def add_phone(
+    request: Request,
     engine: Engine = ENGINE,
     now: datetime = Depends(get_now),  # noqa: B008
 ) -> Response:
     try:
-        subscribe(engine, body, now)
+        await run_in_threadpool(subscribe, engine, await _json(request), now)
+    except _TooLarge:
+        return JSONResponse({"erreur": "Abonnement trop volumineux."}, status_code=413)
     except InvalidSubscription as error:
         return JSONResponse({"erreur": str(error)}, status_code=400)
     return Response(status_code=204)
 
 
 @router.post("/desabonnement")
-def remove_phone(body: Any = BODY, engine: Engine = ENGINE) -> Response:
+async def remove_phone(request: Request, engine: Engine = ENGINE) -> Response:
+    try:
+        body = await _json(request)
+    except _TooLarge:
+        return Response(status_code=413)
     endpoint = body.get("endpoint") if isinstance(body, dict) else None
     if isinstance(endpoint, str):
-        unsubscribe(engine, endpoint[:1000])
+        await run_in_threadpool(unsubscribe, engine, endpoint[:1000])
     return Response(status_code=204)
 
 

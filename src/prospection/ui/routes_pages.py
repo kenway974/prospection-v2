@@ -52,4 +52,4 @@ def connection_journal(
         status = "blocked" if attempt.blocked else "ok" if attempt.success else "refused"
         when = short_datetime(attempt.at, settings.timezone)
         rows.append((when, attempt.ip, status, STATUS_LABELS[status]))
-    return _page(request, "reglages_connexions.html", "", rows=rows, size=JOURNAL_SIZE)
+    return _page(request, "reglages_connexions.html", "settings", rows=rows, size=JOURNAL_SIZE)

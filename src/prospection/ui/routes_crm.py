@@ -22,7 +22,7 @@ def _page(
     error: str | None = None,
     status_code: int = 200,
 ) -> Response:
-    context = {"tab": "", "screen": crm_screen(engine, box, client), "error": error}
+    context = {"tab": "settings", "screen": crm_screen(engine, box, client), "error": error}
     return templates.TemplateResponse(
         request, "reglages_crm.html", context, status_code=status_code
     )

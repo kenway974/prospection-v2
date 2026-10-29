@@ -27,11 +27,20 @@ def _place(n: int, name: str) -> dict[str, object]:
     }  # fmt: skip
 
 
+PAGESPEED: dict[str, object] = {"lighthouseResult": {
+    "categories": {"performance": {"score": 0.42}},
+    "audits": {"largest-contentful-paint": {"score": 0.2, "numericValue": 5100},
+               "uses-optimized-images": {"score": 0.3, "details": {"overallSavingsMs": 800}}},
+}}  # fmt: skip
+
+
 class FakeGoogle(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         if self.path.startswith("/site"):
             wanted = parse_qs(urlsplit(self.path).query).get("url", [""])[0]
             self._site(200 if urlsplit(wanted).hostname == "cuisinesmartin.fr" else 404)
+        elif self.path.startswith("/pagespeedonline/"):  # PageSpeed Insights (C126)
+            self._reply(200, PAGESPEED)
         elif self.path.startswith("/search"):
             self._reply(200, {"results": [], "total_results": 0, "page": 1, "per_page": 5,
                               "total_pages": 0})  # fmt: skip

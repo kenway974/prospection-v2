@@ -13,6 +13,7 @@ from prospection.application.api_watch import weekly_api_check
 from prospection.application.crm_index import refresh_crm_index
 from prospection.application.privacy import purge
 from prospection.application.reminders import remind_due_actions
+from prospection.application.speed_check import SpeedJob
 from prospection.domain.google_cost import Pricing
 from prospection.storage.secret_box import SecretBox
 
@@ -39,7 +40,7 @@ class Periodic:
 def regular_jobs(
     engine: Engine, box: SecretBox, client: httpx.Client, pricing: Pricing, timezone: str,
     backup: Callable[[datetime], object] | None, start: datetime,
-    push: Callable[[datetime], object] | None = None,
+    push: Callable[[datetime], object] | None = None, speed: SpeedJob | None = None,
 ) -> tuple[Periodic, list[Periodic]]:  # fmt: skip
     """Rappels (chaque minute) et travaux réguliers ; tous tournent même en pleine campagne.
     Purge, vérification et sauvegarde attendent 5 min après le démarrage (pas de rafale à
@@ -56,5 +57,6 @@ def regular_jobs(
                  lambda now: weekly_api_check(engine, box, client, pricing, now), later),  # C99
         *([Periodic("sauvegarde", timedelta(hours=1), backup, later)] if backup else []),  # C91
         *([Periodic("notifications", timedelta(seconds=20), push)] if push else []),
+        *([Periodic("vitesse des sites", timedelta(minutes=1), speed, later)] if speed else []),
     ]  # fmt: skip
     return reminders, jobs

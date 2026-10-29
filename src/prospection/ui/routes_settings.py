@@ -43,7 +43,7 @@ def service_from(name: str) -> Service:
 
 @router.get("", response_class=HTMLResponse)
 def hub(request: Request) -> Response:
-    return templates.TemplateResponse(request, "reglages.html", {"tab": ""})
+    return templates.TemplateResponse(request, "reglages.html", {"tab": "settings"})
 
 
 @dataclass(frozen=True)
@@ -68,7 +68,7 @@ def keys_page(
     status_code: int = 200,
 ) -> Response:
     keys = key_views(engine, box, settings)
-    context = {"tab": "", "keys": keys, "error": error}
+    context = {"tab": "settings", "keys": keys, "error": error}
     return templates.TemplateResponse(
         request, "reglages_cles.html", context, status_code=status_code
     )

@@ -15,7 +15,7 @@ MAX_FORM_CHARS = 100_000
 def _page(
     request: Request, franchises: str, blacklist: str, error: str | None, status_code: int
 ) -> Response:
-    context = {"tab": "", "franchises": franchises, "blacklist": blacklist, "error": error}
+    context = {"tab": "settings", "franchises": franchises, "blacklist": blacklist, "error": error}
     return templates.TemplateResponse(
         request, "reglages_exclusions.html", context, status_code=status_code
     )

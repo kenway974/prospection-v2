@@ -10,12 +10,14 @@ import httpx
 
 from prospection.domain.html_page import parse_page
 from prospection.domain.place import Place, web_link
-from prospection.domain.site_audit import audit
+from prospection.domain.site_audit import audit, is_placeholder
 from prospection.domain.site_contacts import find_contacts
 from prospection.domain.site_guess import STRONG, address_city, candidate_domains, confirmation
 from prospection.domain.site_report import Origin, SiteReport
 from prospection.domain.site_seo import local_seo
 from prospection.sources.web_reader import UNREACHABLE, ReadResult, read_page
+
+PLACEHOLDER = "Page « en construction » de l'hébergeur : aucun vrai site en ligne"
 
 
 def _report(
@@ -24,20 +26,27 @@ def _report(
     if result.page is None:
         return SiteReport(origin, problem=result.problem)
     page = parse_page(result.page.html)
+    if is_placeholder(page):  # domaine acheté, aucun site en ligne : un prospect sans site
+        return SiteReport(origin, problem=PLACEHOLDER, parked=True)
     return SiteReport(
         origin, result.page.url,
-        audit=audit(page, result.page.url, result.page.seconds, year),
+        audit=audit(page, result.page.url, result.page.seconds, year, result.page.powered_by),
         seo=local_seo(page, keywords, address_city(place.address)),
         contacts=find_contacts(page, place.country or "FR"),
     )  # fmt: skip
 
 
-def _read_domain(client: httpx.Client, domain: str) -> ReadResult:
-    """https d'abord ; sinon http (les sites faibles, la cible, n'ont souvent pas de HTTPS)."""
-    result = read_page(client, f"https://{domain}")
-    if result.page is None and result.problem == UNREACHABLE:
-        return read_page(client, f"http://{domain}")
+def _read_url(client: httpx.Client, url: str) -> ReadResult:
+    """L'adresse donnée ; si https ne répond pas (certificat cassé…), la même en http : les
+    sites faibles, la cible, n'ont souvent pas de HTTPS."""
+    result = read_page(client, url)
+    if result.page is None and result.problem == UNREACHABLE and url.startswith("https://"):
+        return read_page(client, "http://" + url.removeprefix("https://"))
     return result
+
+
+def _read_domain(client: httpx.Client, domain: str) -> ReadResult:
+    return _read_url(client, f"https://{domain}")
 
 
 def _guess(client: httpx.Client, place: Place, keywords: tuple[str, ...], year: int) -> SiteReport:
@@ -65,5 +74,5 @@ def check_site(
     """Rapport du site ; jamais d'exception pour un site absent ou en panne."""
     url = web_link(place.website)
     if url:
-        return _report(read_page(client, url), "fiche Google", place, keywords, year)
+        return _report(_read_url(client, url), "fiche Google", place, keywords, year)
     return _guess(client, place, keywords, year)

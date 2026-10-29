@@ -27,6 +27,10 @@ class Signals:
 
     @property
     def has_site(self) -> bool:
+        """Une page « en construction » de l'hébergeur n'est pas un site : c'est un prospect
+        sans site, le plus intéressant."""
+        if self.site and self.site.parked:
+            return False
         return bool(self.place.website or (self.site and self.site.url))
 
     @property

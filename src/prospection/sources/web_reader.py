@@ -37,6 +37,7 @@ class WebPage:
     url: str  # adresse finale, après redirections
     html: str
     seconds: float
+    powered_by: str = ""  # en-tête X-Powered-By (version de PHP…), borné
 
 
 @dataclass(frozen=True)
@@ -119,7 +120,8 @@ def _read(client: httpx.Client, url: str, clock: Callable[[], float]) -> ReadRes
                 if seconds > MAX_SECONDS:
                     return ReadResult(None, SLOW)
                 text = _decode(bytes(body[:MAX_BYTES]), response.charset_encoding)
-                return ReadResult(WebPage(url, text[:MAX_BYTES], seconds))
+                powered = response.headers.get("X-Powered-By", "")[:100]
+                return ReadResult(WebPage(url, text[:MAX_BYTES], seconds, powered))
         except (httpx.TimeoutException, httpcore.TimeoutException):
             return ReadResult(None, SLOW)
         except (httpx.HTTPError, UnicodeError, LookupError):

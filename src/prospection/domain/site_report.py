@@ -20,4 +20,5 @@ class SiteReport:
     audit: Audit | None = None
     seo: LocalSeo | None = None
     contacts: Contacts | None = None
+    parked: bool = False  # page « en construction » de l'hébergeur : pas de vrai site
     speed: PageSpeed | None = None  # vitesse mobile mesurée par Google (tâche de fond, C126)

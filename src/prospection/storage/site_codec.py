@@ -34,6 +34,7 @@ def _decode(data: dict[str, Any]) -> SiteReport:
         LocalSeo(seo["trade"], seo["city"], tuple(seo["problems"])) if seo else None,
         Contacts(*(tuple(contacts[k]) for k in ("emails", "phones", "social")))
         if contacts else None,
+        bool(data.get("parked", False)),
         decode_speed(data["speed"]) if data.get("speed") else None,
     )  # fmt: skip
 

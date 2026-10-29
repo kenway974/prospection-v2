@@ -15,7 +15,7 @@ router = APIRouter(prefix="/reglages", dependencies=[Depends(require_session)])
 
 def _page(request: Request, engine: Engine, error: str | None, status_code: int) -> Response:
     cents = current_budget(engine)
-    context = {"tab": "", "budget": euros(cents), "free_only": cents == 0, "error": error}
+    context = {"tab": "settings", "budget": euros(cents), "free_only": cents == 0, "error": error}
     return templates.TemplateResponse(
         request, "reglages_budget.html", context, status_code=status_code
     )

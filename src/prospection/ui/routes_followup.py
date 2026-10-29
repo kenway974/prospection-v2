@@ -44,7 +44,7 @@ def _reminders(
 ) -> Response:  # fmt: skip
     minutes, hour, calm_from, calm_to = reminder_settings(engine)
     keys = settings.vapid_keys()
-    context = {"tab": "", "minutes": minutes, "hour": hour, "calm_from": calm_from,
+    context = {"tab": "settings", "minutes": minutes, "hour": hour, "calm_from": calm_from,
                "calm_to": calm_to, "error": error, "reached": reached,
                "vapid_public": keys.public_key if keys else None}  # fmt: skip
     return templates.TemplateResponse(request, "reglages_rappels.html", context, status_code=code)

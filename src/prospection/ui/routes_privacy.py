@@ -21,7 +21,7 @@ ENGINE = Depends(get_engine)
 def _settings(
     request: Request, engine: Engine, error: str | None, code: int, erased: int = 0
 ) -> Response:
-    context = {"tab": "", "months": purge_months(engine), "error": error, "erased": erased}
+    context = {"tab": "settings", "months": purge_months(engine), "error": error, "erased": erased}
     return templates.TemplateResponse(
         request, "reglages_confidentialite.html", context, status_code=code
     )

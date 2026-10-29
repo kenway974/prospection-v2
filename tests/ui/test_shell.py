@@ -21,9 +21,9 @@ TABS = [
     ("Prospects", "/prospects"),
     ("Terrain", "/terrain"),
     ("Recherche", "/recherche"),
+    ("Réglages", "/reglages"),
 ]
 PAGES = [path for _, path in TABS] + [
-    "/reglages",
     "/reglages/cles",
     "/reglages/crm",
     "/reglages/connexions",
@@ -77,7 +77,15 @@ def test_today_empty_state_says_what_to_do(client: TestClient) -> None:
     page = client.get("/").text.replace("&#39;", "'")
     assert "Rien de prévu. Lancez une recherche pour trouver vos premiers prospects." in page
     assert 'href="/recherche"' in page
-    assert 'aria-label="Réglages"' in page
+
+
+def test_settings_tab_on_every_screen(client: TestClient) -> None:
+    """Réglages : un onglet de la barre du bas, partout, actif sur les écrans de réglages."""
+    for path in ("/", "/prospects", "/terrain", "/recherche"):
+        assert '<a href="/reglages" class="tab">' in client.get(path).text, path
+    for path in ("/reglages", "/reglages/cles", "/reglages/rappels", "/reglages/connexions"):
+        page = client.get(path).text
+        assert '<a href="/reglages" aria-current="page" class="tab">' in page, path
 
 
 def test_C83_connection_journal_lists_date_ip_result(client: TestClient, engine: Engine) -> None:

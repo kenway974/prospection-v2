@@ -8,7 +8,7 @@ from sqlalchemy import Engine
 from prospection.application import page_results, registry_step
 from prospection.application.campaign_step import run_step
 from prospection.application.campaigns import create_campaign, progress
-from prospection.application.prospect_card import prospect_list
+from prospection.application.prospect_listing import prospect_list
 from prospection.domain.criteria import Criteria
 from prospection.storage.campaign_steps import next_step
 from tests.application.campaign_helpers import BOX, NOW, PRICING, api_place, pages, request

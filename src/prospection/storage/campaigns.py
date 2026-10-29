@@ -7,6 +7,7 @@ from datetime import datetime
 from sqlalchemy import Connection, insert, select, update
 
 from prospection.domain.campaign_request import CampaignRequest
+from prospection.domain.prospect_source import CALLS
 from prospection.storage.campaign_codec import decode_request, encode_circle, encode_request
 from prospection.storage.campaign_steps import StepSpec
 from prospection.storage.schema_campaigns import campaign_events, campaign_steps, campaigns
@@ -33,10 +34,11 @@ class Event:
 
 def create_campaign(
     conn: Connection, request: CampaignRequest, steps: Sequence[StepSpec], now: datetime,
-    schedule_id: int | None = None,
+    schedule_id: int | None = None, kind: str = CALLS,
 ) -> int:  # fmt: skip
     values = {"name": request.name, "request_json": encode_request(request), "status": "queued",
-              "schedule_id": schedule_id, "scheduled": schedule_id is not None}  # fmt: skip
+              "schedule_id": schedule_id, "scheduled": schedule_id is not None,
+              "kind": kind}  # fmt: skip
     counters = {"found": 0, "excluded": 0, "qualified": 0, "cost_cents": 0}
     campaign_id = int(
         conn.execute(

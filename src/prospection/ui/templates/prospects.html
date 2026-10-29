@@ -2,11 +2,20 @@
 {% block title %}Prospects · Prospection{% endblock %}
 {% block content %}
 <h1 class="large-title">Prospects</h1>
+{% if deleted %}<p class="secondary" role="status">{{ deleted }} prospect{{ "s" if deleted > 1 }} supprimé{{ "s" if deleted > 1 }}.</p>{% endif %}
 <p><a href="/exporter">Exporter les intéressés vers Notion</a></p>
-{% if not total %}
+{% if not sources %}
 <p class="empty">Aucun prospect pour l'instant. Ils apparaîtront ici après une recherche.</p>
 {% else %}
+<ul class="chips" aria-label="Origine des prospects">
+  {% for key, label in source_labels.items() %}<li><a class="chip" href="/prospects?{{ {'origine': key, 'q': query, 'tri': sort} | urlencode }}"{% if scope.source == key %} aria-current="true"{% endif %}>{{ label }} · {{ sources.get(key, 0) }}</a></li>{% endfor %}
+</ul>
 <form method="get" action="/prospects" class="group form" role="search">
+  <input type="hidden" name="origine" value="{{ here.origine }}">
+  {% if campaigns %}
+  <label for="campagne">Campagne</label>
+  <select id="campagne" name="campagne"><option value="">Toutes les campagnes</option>{% for id, name, n in campaigns %}<option value="{{ id }}"{% if scope.campaign_id == id %} selected{% endif %}>{{ name }} · {{ n }}</option>{% endfor %}</select>
+  {% endif %}
   <label for="q">Chercher (nom, ville, métier)</label>
   <input id="q" name="q" type="search" value="{{ query }}" maxlength="100" autocomplete="off">
   {% if status %}<input type="hidden" name="statut" value="{{ status }}">{% endif %}
@@ -14,18 +23,26 @@
   <select id="tri" name="tri">{% for key, label in sorts.items() %}<option value="{{ key }}"{% if sort == key %} selected{% endif %}>{{ label }}</option>{% endfor %}</select>
   <button type="submit" class="button-secondary">Afficher</button>
 </form>
+{% if total %}
 <ul class="chips" aria-label="Filtrer par statut">
-  <li><a class="chip" href="/prospects?{{ {'q': query, 'tri': sort} | urlencode }}"{% if not status %} aria-current="true"{% endif %}>Tous · {{ total }}</a></li>
-  {% for s in statuses %}{% if counts.get(s) %}<li><a class="chip" href="/prospects?{{ {'statut': s, 'q': query, 'tri': sort} | urlencode }}"{% if status == s %} aria-current="true"{% endif %}>{{ s | capitalize }} · {{ counts[s] }}</a></li>{% endif %}{% endfor %}
+  <li><a class="chip" href="/prospects?{{ dict(here, q=query, tri=sort) | urlencode }}"{% if not status %} aria-current="true"{% endif %}>Tous · {{ total }}</a></li>
+  {% for s in statuses %}{% if counts.get(s) %}<li><a class="chip" href="/prospects?{{ dict(here, statut=s, q=query, tri=sort) | urlencode }}"{% if status == s %} aria-current="true"{% endif %}>{{ s | capitalize }} · {{ counts[s] }}</a></li>{% endif %}{% endfor %}
 </ul>
+{% endif %}
 {% if rows %}
 <form method="post" action="/prospects/session">
   <input type="hidden" name="statut" value="{{ status or '' }}"><input type="hidden" name="q" value="{{ query }}"><input type="hidden" name="tri" value="{{ sort }}">
+  <input type="hidden" name="origine" value="{{ here.origine }}"><input type="hidden" name="campagne" value="{{ here.campagne }}">
   <button type="submit" class="button-primary">Démarrer la session d'appel</button>
 </form>
-<ul class="group">{% for r in rows %}{% set s = summaries.get(r.id) %}<li><a class="row link-row" href="/prospects/{{ r.id }}"><span>{{ r.data.name }}<br><span class="secondary">{{ r.data.address }}</span>{% if s %}<br><span class="secondary">{{ s.reason }}{% if s.flagged %} · à vérifier{% endif %}</span>{% endif %}</span><span class="secondary">{% if s %}<strong class="score">{{ s.score }}</strong><span class="visually-hidden"> sur 100, score d'opportunité</span><br>{% endif %}{{ r.status }}</span></a></li>{% endfor %}</ul>
-{% else %}
+<form id="selection" method="get" action="/prospects/selection/supprimer"><input type="hidden" name="origine" value="{{ here.origine }}"></form>
+<label class="choice" id="tout-cocher-ligne" hidden><input type="checkbox" id="tout-cocher"> Tout cocher</label>
+<button type="submit" form="selection" class="button-danger">Supprimer les prospects cochés</button>
+<ul class="group">{% for r in rows %}{% set s = summaries.get(r.id) %}<li class="row select-row"><label class="check"><input type="checkbox" name="id" value="{{ r.id }}" form="selection"><span class="visually-hidden">Cocher {{ r.data.name }}</span></label><a class="link-row" href="/prospects/{{ r.id }}"><span>{{ r.data.name }}<br><span class="secondary">{{ r.data.address }}</span>{% if s %}<br><span class="secondary">{{ s.reason }}{% if s.flagged %} · à vérifier{% endif %}</span>{% endif %}</span><span class="secondary">{% if s %}<strong class="score">{{ s.score }}</strong><span class="visually-hidden"> sur 100, score d'opportunité</span><br>{% endif %}{{ r.status }}</span></a></li>{% endfor %}</ul>
+{% elif total %}
 <p class="empty">Aucun prospect ne correspond. Changez la recherche ou le filtre.</p>
+{% else %}
+<p class="empty">Aucun prospect {{ source_labels[scope.source] | lower }} pour l'instant.{% if scope.source == "terrain" %} Lancez une recherche depuis l'onglet Terrain.{% endif %}</p>
 {% endif %}
 {% endif %}
 {% endblock %}

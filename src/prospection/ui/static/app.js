@@ -35,6 +35,17 @@ window.addEventListener("beforeunload", function (event) {
   if (unsaved.size) { event.preventDefault(); }
 });
 
+// Liste des prospects (C129) : tout cocher d'un geste avant de supprimer.
+var checkAll = document.getElementById("tout-cocher");
+if (checkAll) {
+  document.getElementById("tout-cocher-ligne").hidden = false;
+  checkAll.addEventListener("change", function () {
+    document.querySelectorAll('input[name="id"][form="selection"]').forEach(function (box) {
+      box.checked = checkAll.checked;
+    });
+  });
+}
+
 // Terrain (C113) : la position du téléphone, avec son accord, remplit le formulaire
 var positionButton = document.getElementById("ma-position");
 if (positionButton && navigator.geolocation) {

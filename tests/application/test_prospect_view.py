@@ -4,7 +4,8 @@ import dataclasses
 
 from sqlalchemy import Engine
 
-from prospection.application.prospect_card import card, prospect_list
+from prospection.application.prospect_card import card
+from prospection.application.prospect_listing import prospect_list
 from prospection.domain.site_contacts import Contacts
 from prospection.domain.site_report import SiteReport
 from prospection.storage.mail_domains import save_mail_server

@@ -16,7 +16,8 @@ from prospection.application.call_actions import (
     schedule,
     today_screen,
 )
-from prospection.application.prospect_card import card, prospect_list
+from prospection.application.prospect_card import card
+from prospection.application.prospect_listing import prospect_list
 from prospection.domain.criteria import Verdict
 from prospection.domain.place import Place
 from prospection.storage.campaigns import create_campaign

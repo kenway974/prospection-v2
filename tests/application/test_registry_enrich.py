@@ -5,7 +5,8 @@ import dataclasses
 import httpx
 from sqlalchemy import Engine, select
 
-from prospection.application.prospect_card import card, prospect_list
+from prospection.application.prospect_card import card
+from prospection.application.prospect_listing import prospect_list
 from prospection.application.registry_enrich import enrich_new_prospects
 from prospection.storage.prospect_list import ProspectRow
 from prospection.storage.schema_campaigns import prospects

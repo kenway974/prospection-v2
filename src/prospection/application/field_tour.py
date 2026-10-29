@@ -16,6 +16,7 @@ from prospection.application.prospect_card import UnknownProspect
 from prospection.domain.campaign_request import CityZone, RadiusZone, RawRequest, validate_request
 from prospection.domain.criteria import Criteria
 from prospection.domain.opening import open_now
+from prospection.domain.prospect_source import FIELD
 from prospection.domain.tour import Stop, order_tour, route_links
 from prospection.storage import call_tracking as store
 from prospection.storage.campaigns import load_campaign
@@ -55,7 +56,7 @@ def start_field(
                       search.radius_km)  # fmt: skip
     raw = RawRequest(f"Terrain · {search.label[:40]} · {when}", list(search.trades), [zone],
                      search.target, criteria, False)  # fmt: skip
-    return create_campaign(engine, validate_request(raw), now)
+    return create_campaign(engine, validate_request(raw), now, kind=FIELD)
 
 
 def field_tour(

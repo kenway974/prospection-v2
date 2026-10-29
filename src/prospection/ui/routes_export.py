@@ -8,7 +8,7 @@ from sqlalchemy import Engine
 
 from prospection.application.crm_export import export_report, queue_export
 from prospection.application.crm_target import notion_target
-from prospection.application.prospect_card import prospect_list
+from prospection.application.prospect_listing import prospect_list
 from prospection.config import Settings
 from prospection.domain.call_status import INTERESTED
 from prospection.storage.secret_box import SecretBox

@@ -1,4 +1,5 @@
-"""RGPD : purge des prospects non retenus (C94) et suppression d'une entreprise (C95)."""
+"""RGPD : purge des prospects non retenus (C94), suppression d'une entreprise (C95) ou d'une
+sélection de prospects (C129)."""
 
 from collections.abc import Sequence
 from datetime import datetime
@@ -75,6 +76,22 @@ def erase_company(conn: Connection, prospect_id: int, keep_blacklist: bool = Fal
         conn.execute(delete(exclusion_names).where(e.kind == BLACKLIST, e.name_norm.in_(names)))
     values = [{"kind": ERASED, "name_norm": key, "name": "(entreprise supprimée)"} for key in keys]
     conn.execute(insert(exclusion_names).values(values).on_conflict_do_nothing())
+    return len(rows)
+
+
+def prospect_names(conn: Connection, prospect_ids: Sequence[int]) -> list[tuple[int, str]]:
+    """Prospects retenus qui existent encore parmi ces identifiants, dans l'ordre de la liste."""
+    rows = conn.execute(
+        select(_P.id, _P.data_json["name"].astext)
+        .where(_P.id.in_(prospect_ids), _P.qualified.is_(True)).order_by(_P.created_at, _P.id)
+    )  # fmt: skip
+    return [(int(i), name or "Sans nom") for i, name in rows]
+
+
+def delete_prospects(conn: Connection, prospect_ids: Sequence[int]) -> int:
+    """Ces prospects, leurs notes, actions et alertes ; une recherche pourra les reprendre."""
+    rows = conn.execute(delete(prospects).where(_P.id.in_(prospect_ids)).returning(*_DELETED)).all()
+    _forget(conn, rows)
     return len(rows)
 
 

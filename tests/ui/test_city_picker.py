@@ -16,3 +16,10 @@ def test_C134_cities_suggested_while_typing(client: TestClient) -> None:
 def test_C134_one_letter_is_not_searched(client: TestClient) -> None:
     fragment = text(client.get("/recherche/communes", params={"ville": "P", "pays": "BE"}))
     assert fragment.strip() == '<p class="secondary">Tapez au moins 2 lettres.</p>'
+
+
+def test_C134_first_city_checked_only_when_alone(client: TestClient) -> None:
+    several = text(client.get("/recherche/communes", params={"ville": "Saint", "pays": "BE"}))
+    assert several.count('name="commune"') > 1 and "checked" not in several
+    alone = text(client.get("/recherche/communes", params={"ville": "Namur", "pays": "BE"}))
+    assert alone.count('name="commune"') == 1 and "checked" in alone

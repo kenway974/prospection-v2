@@ -14,6 +14,7 @@ from prospection.storage.login_journal import record_attempt
 from prospection.ui.app import create_app
 from prospection.ui.deps import get_now
 from prospection.ui.session import COOKIE_NAME, make_session_value
+from prospection.ui.static_version import static_version
 
 NOW = datetime(2026, 10, 24, 22, 30, tzinfo=UTC)
 TABS = [
@@ -103,7 +104,7 @@ def test_C83_connection_journal_lists_date_ip_result(client: TestClient, engine:
 
 def test_assets_are_linked(client: TestClient) -> None:
     page = client.get("/").text
-    assert '<link rel="stylesheet" href="/static/app.css">' in page
+    assert f'<link rel="stylesheet" href="/static/app.css?v={static_version()}">' in page
     assert '<script src="/static/htmx-2.0.11.min.js" defer></script>' in page
 
     assert client.get("/static/htmx-2.0.11.min.js").status_code == 200

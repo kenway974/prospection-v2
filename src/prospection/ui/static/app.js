@@ -30,7 +30,7 @@ document.addEventListener("htmx:afterRequest", function (event) {
 });
 document.addEventListener("submit", function (event) {
   if (event.submitter && event.submitter.getAttribute("aria-busy") === "true") {
-    event.preventDefault();  // deuxième appui pendant l'attente : rien n'est envoyé deux fois
+    event.preventDefault();  // deuxième appui pendant l'attente (formulaires classiques)
     return;
   }
   if (!event.defaultPrevented) {  // vrai envoi : la page change exprès
@@ -78,14 +78,24 @@ if (checkAll) {
   });
 }
 
-// Ville (C134) : une fois la commune choisie, les autres propositions disparaissent.
+// Ville (C134) : la commune choisie reste seule (« Changer de commune » rouvre la liste) ;
+// une nouvelle frappe vide la liste aussitôt, pour ne jamais lancer sur une commune périmée.
 var communes = document.getElementById("communes");
-if (communes) {
+var cityInput = document.getElementById("ville");
+if (communes && cityInput) {
+  cityInput.addEventListener("input", function () { communes.innerHTML = ""; });
   communes.addEventListener("change", function (event) {
     if (event.target.name !== "commune") { return; }
     communes.querySelectorAll("label.choice").forEach(function (label) {
-      if (!label.contains(event.target)) { label.remove(); }
+      label.hidden = !label.contains(event.target);
     });
+    var reopen = document.getElementById("changer-commune");
+    if (reopen) { reopen.hidden = false; }
+  });
+  communes.addEventListener("click", function (event) {
+    if (event.target.id !== "changer-commune") { return; }
+    communes.querySelectorAll("label.choice").forEach(function (label) { label.hidden = false; });
+    event.target.hidden = true;
   });
 }
 

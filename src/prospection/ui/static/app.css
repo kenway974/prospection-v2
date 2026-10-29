@@ -134,3 +134,5 @@ button[aria-busy="true"]::before { content: ""; width: 16px; height: 16px; margi
    du formulaire (sinon la liste bouge sous le doigt, C134). */
 #communes-attente.htmx-indicator { display: none; }
 #communes-attente.htmx-request { display: block; }
+.chip[aria-busy="true"]::before { content: none; }  /* les puces ne bougent pas sous le doigt */
+[hidden] { display: none !important; }  /* « hidden » gagne toujours sur display: flex */

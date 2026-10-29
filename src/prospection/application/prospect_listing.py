@@ -48,10 +48,15 @@ def _grouped(
     rows: list[ProspectRow], campaigns: list[tuple[int, str, int]]
 ) -> list[tuple[str, list[ProspectRow]]]:
     """Par campagne, la plus récente d'abord ; dans chaque campagne, le tri choisi (C133)."""
+    other = (len(campaigns), "Autre campagne")
     rank = {c[0]: (i, c[1]) for i, c in enumerate(campaigns)}
-    ordered = sorted(rows, key=lambda r: rank.get(r.campaign_id or 0, (len(rank), ""))[0])
+
+    def key(row: ProspectRow) -> tuple[int, int]:
+        return rank.get(row.campaign_id or 0, other)[0], row.campaign_id or 0
+
+    ordered = sorted(rows, key=key)  # stable : le tri choisi est gardé dans chaque campagne
     return [
-        (rank.get(cid or 0, (0, "Autre campagne"))[1], list(group))
+        (rank.get(cid or 0, other)[1], list(group))
         for cid, group in groupby(ordered, key=lambda r: r.campaign_id)
     ]
 

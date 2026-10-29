@@ -22,7 +22,11 @@ def test_C134_city_list_while_typing_then_closed(page: Page, base_url: str) -> N
     choices = page.locator("#communes label.choice")
     expect(choices).to_have_count(10, timeout=5_000)
     choices.nth(1).click()
-    expect(choices).to_have_count(1)  # la ville choisie reste seule
+    expect(choices.filter(visible=True)).to_have_count(1)  # la ville choisie reste seule
+    page.get_by_role("button", name="Changer de commune").click()
+    expect(choices.filter(visible=True)).to_have_count(10)
+    page.get_by_label("Ville", exact=True).press_sequentially("-")  # nouvelle frappe : liste vidée
+    expect(page.locator("#communes input:checked")).to_have_count(0)
 
 
 def test_C135_launch_button_says_it_is_working(page: Page, base_url: str) -> None:

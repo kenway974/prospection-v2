@@ -27,10 +27,15 @@ def test_C136_clean_site_and_unread_site_said_plainly() -> None:
     assert audit_recap(SiteReport("fiche Google", "https://a.fr", audit=good)) == (
         "Audit : aucun problème relevé"
     )
-    assert audit_recap(SiteReport("fiche Google", problem="Site injoignable")) == (
-        "Audit : site injoignable"
-    )
+    # Pas d'audit fait (site injoignable, pas cherché) : la raison du prospect le dit déjà
+    assert audit_recap(SiteReport("fiche Google", problem="Site injoignable")) is None
     assert audit_recap(SiteReport("aucun")) is None  # sans site : la raison le dit déjà
     assert audit_recap(None) is None
     parked = SiteReport("fiche Google", problem="Page en construction", parked=True)
     assert audit_recap(parked) is None  # « page en construction » est déjà la raison
+
+
+def test_C136_proper_names_keep_their_capital() -> None:
+    old = Audit(50, ("WordPress ancien (version 4.2)", "HTTPS absent"), None, False, True, True)
+    recap = audit_recap(SiteReport("fiche Google", "http://a.fr", audit=old))
+    assert recap == "Audit : WordPress ancien (version 4.2) · HTTPS absent"

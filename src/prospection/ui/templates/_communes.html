@@ -1,3 +1,4 @@
 {% if problem %}<p class="secondary">{{ problem }}</p>{% endif %}
-{% for value, label in choices %}<label class="choice"><input type="radio" name="commune" value="{{ value }}"{% if loop.first %} checked{% endif %}> {{ label }}</label>
+{% for value, label in choices %}<label class="choice"><input type="radio" name="commune" value="{{ value }}"{% if choices | length == 1 %} checked{% endif %}> {{ label }}</label>
 {% endfor %}
+{% if choices | length > 1 %}<button type="button" class="button-secondary" id="changer-commune" hidden>Changer de commune</button>{% endif %}

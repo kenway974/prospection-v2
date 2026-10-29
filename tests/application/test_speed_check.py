@@ -2,13 +2,14 @@
 
 import json
 import threading
+from datetime import timedelta
 
 import httpx
 import pytest
 from sqlalchemy import Engine
 
 from prospection.application.prospect_card import card
-from prospection.application.speed_check import SpeedPaused, check_next_site, speed_job
+from prospection.application.speed_check import SpeedJob, SpeedPaused, check_next_site
 from prospection.domain.site_audit import Audit
 from prospection.domain.site_report import SiteReport
 from prospection.storage.alerts import unseen_alerts
@@ -47,12 +48,14 @@ def test_busy_google_retried_later_refused_api_alerted(campaign_db: Engine) -> N
     with_site(campaign_db)
     with pytest.raises(SpeedPaused):
         check_next_site(campaign_db, BOX, fake_client(json_reply(503, {}))[0], NOW)
+    later = NOW + timedelta(minutes=16)  # repris après le délai de reprise
     with pytest.raises(SpeedPaused):
-        check_next_site(campaign_db, BOX, fake_client(json_reply(403, {}))[0], NOW)
+        check_next_site(campaign_db, BOX, fake_client(json_reply(403, {}))[0], later)
     with campaign_db.connect() as conn:
         [alert] = unseen_alerts(conn)
     assert "PageSpeed Insights API" in alert.message
-    assert check_next_site(campaign_db, BOX, fake_client(json_reply(200, ANSWER))[0], NOW)
+    again = later + timedelta(minutes=16)
+    assert check_next_site(campaign_db, BOX, fake_client(json_reply(200, ANSWER))[0], again)
 
 
 def test_nothing_without_site_or_key(campaign_db: Engine) -> None:
@@ -74,7 +77,38 @@ def test_job_runs_aside_one_pass_at_a_time(campaign_db: Engine) -> None:
         release.wait(5)
         return httpx.Response(200, json=ANSWER)
 
-    job = speed_job(campaign_db, BOX, fake_client(slow)[0])
+    job = SpeedJob(campaign_db, BOX, fake_client(slow)[0])
     assert job(NOW) is True and started.wait(5)
     assert job(NOW) is False  # passage déjà en cours
     release.set()
+    job.join(5)
+    assert job.thread is not None and not job.thread.is_alive()
+
+
+def test_cut_off_measure_retaken_failing_site_gives_up_without_blocking(
+    campaign_db: Engine,
+) -> None:
+    from prospection.storage.page_speed_queue import take_site
+
+    first, second = with_site(campaign_db), with_site(campaign_db)
+    with campaign_db.begin() as conn:
+        assert take_site(conn, NOW) == (first, "https://atelier.fr")  # worker coupé ensuite
+        assert take_site(conn, NOW) == (second, "https://atelier.fr")
+        assert take_site(conn, NOW + timedelta(minutes=5)) is None  # encore en cours
+        retaken = take_site(conn, NOW + timedelta(minutes=16))
+        assert retaken is not None and retaken[0] == first  # le plus ancien essai d'abord
+        take_site(conn, NOW + timedelta(minutes=40))
+        take_site(conn, NOW + timedelta(minutes=60))
+        assert take_site(conn, NOW + timedelta(hours=3)) == (second, "https://atelier.fr")
+        assert take_site(conn, NOW + timedelta(hours=5)) is None  # 3 essais : abandonnés
+
+
+def test_same_site_measured_once_for_two_prospects(campaign_db: Engine) -> None:
+    with_site(campaign_db)
+    other = with_site(campaign_db)
+    client, seen = fake_client(json_reply(200, ANSWER))
+    check_next_site(campaign_db, BOX, client, NOW)
+    check_next_site(campaign_db, BOX, client, NOW)
+    assert len(seen.requests) == 1  # la mesure du même site est reprise
+    shown = card(campaign_db, other, NOW, PARIS).prospect.site
+    assert shown is not None and shown.speed is not None and shown.speed.score == 34

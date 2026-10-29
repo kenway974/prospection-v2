@@ -26,6 +26,7 @@ from prospection.application.push import push_job
 from prospection.application.registry_enrich import enrich_new_prospects
 from prospection.application.schedules import run_due_schedule
 from prospection.application.site_verdict import SiteChecker, skip_sites
+from prospection.application.speed_check import SpeedJob
 from prospection.domain.google_cost import Pricing, load_pricing
 from prospection.sources.mail_domain import mail_server
 from prospection.storage.secret_box import SecretBox
@@ -41,15 +42,16 @@ class Worker:
         sites: SiteChecker = skip_sites,
         mail_lookup: Callable[[str], str | None] | None = None, timezone: str = "Europe/Paris",
         backup: Callable[[datetime], object] | None = None,
-        push: Callable[[datetime], object] | None = None,
+        push: Callable[[datetime], object] | None = None, speed: SpeedJob | None = None,
     ) -> None:  # fmt: skip
         self.engine, self.box, self.client, self.pricing = engine, box, client, pricing
         self.now, self.sites, self.mail_lookup = now, sites, mail_lookup
         self.timezone = timezone
         self.next_mail_check = datetime.min.replace(tzinfo=UTC)
         self.reminders, self.periodic = regular_jobs(
-            engine, box, client, pricing, timezone, backup, now(), push
+            engine, box, client, pricing, timezone, backup, now(), push, speed
         )
+        self.speed = speed
         self.worker_id = uuid.uuid4().hex
 
     def work_once(self) -> bool:
@@ -136,9 +138,12 @@ def main() -> None:  # pragma: no cover (point d'entrée, testé en bout en bout
         backup = backup_job(settings.backup_target(), key, settings.database_url, engine, client)
         push = push_job(settings.vapid_keys(), engine, client, settings.timezone)
         worker = Worker(engine, box, client, load_pricing(), sites=sites, mail_lookup=lookup,
-                        timezone=settings.timezone, backup=backup, push=push)  # fmt: skip
+                        timezone=settings.timezone, backup=backup, push=push,
+                        speed=SpeedJob(engine, box, client))  # fmt: skip
         logger.info("Tâche de fond démarrée")
         worker.run_forever(stop)
+        if worker.speed:  # arrêt propre : la mesure en cours finit avant la fermeture
+            worker.speed.join(timeout=15)
 
 
 if __name__ == "__main__":  # pragma: no cover

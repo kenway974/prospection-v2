@@ -20,4 +20,4 @@ class SiteReport:
     audit: Audit | None = None
     seo: LocalSeo | None = None
     contacts: Contacts | None = None
-    speed: PageSpeed | None = None  # vitesse mobile mesurée par Google, plus tard
+    speed: PageSpeed | None = None  # vitesse mobile mesurée par Google (tâche de fond, C126)

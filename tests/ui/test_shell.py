@@ -48,7 +48,7 @@ def nav_of(page: str) -> str:
 
 
 @pytest.mark.parametrize("path", PAGES)
-def test_C117_nav_on_every_page_with_four_tabs_in_order(client: TestClient, path: str) -> None:
+def test_C117_nav_on_every_page_with_five_tabs_in_order(client: TestClient, path: str) -> None:
     nav = nav_of(client.get(path).text)
     links = re.findall(r'<a href="([^"]+)"[^>]*>.*?<span>([^<]+)</span></a>', nav, re.S)
     assert [(label.replace("&#39;", "'"), href) for href, label in links] == TABS

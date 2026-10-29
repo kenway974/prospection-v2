@@ -28,8 +28,9 @@ def _site(s: Signals) -> list[tuple[str, int]]:
         lines.append((f"Site à améliorer (qualité {audit.score}/100)", weak))
     if audit and not audit.contact_form:
         lines.append(("Pas de formulaire de contact", NO_FORM))
-    if s.site and is_slow(s.site.speed) and s.site.speed:
-        lines.append((f"Site lent sur mobile (Google : {s.site.speed.score}/100)", SLOW_SITE))
+    speed = s.site.speed if s.site else None
+    if speed is not None and is_slow(speed):
+        lines.append((f"Site lent sur mobile (Google : {speed.score}/100)", SLOW_SITE))
     if s.site and s.site.origin == "retrouvé":
         lines.append(("Site absent de la fiche Google", FOUND_SITE))
     return lines

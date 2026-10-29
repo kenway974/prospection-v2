@@ -12,6 +12,16 @@ from prospection.domain.page_speed import ISSUE_LABELS, PageSpeed
 API_URL = "https://www.googleapis.com/pagespeedonline/v5/runPagespeed"
 TIMEOUT = 90.0  # une analyse prend souvent 10 à 40 s
 FAILING = 0.9  # audit sous ce score : à améliorer
+# Google n'a pas pu charger le site (injoignable, trop lent, page vide) : rien à mesurer.
+SITE_ERRORS = ("FAILED_DOCUMENT_REQUEST", "ERRORED_DOCUMENT_REQUEST", "NO_FCP",
+               "DNS_FAILURE", "NOT_HTML", "PAGE_HUNG", "NO_NAVSTART")  # fmt: skip
+KEY_ERRORS = ("API_KEY_INVALID", "PERMISSION_DENIED", "API_KEY_SERVICE_BLOCKED")
+
+
+REFUSED = (
+    "PageSpeed refusé : activez « PageSpeed Insights API » dans Google Cloud et autorisez-la "
+    "sur la clé Google (Réglages → Clés API). Les mesures reprennent demain."
+)
 
 
 class SpeedBusy(Exception):
@@ -64,21 +74,21 @@ def _parse(body: Any) -> PageSpeed | None:
 
 def page_speed(client: httpx.Client, key: str, url: str) -> PageSpeed | None:
     """Mesure mobile du site ; None si Google ne peut pas l'analyser (site injoignable)."""
-    params = {"url": url, "strategy": "mobile", "category": "performance", "locale": "fr",
-              "key": key}  # fmt: skip
+    params = {"url": url, "strategy": "mobile", "category": "performance", "locale": "fr"}
+    headers = {"X-Goog-Api-Key": key}  # jamais dans l'adresse (journaux, proxys)
     try:
-        response = client.get(API_URL, params=params, timeout=TIMEOUT)
+        response = client.get(API_URL, params=params, headers=headers, timeout=TIMEOUT)
     except httpx.HTTPError:
         raise SpeedBusy from None
-    if response.status_code == 429 or response.status_code >= 500:
+    code, text = response.status_code, response.text
+    if code in (401, 403) or (code == 400 and any(e in text for e in KEY_ERRORS)):
+        raise SpeedRefused(REFUSED)
+    if code != 200 and any(e in text for e in SITE_ERRORS):
+        return None  # le site, pas Google : rien à mesurer
+    if code == 429 or code >= 500:
         raise SpeedBusy
-    if response.status_code in (401, 403):
-        raise SpeedRefused(
-            "PageSpeed refusé : activez « PageSpeed Insights API » dans Google Cloud et "
-            "autorisez-la sur la clé Google."
-        )
-    if response.status_code != 200:
-        return None  # 400 : Google n'a pas pu charger le site
+    if code != 200:
+        return None
     try:
         return _parse(response.json())
     except ValueError:

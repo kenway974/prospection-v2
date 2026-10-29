@@ -32,6 +32,7 @@ Ajouter ou retirer un comportement = modifier ce fichier (avec l'accord du propr
 - C122 Hors de France, je saisis une ville, une province (Belgique) ou un canton (Suisse, Luxembourg), ou un rayon autour d'une ville *(validé le 25/10/2026)*
 - C123 Un établissement situé hors du pays ou de la province / du canton choisi est exclu « Hors zone » *(validé le 25/10/2026)*
 - C124 Les numéros belges, suisses, luxembourgeois et monégasques sont reconnus (mobile ou fixe) *(validé le 25/10/2026)*
+- C126 Vitesse du site sur mobile mesurée par Google PageSpeed Insights (note, temps d'affichage, problèmes principaux) ; un site lent compte dans le score et donne une accroche *(validé le 29/10/2026)*
 - C125 Entreprises récemment créées hors de France : registre officiel du pays quand il est ouvert (Belgique : BCE ; Suisse : Zefix) ; sinon l'app dit que cette source n'existe pas pour ce pays *(validé le 25/10/2026)*
 
 ## 3. Critères de qualification
@@ -178,4 +179,4 @@ Ajouter ou retirer un comportement = modifier ce fichier (avec l'accord du propr
 
 ## 16. App sur le téléphone
 - C116 L'app s'installe sur Android (icône, plein écran) et reste connectée 30 jours
-- C117 La barre de navigation flottante donne accès en un geste à Aujourd'hui, Prospects, Terrain, Recherche
+- C117 La barre de navigation flottante donne accès en un geste à Aujourd'hui, Prospects, Terrain, Recherche, Réglages *(Réglages ajouté le 29/10/2026)*

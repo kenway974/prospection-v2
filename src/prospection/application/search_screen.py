@@ -12,7 +12,7 @@ from prospection.domain.campaign_request import CampaignRequest, CityZone, RawRe
 from prospection.domain.foreign_zones import city_choice_label, find_foreign_cities
 from prospection.domain.google_cost import Estimate, Pricing, billing_month, estimate, pages_needed
 from prospection.domain.registry import GOOGLE, LOOKUPS_PER_TARGET, REGISTRY
-from prospection.domain.trades import expand_queries, load_trades
+from prospection.domain.trades import expand_queries, load_trades, split_trades
 from prospection.sources.geo_communes import GeoUnavailable, find_communes
 from prospection.storage.google_usage import month_usage
 from prospection.storage.templates import (
@@ -56,7 +56,7 @@ def templates(engine: Engine) -> list[Template]:
 
 
 def synonyms(trades_text: str, synonyms_on: bool = True) -> list[str]:
-    keywords = [t for t in trades_text.split(",") if t.strip()]
+    keywords = split_trades(trades_text)
     return expand_queries(keywords, load_trades(), synonyms_on)
 
 

@@ -1,8 +1,7 @@
 """Formulaire Terrain : lecture et contrôle des champs (C113)."""
 
-import re
-
 from prospection.application.field_tour import FieldSearch
+from prospection.domain.trades import MAX_TRADES, split_trades
 
 FIELD_DEFAULTS = {"metiers": "commerce", "rayon": "1", "avis_max": "20", "nombre": "15"}
 
@@ -40,9 +39,7 @@ def read_field_form(form: dict[str, str]) -> tuple[FieldSearch | None, dict[str,
         if not form.get("adresse", "").strip():
             return None, {"adresse": "Utilisez votre position, ou écrivez une adresse."}
         return None, {}
-    trades = tuple(
-        t.strip()[:60] for t in re.split(r"[,;\n]", form.get("metiers", "")) if t.strip()
-    )
+    trades = tuple(split_trades(form.get("metiers", ""))[: MAX_TRADES + 1])  # au-delà : refusé
     return FieldSearch(lat, lon, form.get("lieu", "Ma position")[:60] or "Ma position",
-                       trades[:5] or ("commerce",), radius or 1, max_reviews,
+                       trades or ("commerce",), radius or 1, max_reviews,
                        form.get("sans_site") == "on", target or 15), {}  # fmt: skip

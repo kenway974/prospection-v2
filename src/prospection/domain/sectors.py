@@ -10,7 +10,7 @@ from importlib import resources
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationError
 
-MAX_KEYWORDS = 10  # même limite que le champ « Métiers » de la recherche
+from prospection.domain.trades import MAX_TRADES
 
 
 class InvalidSectorFile(ValueError):
@@ -21,7 +21,7 @@ class Sector(BaseModel):
     model_config = ConfigDict(frozen=True)
     id: str = Field(pattern=r"^[a-z_]+$")
     label: str = Field(min_length=1)
-    keywords: tuple[str, ...] = Field(min_length=1, max_length=MAX_KEYWORDS)
+    keywords: tuple[str, ...] = Field(min_length=1, max_length=MAX_TRADES)
 
 
 class SectorGroup(BaseModel):

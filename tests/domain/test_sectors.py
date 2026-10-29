@@ -2,7 +2,11 @@
 
 import pytest
 
+from prospection.domain.campaign_request import InvalidRequest, RawRequest, validate_request
+from prospection.domain.criteria import Criteria
 from prospection.domain.sectors import InvalidSectorFile, load_sectors, parse_sectors
+from prospection.domain.trades import split_trades
+from tests.storage.test_campaigns import LYON
 
 GROUP = "- label: X\n  sectors:\n"
 
@@ -43,3 +47,18 @@ def test_C132_each_sector_fits_the_search_form() -> None:
 def test_C132_invalid_sector_file_refused(text: str) -> None:
     with pytest.raises(InvalidSectorFile):
         parse_sectors(text)
+
+
+def test_C132_trades_split_on_commas_and_lines() -> None:
+    assert split_trades("plombier\r\nélectricien,, ; maçon ") == [
+        "plombier",
+        "électricien",
+        "maçon",
+    ]
+
+
+def test_C132_more_than_ten_trades_refused_not_cut() -> None:
+    trades = [f"métier {n}" for n in range(11)]
+    with pytest.raises(InvalidRequest) as refused:
+        validate_request(RawRequest("Test", trades, [LYON], 10, Criteria(), False))
+    assert refused.value.errors["trades"] == "10 métiers au plus : retirez-en."

@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from prospection.domain.criteria import Criteria
 from prospection.domain.registry import GOOGLE, SOURCES, source_errors
 from prospection.domain.site_criteria import site_criteria_errors
-from prospection.domain.trades import naf_prefixes, normalize
+from prospection.domain.trades import MAX_TRADES, naf_prefixes, normalize
 
 MAX_TARGET = 200
 MAX_RADIUS_KM = 50
@@ -120,6 +120,8 @@ def validate_request(raw: RawRequest) -> CampaignRequest:
         errors["name"] = "Donnez un nom à la campagne."
     if not trades:
         errors["trades"] = "Indiquez au moins un métier."
+    elif len(trades) > MAX_TRADES:
+        errors["trades"] = f"{MAX_TRADES} métiers au plus : retirez-en."
     if not raw.zones:
         errors["zones"] = "Indiquez au moins une ville, un département ou un rayon."
     elif any(

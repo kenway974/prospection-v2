@@ -22,6 +22,7 @@ from prospection.domain.foreign_zones import (
 from prospection.domain.place import clip
 from prospection.domain.registry import SOURCES
 from prospection.domain.site_criteria import SITE_CHOICES
+from prospection.domain.trades import MAX_TRADES, split_trades
 
 _COORD = r"(-?\d{1,3}(?:\.\d+)?)"
 _COMMUNE = re.compile(rf"([A-Z]{{2}})\|([0-9A-Z]{{0,5}})\|{_COORD}\|{_COORD}\|(.{{1,100}})")
@@ -119,7 +120,7 @@ def parse_form(form: dict[str, str]) -> ParsedForm:
     )
     raw = RawRequest(
         name=form.get("nom", "")[:100],
-        trades=[t[:60] for t in re.split(r"[,;\n]", form.get("metiers", ""))][:10],
+        trades=split_trades(form.get("metiers", ""))[: MAX_TRADES + 1],  # au-delà : refusé
         zones=_zones(form, errors),
         target=_int(form.get("nombre", ""), 0) or 0,
         criteria=criteria,

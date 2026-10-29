@@ -16,6 +16,7 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 MAX_QUERIES_PER_KEYWORD = 3
+MAX_TRADES = 10  # métiers d'une même recherche (recherche, Terrain, secteur)
 
 
 class InvalidTradeFile(ValueError):
@@ -44,6 +45,11 @@ def normalize(text: str) -> str:
 
 def _singular(text: str) -> str:
     return " ".join(w[:-1] if len(w) > 3 and w.endswith("s") else w for w in text.split())
+
+
+def split_trades(text: str) -> list[str]:
+    """Métiers saisis, séparés par des virgules, des points-virgules ou des lignes (C132)."""
+    return [t.strip()[:60] for t in re.split(r"[,;\n]", text) if t.strip()]
 
 
 def comparable(text: str) -> str:

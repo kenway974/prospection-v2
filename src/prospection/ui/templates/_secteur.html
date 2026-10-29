@@ -1,3 +1,4 @@
 <label for="secteur">Secteur d'activité</label>
-<select id="secteur" data-remplit="metiers"><option value="">Choisir un secteur…</option>{% for group in sector_groups %}<optgroup label="{{ group.label }}">{% for s in group.sectors %}<option value="{{ s.id }}" data-metiers="{{ s.keywords | join(', ') }}">{{ s.label }}</option>{% endfor %}</optgroup>{% endfor %}</select>
-<p class="secondary">Un secteur remplit le champ ci-dessous avec tous ses mots-clés ; retirez ceux qui ne vous intéressent pas.</p>
+<select id="secteur" data-remplit="metiers" aria-describedby="secteur-aide"><option value="">Choisir un secteur…</option>{% for group in sector_groups %}<optgroup label="{{ group.label }}">{% for s in group.sectors %}<option value="{{ s.id }}" data-metiers="{{ s.keywords | join(', ') }}">{{ s.label }}</option>{% endfor %}</optgroup>{% endfor %}</select>
+<p class="secondary" id="secteur-aide">Un secteur remplace le contenu du champ ci-dessous par tous ses mots-clés ; retirez ceux qui ne vous intéressent pas.</p>
+<p class="secondary" id="secteur-etat" role="status"></p>

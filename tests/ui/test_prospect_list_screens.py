@@ -56,7 +56,7 @@ def test_C129_bulk_delete_after_confirmation(client: TestClient, campaign_db: En
     page = text(client.get("/prospects"))
     assert page.count('type="checkbox" name="id"') == 3
     ids = [int(part.split('"')[0]) for part in page.split('name="id" value="')[1:]]
-    confirm = text(client.get("/prospects/selection/supprimer", params={"id": ids[:2]}))
+    confirm = text(client.post("/prospects/selection", data={"id": ids[:2]}, headers=ORIGIN))
     assert "Cuisines Martin" in confirm and "Cuisines Durand" in confirm
     assert "Atelier" not in confirm
     done = client.post("/prospects/selection/supprimer", data={"id": ids[:2]}, headers=ORIGIN,
@@ -68,7 +68,7 @@ def test_C129_bulk_delete_after_confirmation(client: TestClient, campaign_db: En
 
 
 def test_C129_nothing_selected_goes_back(client: TestClient) -> None:
-    empty = client.get("/prospects/selection/supprimer", follow_redirects=False)
+    empty = client.post("/prospects/selection", headers=ORIGIN, follow_redirects=False)
     assert empty.headers["location"] == "/prospects"
     bad = client.post("/prospects/selection/supprimer", headers=ORIGIN, follow_redirects=False)
     assert bad.headers["location"] == "/prospects"
@@ -92,3 +92,26 @@ def test_C130_only_card_inputs_guard_against_leaving(
     pid = int(page.split('name="id" value="')[1].split('"')[0])
     assert text(client.get(f"/prospects/{pid}")).count("data-garde") == 4  # note, contact, suivi
     assert "data-garde" not in text(client.get("/recherche"))  # lancer une campagne : rien
+
+
+def test_C128_campaign_of_another_tab_ignored(client: TestClient, campaign_db: Engine) -> None:
+    _campaign(campaign_db, "Cuisinistes Lyon", "Cuisines Martin")
+    field = _campaign(campaign_db, "Terrain · Croix-Rousse", "Boulangerie Paul", kind=FIELD)
+    page = text(client.get("/prospects", params={"campagne": str(field)}))
+    assert "Cuisines Martin" in page and f'value="{field}"' not in page
+
+
+def test_C129_back_to_the_same_tab_and_campaign(client: TestClient, campaign_db: Engine) -> None:
+    field = _campaign(campaign_db, "Terrain · Croix-Rousse", "Boulangerie Paul", kind=FIELD)
+    page = text(client.get("/prospects", params={"origine": "terrain"}))
+    pid = int(page.split('name="id" value="')[1].split('"')[0])
+    form = {"id": [pid], "origine": "terrain", "campagne": str(field)}
+    done = client.post("/prospects/selection/supprimer", data=form, headers=ORIGIN,
+                       follow_redirects=False)  # fmt: skip
+    assert done.headers["location"] == f"/prospects?supprime=1&origine=terrain&campagne={field}"
+
+
+def test_C120_search_without_result_keeps_the_form(client: TestClient, campaign_db: Engine) -> None:
+    _campaign(campaign_db, "Cuisinistes Lyon", "Cuisines Martin")
+    page = text(client.get("/prospects", params={"q": "introuvable"}))
+    assert "Aucun prospect ne correspond" in page and 'id="q"' in page

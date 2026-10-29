@@ -4,7 +4,7 @@
 <h1 class="large-title">Prospects</h1>
 {% if deleted %}<p class="secondary" role="status">{{ deleted }} prospect{{ "s" if deleted > 1 }} supprimé{{ "s" if deleted > 1 }}.</p>{% endif %}
 <p><a href="/exporter">Exporter les intéressés vers Notion</a></p>
-{% if not sources %}
+{% if not any_prospect %}
 <p class="empty">Aucun prospect pour l'instant. Ils apparaîtront ici après une recherche.</p>
 {% else %}
 <ul class="chips" aria-label="Origine des prospects">
@@ -35,11 +35,11 @@
   <input type="hidden" name="origine" value="{{ here.origine }}"><input type="hidden" name="campagne" value="{{ here.campagne }}">
   <button type="submit" class="button-primary">Démarrer la session d'appel</button>
 </form>
-<form id="selection" method="get" action="/prospects/selection/supprimer"><input type="hidden" name="origine" value="{{ here.origine }}"></form>
+<form id="selection" method="post" action="/prospects/selection"><input type="hidden" name="origine" value="{{ here.origine }}"><input type="hidden" name="campagne" value="{{ here.campagne }}"></form>
 <label class="choice" id="tout-cocher-ligne" hidden><input type="checkbox" id="tout-cocher"> Tout cocher</label>
 <button type="submit" form="selection" class="button-danger">Supprimer les prospects cochés</button>
 <ul class="group">{% for r in rows %}{% set s = summaries.get(r.id) %}<li class="row select-row"><label class="check"><input type="checkbox" name="id" value="{{ r.id }}" form="selection"><span class="visually-hidden">Cocher {{ r.data.name }}</span></label><a class="link-row" href="/prospects/{{ r.id }}"><span>{{ r.data.name }}<br><span class="secondary">{{ r.data.address }}</span>{% if s %}<br><span class="secondary">{{ s.reason }}{% if s.flagged %} · à vérifier{% endif %}</span>{% endif %}</span><span class="secondary">{% if s %}<strong class="score">{{ s.score }}</strong><span class="visually-hidden"> sur 100, score d'opportunité</span><br>{% endif %}{{ r.status }}</span></a></li>{% endfor %}</ul>
-{% elif total %}
+{% elif total or query or status %}
 <p class="empty">Aucun prospect ne correspond. Changez la recherche ou le filtre.</p>
 {% else %}
 <p class="empty">Aucun prospect {{ source_labels[scope.source] | lower }} pour l'instant.{% if scope.source == "terrain" %} Lancez une recherche depuis l'onglet Terrain.{% endif %}</p>

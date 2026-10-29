@@ -29,7 +29,7 @@ def test_C127_existing_field_campaigns_recognised_by_their_name(
             conn.execute(insert, {"name": name})
     command.upgrade(config, "head")
     with engine.begin() as conn:
-        rows = conn.execute(text("SELECT name, kind FROM campaigns")).tuples().all()
-        kinds: dict[str, str] = dict(rows)
+        rows = conn.execute(text("SELECT name, kind FROM campaigns")).all()
+        kinds = {str(name): str(kind) for name, kind in rows}
         conn.execute(text("DELETE FROM campaigns"))
     assert kinds == {"Terrain · Ma position · 28/10 10:00": "terrain", "Cuisinistes Lyon": "appel"}

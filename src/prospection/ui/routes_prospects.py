@@ -39,7 +39,8 @@ def prospects_page(
         "total": sum(listing.counts.values()), "statuses": STATUSES, "status": status,
         "query": query, "sort": sort, "sorts": SORT_LABELS, "summaries": listing.summaries,
         "sources": listing.sources, "source_labels": SOURCES, "campaigns": listing.campaigns,
-        "scope": scope, "here": scope_params(scope), "deleted": max(supprime, 0),
+        "scope": listing.scope, "here": scope_params(listing.scope),
+        "deleted": max(supprime, 0), "any_prospect": listing.any_prospect,
     }  # fmt: skip
     return templates.TemplateResponse(request, "prospects.html", context)
 

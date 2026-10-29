@@ -22,6 +22,8 @@ class ProspectList:
     summaries: dict[int, Summary] = field(default_factory=dict)
     sources: dict[str, int] = field(default_factory=dict)  # par origine (à appeler, Terrain)
     campaigns: list[tuple[int, str, int]] = field(default_factory=list)  # de cette origine
+    scope: Scope = ALL  # celle appliquée : une campagne d'une autre origine est ignorée
+    any_prospect: bool = False  # au moins un prospect, recherche et filtres mis à part
 
 
 def clean_query(query: str) -> str:
@@ -52,11 +54,20 @@ def prospect_list(
     """`scope` : une origine (Terrain à part, C127), éventuellement une campagne (C128)."""
     query = clean_query(query)
     with engine.connect() as conn:
+        campaigns = campaign_choices(conn, scope.source) if scope.source else []
+        scope = _checked(scope, campaigns)
         rows, summaries = _listed(conn, status, query, sort, _today(now, timezone), scope)
         counts = store.status_counts(conn, query, scope)
         sources = store.source_counts(conn, query)
-        campaigns = campaign_choices(conn, scope.source) if scope.source else []
-    return ProspectList(rows, counts, summaries, sources, campaigns)
+        any_prospect = bool(sources) or bool(store.source_counts(conn, ""))
+    return ProspectList(rows, counts, summaries, sources, campaigns, scope, any_prospect)
+
+
+def _checked(scope: Scope, campaigns: list[tuple[int, str, int]]) -> Scope:
+    """Une campagne qui n'est pas de cet onglet (vieux lien) : toute la liste de l'onglet."""
+    if scope.campaign_id is None or scope.campaign_id in {c[0] for c in campaigns}:
+        return scope
+    return Scope(scope.source)
 
 
 def start_session(
@@ -66,6 +77,7 @@ def start_session(
     """Fige la file affichée et renvoie le premier prospect à appeler (C109)."""
     query = clean_query(query)
     with engine.begin() as conn:
+        scope = _checked(scope, campaign_choices(conn, scope.source) if scope.source else [])
         if sort == SCORE:
             rows, _ = _listed(conn, status, query, sort, _today(now, timezone), scope)
             queue = [r.id for r in rows]

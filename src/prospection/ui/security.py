@@ -18,6 +18,7 @@ SECURITY_HEADERS = {
     "Permissions-Policy": "camera=(), microphone=(), geolocation=(self)",
 }
 HEALTH_PATH = "/sante"
+PUBLIC_ACTION = "/desinscription/"  # jeton aléatoire dans l'adresse : seule action hors de l'app
 UNSAFE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 CROSS_SITE_MESSAGE = "Action refusée : elle ne vient pas de l'app. Rechargez la page et réessayez."
 
@@ -46,7 +47,8 @@ class SameOriginMiddleware(BaseHTTPMiddleware):
     """Refuse les actions (POST…) qui ne viennent pas d'une page de l'app."""
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
-        if request.method in UNSAFE_METHODS and not _same_origin(request):
+        public = request.url.path.startswith(PUBLIC_ACTION)  # désinscription en un clic (C148)
+        if request.method in UNSAFE_METHODS and not public and not _same_origin(request):
             return PlainTextResponse(CROSS_SITE_MESSAGE, status_code=403)
         return await call_next(request)
 

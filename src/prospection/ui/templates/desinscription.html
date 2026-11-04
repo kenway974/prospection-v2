@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Désinscription{% endblock %}
+{% block content %}
+<h1 class="large-title">Désinscription</h1>
+{% if done is defined %}
+  {% if done %}<p role="status">C'est fait : vous ne recevrez plus de mail de ma part. Votre adresse n'est plus utilisée.</p>
+  {% else %}<p role="alert">Lien inconnu : vérifiez qu'il est complet, ou répondez simplement au mail pour demander à ne plus être contacté.</p>{% endif %}
+{% else %}
+<form method="post" action="/desinscription/{{ token }}" class="group form">
+  <p>Vous ne souhaitez plus recevoir de mail de ma part ? Confirmez ci-dessous.</p>
+  <button type="submit" class="button-primary">Confirmer la désinscription</button>
+</form>
+{% endif %}
+{% endblock %}

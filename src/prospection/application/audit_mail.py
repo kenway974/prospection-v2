@@ -99,7 +99,7 @@ def send_audit_mail(
         raise MailBlocked(str(error)) from None
     token = secrets.token_urlsafe(24)
     with engine.begin() as conn:
-        if not record_send(conn, prospect_id, email_fingerprint(address), token, now):
+        if not record_send(conn, prospect_id, email_fingerprint(address, box.pepper), token, now):
             raise MailBlocked("Mail d'audit déjà envoyé à ce prospect.")
     raw = build_message(ctx.sender.name, ctx.gmail_address or "", address, clean_subject,
                         clean_body, f"{base}/desinscription/{token}")  # fmt: skip

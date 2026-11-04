@@ -72,7 +72,7 @@ def load_context(
             raise UnknownProspect(prospect_id)
         emails = emails_of(prospect)
         servers = mail_servers(conn, [d for e in emails if (d := email_domain(e))])
-        hashes = [email_fingerprint(e) for e in emails]
+        hashes = [email_fingerprint(e, box.pepper) for e in emails]
         blocked_out = opted_out(conn, hashes) | already_written(conn, hashes)
         settings, account, sent_on = (
             load_mail_settings(conn),
@@ -81,7 +81,7 @@ def load_context(
         )
     checks = [check_email(e, servers.get(email_domain(e) or "")) for e in emails]
     recipients = [c.email for c in checks if c.status in (VALID, UNCHECKED)
-                  and email_fingerprint(c.email) not in blocked_out]  # fmt: skip
+                  and email_fingerprint(c.email, box.pepper) not in blocked_out]  # fmt: skip
     site = prospect.site
     audited = site is not None and site.audit is not None and site.url is not None
     points = (

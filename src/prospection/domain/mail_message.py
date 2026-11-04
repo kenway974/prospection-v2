@@ -4,6 +4,7 @@ Rien d'injectable : en-têtes nettoyés (aucun retour à la ligne), corps en tex
 """
 
 import hashlib
+import hmac
 from email.message import EmailMessage
 from email.utils import formataddr
 
@@ -51,6 +52,7 @@ def build_message(
     return message.as_bytes()
 
 
-def email_fingerprint(email: str) -> str:
-    """Empreinte d'une adresse : la désinscription la garde sans garder l'adresse (C148)."""
-    return hashlib.sha256(email.strip().lower().encode()).hexdigest()
+def email_fingerprint(email: str, pepper: bytes) -> str:
+    """Empreinte salée d'une adresse : la désinscription la garde sans garder l'adresse, et
+    sans le sel (tiré de la clé de chiffrement) on ne peut pas la retrouver (C148)."""
+    return hmac.new(pepper, email.strip().lower().encode(), hashlib.sha256).hexdigest()

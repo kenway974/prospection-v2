@@ -1,5 +1,6 @@
 """C146, C148 : message envoyé (texte simple, désinscription toujours ajoutée, en-têtes sûrs)."""
 
+import hashlib
 from email import message_from_bytes, policy
 
 import pytest
@@ -48,6 +49,10 @@ def test_C146_draft_checked_before_sending() -> None:
         check_draft("Objet", "x" * 20_001)
 
 
-def test_C148_fingerprint_ignores_case_and_spaces() -> None:
-    assert email_fingerprint(" Contact@Martin.FR ") == email_fingerprint("contact@martin.fr")
-    assert "martin" not in email_fingerprint("contact@martin.fr")
+def test_C148_fingerprint_ignores_case_and_spaces_and_needs_the_secret() -> None:
+    pepper = b"secret-de-l-app"
+    same = email_fingerprint(" Contact@Martin.FR ", pepper)
+    assert same == email_fingerprint("contact@martin.fr", pepper)
+    assert "martin" not in same
+    plain = hashlib.sha256(b"contact@martin.fr").hexdigest()
+    assert same != plain != email_fingerprint("contact@martin.fr", b"autre")  # salée

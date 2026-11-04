@@ -25,7 +25,7 @@ def recipients(engine: Engine, pid: int) -> list[str]:
 
 def blocked(engine: Engine) -> bool:
     with engine.connect() as conn:
-        return bool(opted_out(conn, [email_fingerprint("contact@martin.fr")]))
+        return bool(opted_out(conn, [email_fingerprint("contact@martin.fr", BOX.pepper)]))
 
 
 def test_C148_public_page_confirms_then_address_never_used_again(

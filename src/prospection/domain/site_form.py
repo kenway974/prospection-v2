@@ -19,17 +19,29 @@ MAX_PAGES = 2
 
 
 def _service(page: Page) -> bool:
-    return any(s in src.lower() for src in page.sources for s in signals().form_services)
+    """Formulaire d'un service (iframe, script) ou application de formulaires connue."""
+    raw = page.raw.lower()
+    return any(s in src.lower() for src in page.sources for s in signals().form_services) or (
+        any(app in raw for app in signals().form_apps)
+    )
+
+
+def _widget_at(page: Page) -> float | None:
+    """Position du premier widget de formulaire dessiné en JavaScript (classe CSS exacte)."""
+    found = [page.classes[w] for w in signals().form_widgets if w in page.classes]
+    return min(found) if found else None
 
 
 def has_form(page: Page) -> bool:
-    return page.forms > 0 or page.email_inputs > 0 or _service(page)
+    return (
+        page.forms > 0 or page.email_inputs > 0 or _service(page) or (_widget_at(page) is not None)
+    )
 
 
 def form_place(home: Page, others: Sequence[Page], technology: str | None) -> str:
-    if home.forms > 0 or home.email_inputs > 0:
-        at = home.form_at
-        return HOME_TOP if at is not None and at < TOP_SHARE else HOME
+    seen = [x for x in (home.form_at, _widget_at(home)) if x is not None]
+    if seen:
+        return HOME_TOP if min(seen) < TOP_SHARE else HOME
     if _service(home):
         return HOME
     if any(has_form(p) for p in others):

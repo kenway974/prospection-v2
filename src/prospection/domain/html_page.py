@@ -4,27 +4,16 @@ Seul ce qui sert à l'audit est gardé, en quantité bornée. Le HTML n'est jama
 réaffiché : les textes repris sont neutralisés à l'affichage (règle 5).
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from html.parser import HTMLParser
+
+from prospection.domain.form_fields import field_kind
 
 MAX_ITEMS = 300
 MAX_TEXT = 100_000
 MAX_TITLE = 300
+MAX_CLASSES = 2000
 _HIDDEN = {"script", "style", "noscript", "template", "svg"}
-# Champ texte reconnu par son nom (thèmes qui n'écrivent pas type="email") : indice → genre
-_HINTS = (("mail", "email"), ("phone", "tel"), ("tel", "tel"), ("portable", "tel"),
-          ("message", "textarea"))  # fmt: skip
-_NAMING = ("name", "id", "placeholder", "autocomplete", "aria-label")
-
-
-def _kind(tag: str, a: dict[str, str]) -> str:
-    if tag == "textarea":
-        return "textarea"
-    kind = a.get("type", "text").lower() or "text"
-    if kind != "text":
-        return kind
-    words = " ".join(a.get(k, "") for k in _NAMING).lower()
-    return next((genre for hint, genre in _HINTS if hint in words), kind)
 
 
 @dataclass(frozen=True)
@@ -44,6 +33,7 @@ class Page:
     form_at: float | None = None  # part du texte avant le premier formulaire de contact (0 à 1)
     truncated: bool = False  # page coupée à la lecture : la fin n'a pas été vue
     anchors: tuple[tuple[str, str], ...] = ()  # liens : (adresse, texte affiché)
+    classes: dict[str, float] = field(default_factory=dict)  # classe CSS → position (0 à 1)
 
 
 class _Reader(HTMLParser):
@@ -57,6 +47,7 @@ class _Reader(HTMLParser):
         self.first_form: int | None = None  # position (en caractères) du premier formulaire
         self.anchor: list[str] | None = None  # lien en cours : [adresse, texte]
         self.anchors: list[tuple[str, str]] = []
+        self.classes: dict[str, int] = {}  # première position de chaque classe CSS
         self.metas: dict[str, str] = {}
         self.h1: list[str] = []
         self.links: list[str] = []
@@ -67,6 +58,9 @@ class _Reader(HTMLParser):
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         a = {k.lower(): v or "" for k, v in attrs}
+        for name in a.get("class", "").lower().split()[:20]:
+            if len(self.classes) < MAX_CLASSES:
+                self.classes.setdefault(name[:80], self.size)
         if tag in self.depth:
             self.depth[tag] += 1
         if tag == "meta" and a.get("name") and len(self.metas) < MAX_ITEMS:
@@ -90,7 +84,7 @@ class _Reader(HTMLParser):
             self.sources.append(src[:500])
 
     def _field(self, tag: str, a: dict[str, str]) -> None:
-        kind = _kind(tag, a)
+        kind = field_kind(tag, a)
         if self.form is not None:
             self.form.add(kind)
         elif kind in ("email", "textarea"):
@@ -136,11 +130,14 @@ def parse_page(html: str, truncated: bool = False) -> Page:
     reader.feed(html)
     reader.close()
     reader.end_form()  # formulaire resté ouvert (page coupée) : il compte quand même
-    at = None if reader.first_form is None else reader.first_form / max(reader.size, 1)
+    total = max(reader.size, 1)
+    at = None if reader.first_form is None else reader.first_form / total
+    classes = {name: where / total for name, where in reader.classes.items()}
     text = " ".join(" ".join(reader.words).split())[:MAX_TEXT]
     h1 = tuple(t for t in (" ".join(h.split()) for h in reader.h1) if t)
     return Page(
         html, " ".join(reader.title.split())[:MAX_TITLE], reader.metas, h1, reader.forms,
         reader.email_inputs, reader.h1_count, reader.images, tuple(reader.links),
         tuple(reader.alts), tuple(reader.sources), text, at, truncated, tuple(reader.anchors),
+        classes,
     )  # fmt: skip

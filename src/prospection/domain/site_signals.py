@@ -21,6 +21,8 @@ class Signals(BaseModel):
     booking_services: list[str]
     booking_words: list[str]
     booking_trades: list[str]
+    form_widgets: list[str]
+    form_apps: list[str]
 
 
 @cache

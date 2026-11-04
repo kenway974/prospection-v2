@@ -91,7 +91,7 @@ Ajouter ou retirer un comportement = modifier ce fichier (avec l'accord du propr
 - C50 Audit rapide : HTTPS, mobile, vitesse, titre, formulaire, outil de suivi, copyright ancien
 - C51 Analyse SEO locale : le métier et la ville apparaissent-ils dans le titre, le H1, le texte, les balises des images
 - C52 Score de qualité du site avec la liste des problèmes
-- C137 Un formulaire de contact est reconnu même quand son champ email n'est pas typé « email », quand il est bas dans une page lourde, ou quand il vient d'un service de formulaires (Google Forms, Typeform, HubSpot…) *(demandé le 04/11/2026)*
+- C137 Un formulaire de contact est reconnu même quand son champ email n'est pas typé « email », quand il est bas dans une page lourde, quand il vient d'un service de formulaires (Google Forms, Typeform, HubSpot…), ou quand il est dessiné en JavaScript (widget Ninja Forms, Wix, Squarespace, Weebly, Jimdo, Webflow) *(demandé le 04/11/2026)*
 - C138 Si l'accueil n'a pas de formulaire, l'app lit jusqu'à 2 pages du site dont le lien parle de contact, devis, rendez-vous ou réservation (formulaire, emails, téléphones) ; sans certitude, elle dit « formulaire non vérifié », jamais « pas de formulaire » *(demandé le 04/11/2026)*
 - C139 L'audit dit où est le formulaire : en haut de l'accueil, plus bas sur l'accueil, seulement sur une page Contact (petit problème) ou aucun *(demandé le 04/11/2026)*
 - C140 Audit RGPD : mentions légales, politique de confidentialité quand le site collecte des données, traceurs chargés sans bandeau de consentement *(demandé le 04/11/2026)*

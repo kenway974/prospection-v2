@@ -32,3 +32,8 @@ privacy_words: ["confidentialit", "donnees-personnelles", "données personnelles
 booking_services: ["planity", "calendly", "doctolib", "treatwell", "zenchef", "thefork", "lafourchette", "resengo", "booksy", "simplybook", "setmore", "rdv360", "maiia", "keldoc", "guestonline", "sevenrooms", "fresha", "salonkee", "mindbody", "acuityscheduling", "youcanbook.me", "clicrdv", "timify", "kiute", "bookingkit", "regiondo", "gymlib", "deciplus", "resamania"]
 booking_words: ["reserv", "réserv", "rendez-vous", "prendre rdv", "prise de rdv", "booking", "book now"]
 booking_trades: ["restaurant", "brasserie", "bistrot", "pizzeria", "creperie", "coiff", "barbier", "esthetic", "beaute", "onglerie", "manucure", "massage", "spa", "kine", "osteopath", "dentist", "medecin", "podolog", "orthophon", "psycholog", "sophrolog", "naturopath", "dieteticien", "coach", "salle de sport", "fitness", "yoga", "pilates", "auto ecole", "garage", "controle technique", "toilett", "veterinaire", "tatou", "photograph", "hotel", "gite", "chambre d hote", "escape game", "karting"]
+# Formulaires dessinés en JavaScript : classe CSS exacte du widget laissée dans le HTML (C137).
+# Ninja Forms (WordPress), Squarespace, Weebly, Jimdo, Webflow, Wix.
+form_widgets: ["nf-form-cont", "sqs-block-form", "wsite-form", "j-formnew", "w-form", "wixui-form"]
+# Identifiants d'applications de formulaires présents dans les données de la page (Wix Forms).
+form_apps: ["14ce1214-b278-a7e4-1373-00cebd1bef7c"]

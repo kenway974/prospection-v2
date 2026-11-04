@@ -44,6 +44,6 @@ Sur la fiche d'un prospect, je veux un bouton qui prépare un **mail court** : l
 
 ## Limites connues
 
-- Les formulaires créés entièrement en JavaScript sans aucune trace dans le HTML (certains Wix) restent invisibles : l'app ne lance pas de navigateur. Ils sont alors comptés « non vérifiés » si la page charge un constructeur connu.
+- Formulaires dessinés en JavaScript : reconnus à la trace exacte qu'ils laissent dans le HTML (classe du widget : Ninja Forms, Squarespace, Weebly, Jimdo, Webflow, Wix ; identifiant de l'application Wix Forms), sans lancer de navigateur. Un navigateur par site a été écarté : lourd sur Railway et risqué (il chargerait n'importe quelle adresse, y compris interne). Un formulaire sans aucune trace reste « non vérifié » si la page vient d'un constructeur connu.
 - Open PageRank : service tiers gratuit, quota limité ; une panne n'empêche pas le mail.
 - Gmail : tant que l'app Google est en mode « Test », Google coupe la connexion au bout de 7 jours. La passer « En production » (sans validation Google, un avertissement s'affiche à la connexion) supprime cette limite. Expliqué dans le guide de déploiement.

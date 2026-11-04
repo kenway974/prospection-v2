@@ -3,6 +3,7 @@
 import dataclasses
 
 import httpx
+import pytest
 
 from prospection.domain.site_form import CONTACT_PAGE, HOME_TOP
 from tests.application.test_site_check import AZ, check
@@ -37,3 +38,15 @@ def test_C138_no_extra_reading_when_home_has_a_form() -> None:
     report = check(client, PLACE)
     assert report.audit is not None and report.audit.form_place == HOME_TOP
     assert len(recorder.requests) == 1
+
+
+def test_C138_contact_pages_share_one_time_budget(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Budget des pages Contact épuisé : on s'arrête (jamais 3 lectures de 8 s par site)."""
+    import prospection.application.site_check as site_check
+
+    ticks = iter([0.0, 7.5, 7.5, 9.0, 9.0])
+    monkeypatch.setattr(site_check, "monotonic", lambda: next(ticks))
+    client, recorder = fake_client(lambda r: raw(HOME.encode()))
+    report = check(client, PLACE)
+    assert len(recorder.requests) == 1  # budget épuisé : aucune page Contact lue
+    assert report.audit is not None and report.audit.form_place is not None

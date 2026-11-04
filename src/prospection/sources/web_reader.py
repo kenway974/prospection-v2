@@ -86,11 +86,13 @@ def _decode(body: bytes, header_charset: str | None) -> str:
 
 
 def read_page(
-    client: httpx.Client, url: str, clock: Callable[[], float] = time.monotonic
-) -> ReadResult:
+    client: httpx.Client, url: str, clock: Callable[[], float] = time.monotonic,
+    seconds: float = MAX_SECONDS,
+) -> ReadResult:  # fmt: skip
     """La page HTML du site, ou le problème rencontré, dit simplement. Une seule échéance
-    couvre DNS, connexion, en-têtes, corps et redirections (voir read_deadline)."""
-    with deadline(MAX_SECONDS):
+    couvre DNS, connexion, en-têtes, corps et redirections (voir read_deadline) ; `seconds`
+    la raccourcit (budget restant pour le site)."""
+    with deadline(min(seconds, MAX_SECONDS)):
         return _read(client, url, clock)
 
 

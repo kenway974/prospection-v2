@@ -5,6 +5,7 @@ critères gratuits (C39). Les domaines devinés sont lus en parallèle (4 au plu
 """
 
 from concurrent.futures import ThreadPoolExecutor
+from time import monotonic
 
 import httpx
 
@@ -18,6 +19,8 @@ from prospection.domain.site_report import Origin, SiteReport
 from prospection.domain.site_seo import local_seo
 from prospection.sources.web_reader import UNREACHABLE, ReadResult, read_page
 
+CONTACT_SECONDS = 8.0  # budget commun des pages Contact d'un site (C138)
+MIN_READ_SECONDS = 1.0
 PLACEHOLDER = "Page « en construction » de l'hébergeur : aucun vrai site en ligne"
 
 
@@ -26,8 +29,12 @@ def _contact_pages(client: httpx.Client, home: Page, url: str) -> tuple[Page, ..
     if has_form(home):
         return ()
     pages: list[Page] = []
+    start = monotonic()
     for link in contact_links(home, url):
-        result = read_page(client, link)
+        left = CONTACT_SECONDS - (monotonic() - start)
+        if left < MIN_READ_SECONDS:  # un seul budget pour toutes les pages Contact
+            break
+        result = read_page(client, link, seconds=left)
         if result.page is None:
             continue
         pages.append(parse_page(result.page.html, result.page.truncated))

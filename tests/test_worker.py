@@ -118,7 +118,7 @@ def test_C53_idle_mail_check_at_most_every_ten_minutes(
     campaign_db: Engine, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Rien à vérifier : la recherche de domaines n'est pas relancée à chaque pause."""
-    import prospection.worker as worker_module
+    import prospection.idle_work as worker_module
 
     calls: list[object] = []
     clock = [NOW]

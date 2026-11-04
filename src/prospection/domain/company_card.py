@@ -21,6 +21,7 @@ MESSAGES = {
 class _Labels(BaseModel):
     formes: dict[str, str]
     effectifs: dict[str, str]
+    labels: dict[str, str]
 
 
 def _read(name: str) -> object:
@@ -63,7 +64,21 @@ def describe(company: Company) -> list[tuple[str, str]]:
         ("Activité", _activity(company.naf)),
         ("Dirigeants", ", ".join(company.leaders) or NOT_PUBLISHED),
     ]  # fmt: skip
-    return lines  # chiffres et effectif : bloc « Santé » (C112)
+    return lines + _details(company)  # chiffres et effectif : bloc « Santé » (C112)
+
+
+def _details(company: Company) -> list[tuple[str, str]]:
+    """Compléments (C149, C150) : seulement ce qui est connu, rien d'inventé."""
+    names, c = labels().labels, company
+    found = [
+        (c.site_naf and c.site_naf != c.naf, "Activité de l'établissement", _activity(c.site_naf)),
+        (c.open_sites, "Établissements ouverts", str(c.open_sites)),
+        (c.labels, "Labels", ", ".join(names.get(x, x) for x in c.labels)),
+        (c.purpose, "Objet social", c.purpose or ""),
+        (c.activities, "Activités déclarées", " ; ".join(c.activities)),
+        (c.domains, "Sites déclarés", ", ".join(c.domains)),
+    ]  # fmt: skip
+    return [(label, value) for shown, label, value in found if shown]
 
 
 def registry_lines(company: Company | None, status: str | None) -> list[tuple[str, str]]:

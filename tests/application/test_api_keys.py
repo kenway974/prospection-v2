@@ -32,7 +32,7 @@ def clean(engine: Engine) -> Iterator[None]:
 def test_C02_statuses_in_fixed_order_and_empty_by_default(engine: Engine) -> None:
     statuses = key_statuses(engine, BOX)
     assert [s.service for s in statuses] == [
-        Service.GOOGLE, Service.NOTION, Service.INSEE, Service.OPENPAGERANK,
+        Service.GOOGLE, Service.NOTION, Service.INSEE, Service.OPENPAGERANK, Service.INPI,
     ]  # fmt: skip
     assert all(s.saved_at is None for s in statuses)
 

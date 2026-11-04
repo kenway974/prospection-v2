@@ -20,4 +20,6 @@ def decode_company(data: dict[str, Any]) -> Company:
     values["leaders"] = tuple(values["leaders"])
     values["finances"] = tuple(values["finances"]) if values["finances"] else None
     values["branches"] = tuple(tuple(b) for b in values.get("branches", ()))
+    for name in ("labels", "activities", "domains"):  # absents des anciennes fiches
+        values[name] = tuple(values.get(name, ()))
     return Company(**values)

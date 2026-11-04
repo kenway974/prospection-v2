@@ -36,6 +36,14 @@ class Company:
     diffusible: bool
     siret: str | None = None
     branches: tuple[tuple[str, str], ...] = ()  # (SIRET, code postal) des établissements trouvés
+    labels: tuple[str, ...] = ()  # compléments du registre vrais (est_rge…) (C149)
+    open_sites: int | None = None  # établissements ouverts
+    site_naf: str | None = None  # activité de l'établissement (siège), si connue
+    purpose: str | None = None  # objet social déclaré au RNE (C150)
+    activities: tuple[str, ...] = ()  # activités déclarées au RNE, avec leur forme d'exercice
+    domains: tuple[str, ...] = ()  # noms de domaine déclarés au RNE
+    detailed: bool = False  # compléments du registre gratuit déjà cherchés (C149)
+    rne_checked: bool = False  # registre national (INPI) déjà consulté (C150)
 
 
 @dataclass(frozen=True)
@@ -94,3 +102,22 @@ def match_place(company: Company, places: Sequence[Place]) -> Place | None:
         and any(same_name(p.name, n, company.city) for n in names)
     ]  # fmt: skip
     return sure[0] if len(sure) == 1 else None
+
+
+def with_registry(base: Company, found: Company | None) -> Company:
+    """Compléments du registre gratuit (C149) : dirigeants et chiffres s'ils manquaient,
+    labels, établissements. Rien de plus pour une entreprise non diffusible (C93)."""
+    if found is None or not found.diffusible:
+        return dataclasses.replace(base, detailed=True)
+    return dataclasses.replace(
+        base, leaders=base.leaders or found.leaders, finances=base.finances or found.finances,
+        labels=found.labels, open_sites=found.open_sites, site_naf=found.site_naf, detailed=True,
+    )  # fmt: skip
+
+
+def with_rne(
+    base: Company, purpose: str | None, activities: tuple[str, ...], domains: tuple[str, ...]
+) -> Company:
+    """Ce que l'entreprise a déclaré au registre national (C150)."""
+    return dataclasses.replace(base, purpose=purpose, activities=activities, domains=domains,
+                               rne_checked=True)  # fmt: skip

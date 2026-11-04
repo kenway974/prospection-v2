@@ -9,7 +9,7 @@ import signal
 import threading
 import uuid
 from collections.abc import Callable
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 
 import httpx
 from sqlalchemy import Engine
@@ -17,22 +17,18 @@ from sqlalchemy import Engine
 from prospection.application.backup import backup_job
 from prospection.application.campaign_end import after_campaign
 from prospection.application.campaign_queue import claim_next, release_until
-from prospection.application.campaign_refresh import refresh_next
 from prospection.application.campaign_step import run_step
-from prospection.application.crm_export import send_pending
-from prospection.application.mail_check import check_mail_domains
 from prospection.application.periodic import regular_jobs
 from prospection.application.push import push_job
-from prospection.application.registry_enrich import enrich_new_prospects
 from prospection.application.schedules import run_due_schedule
 from prospection.application.site_verdict import SiteChecker, skip_sites
 from prospection.application.speed_check import SpeedJob
 from prospection.domain.google_cost import Pricing, load_pricing
+from prospection.idle_work import IdleWork
 from prospection.sources.mail_domain import mail_server
 from prospection.storage.secret_box import SecretBox
 
 logger = logging.getLogger("prospection.worker")
-MAIL_CHECK_PAUSE = timedelta(minutes=10)
 
 
 class Worker:
@@ -47,7 +43,7 @@ class Worker:
         self.engine, self.box, self.client, self.pricing = engine, box, client, pricing
         self.now, self.sites, self.mail_lookup = now, sites, mail_lookup
         self.timezone = timezone
-        self.next_mail_check = datetime.min.replace(tzinfo=UTC)
+        self.idle = IdleWork(engine, box, client, pricing, now, mail_lookup)
         self.reminders, self.periodic = regular_jobs(
             engine, box, client, pricing, timezone, backup, now(), push, speed
         )
@@ -78,19 +74,8 @@ class Worker:
         return True
 
     def _between_campaigns(self) -> bool:
-        """Rien à chercher : envois CRM, registre, mises à jour, serveurs mail."""
-        if send_pending(self.engine, self.box, self.client, self.now()) > 0:
-            return True
-        if enrich_new_prospects(self.engine, self.client, self.now()) > 0:
-            return True
-        if refresh_next(self.engine, self.box, self.client, self.pricing, self.now()):  # C76
-            return True
-        if self.mail_lookup is None or self.now() < self.next_mail_check:
-            return False
-        checked = check_mail_domains(self.engine, self.now(), self.mail_lookup)
-        if not checked:  # plus rien : on ne relance la recherche que dans 10 minutes
-            self.next_mail_check = self.now() + MAIL_CHECK_PAUSE
-        return checked > 0
+        """Rien à chercher : envois CRM, registre, compléments, mises à jour, serveurs mail."""
+        return self.idle.run()
 
     def run_forever(self, stop: threading.Event, idle_seconds: float = 2.0) -> None:
         while not stop.is_set():

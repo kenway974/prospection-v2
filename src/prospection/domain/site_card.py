@@ -72,3 +72,18 @@ def site_links(report: SiteReport | None) -> list[tuple[str, str]]:
         if url := web_link(social):
             links.append((_network(url), url))
     return links
+
+
+LOW_AUTHORITY = 2.0  # sur 10 : site presque inconnu de Google (C143)
+
+
+def authority_line(rank: float) -> tuple[str, str]:
+    value = f"{int(rank * 10) / 10:.1f}/10".replace(".", ",")
+    low = " : presque inconnu de Google" if rank < LOW_AUTHORITY else ""
+    return ("Autorité (Open PageRank)", value + low)
+
+
+def site_domain(url: str | None) -> str | None:
+    """Domaine d'un site, sans « www. » : clé de l'autorité (C143)."""
+    host = (urlsplit(url).hostname or "").lower() if url else ""
+    return host.removeprefix("www.") or None

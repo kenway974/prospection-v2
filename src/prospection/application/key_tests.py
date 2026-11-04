@@ -11,6 +11,7 @@ from prospection.domain.key_check import KeyCheck
 from prospection.domain.services import Service
 from prospection.sources.google_places import check_google_key
 from prospection.sources.insee import check_insee_key
+from prospection.sources.open_pagerank import check_openpagerank_key
 from prospection.storage.api_keys import load_key, record_test
 from prospection.storage.secret_box import SecretBox, UnreadableSecret
 
@@ -18,6 +19,7 @@ CHECKERS: dict[Service, Callable[[httpx.Client, str], KeyCheck]] = {
     Service.GOOGLE: check_google_key,
     Service.NOTION: check_notion_token,
     Service.INSEE: check_insee_key,
+    Service.OPENPAGERANK: check_openpagerank_key,
 }
 
 

@@ -80,7 +80,7 @@ def test_remove_key(client: TestClient) -> None:
     save(client, "insee", "cle-insee")
     client.post("/reglages/cles/insee/supprimer", headers=ORIGIN)
     page = client.get("/reglages/cles").text
-    assert page.count("Pas encore saisie") == 3
+    assert page.count("Pas encore saisie") == len(Service)
 
 
 def test_unknown_service_is_404(client: TestClient) -> None:
@@ -113,4 +113,11 @@ def test_confirmed_htmx_delete_reloads_the_page(client: TestClient) -> None:
         "/reglages/cles/google/supprimer", headers={**ORIGIN, "HX-Request": "true"}
     )
     assert response.headers["hx-redirect"] == "/reglages/cles"
-    assert html.unescape(client.get("/reglages/cles").text).count("Pas encore saisie") == 3
+    assert html.unescape(client.get("/reglages/cles").text).count("Pas encore saisie") == len(
+        Service
+    )
+
+
+def test_C143_optional_key_says_where_to_get_it(client: TestClient) -> None:
+    page = client.get("/reglages/cles").text
+    assert "openpagerank.com" in page and "Facultative" in page

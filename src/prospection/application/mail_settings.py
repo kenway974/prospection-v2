@@ -11,7 +11,7 @@ import httpx
 from sqlalchemy import Engine
 
 from prospection.domain.mail_settings import MailSettings, clean_mail_settings
-from prospection.sources.gmail import GmailOAuth, authorize_url, exchange_code
+from prospection.sources.gmail import GmailOAuth, authorize_url, exchange_code, revoke
 from prospection.storage import mail_settings as store
 from prospection.storage.secret_box import SecretBox, UnreadableSecret
 
@@ -66,6 +66,10 @@ def gmail_refresh_token(engine: Engine, box: SecretBox) -> str | None:
         return None
 
 
-def disconnect_gmail(engine: Engine) -> None:
+def disconnect_gmail(engine: Engine, box: SecretBox, client: httpx.Client) -> bool:
+    """Délie Gmail dans l'app (toujours) et retire l'accès chez Google ; faux si Google n'a
+    pas confirmé (l'accès reste alors à retirer dans le compte Google)."""
+    token = gmail_refresh_token(engine, box)
     with engine.begin() as conn:
         store.save_gmail(conn, None, None, None)
+    return token is None or revoke(client, token)

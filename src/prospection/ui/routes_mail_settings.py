@@ -36,6 +36,8 @@ ENGINE, SETTINGS = Depends(get_engine), Depends(get_settings)
 FORGED = "Retour de Google non reconnu. Recommencez la connexion depuis cet écran."
 DENIED = "L'accord n'a pas été donné sur la page Google : Gmail n'est pas relié."
 FAILED = "Google n'a pas pu relier Gmail. Réessayez dans un instant."
+NOT_REVOKED = ("Gmail est délié de l'app, mais Google n'a pas confirmé : retirez aussi l'accès "
+               "sur myaccount.google.com/permissions.")  # fmt: skip
 
 
 def _page(
@@ -115,6 +117,10 @@ def gmail_back(
 
 
 @router.post("/gmail/deconnecter")
-def gmail_disconnect(engine: Engine = ENGINE) -> Response:
-    disconnect_gmail(engine)
-    return RedirectResponse("/reglages/mail", status_code=303)
+def gmail_disconnect(
+    request: Request, engine: Engine = ENGINE, settings: Settings = SETTINGS,
+    box: SecretBox = Depends(get_box), client: httpx.Client = Depends(get_http_client),  # noqa: B008
+) -> Response:  # fmt: skip
+    if disconnect_gmail(engine, box, client):
+        return RedirectResponse("/reglages/mail", status_code=303)
+    return _page(request, engine, settings, gmail_error=NOT_REVOKED)

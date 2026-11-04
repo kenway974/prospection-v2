@@ -17,7 +17,7 @@ from prospection.application.mail_settings import (
 from prospection.domain.mail_settings import InvalidMailSettings, MailSettings
 from prospection.sources.gmail import GmailOAuth
 from tests.application.campaign_helpers import BOX, NOW
-from tests.fake_http import fake_client, json_reply
+from tests.fake_http import fake_client, json_reply, timeout
 from tests.sources.test_gmail import id_token
 
 OAUTH = GmailOAuth("id", "secret")
@@ -56,5 +56,14 @@ def test_C144_gmail_connected_with_encrypted_token_then_disconnected(engine: Eng
     with engine.connect() as conn:
         stored = conn.exec_driver_sql("SELECT gmail_token FROM mail_settings").scalar()
     assert stored is not None and b"jeton-long" not in bytes(stored)
-    disconnect_gmail(engine)
+    revoke, asked = fake_client(json_reply(200, {}))
+    assert disconnect_gmail(engine, BOX, revoke) is True
+    assert asked.requests[0].url.path == "/revoke"
     assert connected_address(engine) is None and gmail_refresh_token(engine, BOX) is None
+
+
+def test_C144_disconnected_here_even_when_google_does_not_answer(engine: Engine) -> None:
+    reply = {"refresh_token": "jeton-long", "id_token": id_token("kapignolet18@gmail.com")}
+    finish_gmail(engine, BOX, fake_client(json_reply(200, reply))[0], OAUTH, BASE, "c", NOW)
+    assert disconnect_gmail(engine, BOX, fake_client(timeout)[0]) is False
+    assert connected_address(engine) is None

@@ -86,3 +86,17 @@ def test_C146_send_failures_said_plainly(status: int, error: type[Exception]) ->
     client, _ = fake_client(lambda r: httpx.Response(status, json={"error": {"message": "x"}}))
     with pytest.raises(error):
         send_raw(client, "court", b"x")
+
+
+def test_C144_access_withdrawn_at_google() -> None:
+    from prospection.sources.gmail import revoke
+
+    client, recorder = fake_client(json_reply(200, {}))
+    assert revoke(client, "jeton-long") is True
+    request = recorder.requests[0]
+    assert str(request.url) == "https://oauth2.googleapis.com/revoke"
+    assert parse_qs(request.content.decode())["token"] == ["jeton-long"]
+    client, _ = fake_client(json_reply(400, {"error": "invalid_token"}))
+    assert revoke(client, "jeton-long") is True  # déjà retiré chez Google
+    client, _ = fake_client(timeout)
+    assert revoke(client, "jeton-long") is False

@@ -89,3 +89,23 @@ def test_C144_refused_consent_said_plainly(mail_client: TestClient) -> None:
 def test_C144_without_google_identifiers_says_what_to_do(bare_client: TestClient) -> None:
     page = html.unescape(bare_client.get("/reglages/mail").text)
     assert "GMAIL_CLIENT_ID" in page and "/reglages/gmail/connecter" not in page
+
+
+def test_C144_disconnect_says_when_google_did_not_confirm(
+    settings: Settings, engine: Engine
+) -> None:
+    from tests.fake_http import timeout
+
+    configured = settings.model_copy(update={
+        "gmail_client_id": "id", "gmail_client_secret": SecretStr("secret"),
+        "public_url": "https://testserver"})  # fmt: skip
+    for client in make_client(configured, engine):
+        client.app.dependency_overrides[get_http_client] = (  # type: ignore[attr-defined]
+            lambda: fake_client(json_reply(200, GOOGLE))[0]
+        )
+        client.get("/reglages/gmail/connecter", follow_redirects=False)
+        state = client.cookies.get(STATE_COOKIE)
+        client.get(f"/reglages/gmail/retour?code=c&state={state}", follow_redirects=False)
+        client.app.dependency_overrides[get_http_client] = lambda: fake_client(timeout)[0]  # type: ignore[attr-defined]
+        page = html.unescape(client.post("/reglages/gmail/deconnecter", headers=ORIGIN).text)
+        assert "myaccount.google.com/permissions" in page and "kapignolet18" not in page

@@ -18,6 +18,7 @@ from prospection.http_client import json_object, send
 
 AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 TOKEN_URL = "https://oauth2.googleapis.com/token"  # noqa: S105 (adresse, pas un secret)
+REVOKE_URL = "https://oauth2.googleapis.com/revoke"
 SEND_URL = "https://gmail.googleapis.com/gmail/v1/users/me/messages/send"
 SCOPES = "openid email https://www.googleapis.com/auth/gmail.send"
 LABEL = "Gmail"
@@ -125,3 +126,16 @@ def send_raw(client: httpx.Client, token: str, raw: bytes) -> None:
         raise GmailRevoked
     if response.status_code != 200:
         raise GmailRefused
+
+
+def revoke(client: httpx.Client, refresh_token: str) -> bool:
+    """Retire l'accès chez Google ; vrai si c'est fait (ou déjà fait)."""
+    response = send(client, "POST", REVOKE_URL, LABEL, data={"token": refresh_token})
+    if isinstance(response, KeyCheck):
+        return False
+    if response.status_code == 200:
+        return True
+    return (
+        response.status_code == 400
+        and (json_object(response) or {}).get("error") == "invalid_token"
+    )

@@ -4,7 +4,7 @@ from sqlalchemy import Connection, or_, select, update
 
 from prospection.domain.company import Company
 from prospection.storage.company_codec import decode_company, encode_company
-from prospection.storage.registry_status import SURE
+from prospection.storage.registry_status import NON_DIFFUSIBLE, SURE
 from prospection.storage.schema_campaigns import prospects
 
 
@@ -25,7 +25,9 @@ def pending_details(conn: Connection, with_rne: bool, limit: int) -> list[tuple[
 
 
 def save_details(conn: Connection, prospect_id: int, company: Company) -> None:
+    """Entreprise devenue non diffusible : plus rien du registre n'est gardé (C93)."""
     p = prospects.c
-    conn.execute(
-        update(prospects).where(p.id == prospect_id).values(company_json=encode_company(company))
-    )
+    values: dict[str, object] = {"company_json": encode_company(company)}
+    if not company.diffusible:
+        values = {"company_json": None, "registry_status": NON_DIFFUSIBLE}
+    conn.execute(update(prospects).where(p.id == prospect_id).values(**values))

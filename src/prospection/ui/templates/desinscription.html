@@ -3,7 +3,7 @@
 {% block content %}
 <h1 class="large-title">Désinscription</h1>
 {% if done is defined %}
-  {% if done %}<p role="status">C'est fait : vous ne recevrez plus de mail de ma part. Votre adresse n'est plus utilisée.</p>
+  {% if done %}<p role="status">C'est fait : vous ne recevrez plus de mail de ma part.</p>
   {% else %}<p role="alert">Lien inconnu : vérifiez qu'il est complet, ou répondez simplement au mail pour demander à ne plus être contacté.</p>{% endif %}
 {% else %}
 <form method="post" action="/desinscription/{{ token }}" class="group form">

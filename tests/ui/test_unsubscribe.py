@@ -6,6 +6,8 @@ from fastapi.testclient import TestClient
 from sqlalchemy import Engine
 
 from prospection.application.audit_mail import mail_screen
+from prospection.domain.mail_message import email_fingerprint
+from prospection.storage.audit_mails import opted_out
 from prospection.storage.privacy import delete_prospects
 from tests.application.campaign_helpers import BOX, NOW
 from tests.application.mail_helpers import BASE, OAUTH, add_audited, google, ready
@@ -21,6 +23,11 @@ def recipients(engine: Engine, pid: int) -> list[str]:
     return mail_screen(engine, BOX, google()[0], OAUTH, BASE, pid, NOW).recipients
 
 
+def blocked(engine: Engine) -> bool:
+    with engine.connect() as conn:
+        return bool(opted_out(conn, [email_fingerprint("contact@martin.fr")]))
+
+
 def test_C148_public_page_confirms_then_address_never_used_again(
     client: TestClient, mail_db: Engine
 ) -> None:
@@ -31,10 +38,10 @@ def test_C148_public_page_confirms_then_address_never_used_again(
     client.cookies.clear()  # page publique : aucune connexion
     page = client.get(f"/desinscription/{token}")
     assert page.status_code == 200 and "Confirmer" in html.unescape(page.text)
-    assert recipients(mail_db, add_audited(mail_db)) == ["contact@martin.fr"]  # pas encore
+    assert not blocked(mail_db)  # ouvrir la page ne change rien
     done = client.post(f"/desinscription/{token}")  # sans origine : comme Gmail en un clic
     assert done.status_code == 200 and "ne recevrez plus" in html.unescape(done.text)
-    assert recipients(mail_db, add_audited(mail_db)) == []
+    assert blocked(mail_db) and recipients(mail_db, add_audited(mail_db)) == []
 
 
 def test_C148_link_still_works_after_the_prospect_is_deleted(
@@ -46,7 +53,7 @@ def test_C148_link_still_works_after_the_prospect_is_deleted(
     with mail_db.begin() as conn:
         delete_prospects(conn, [pid])
     assert client.post(f"/desinscription/{token_of(mail_db)}").status_code == 200
-    assert recipients(mail_db, add_audited(mail_db)) == []
+    assert blocked(mail_db)
 
 
 def test_C148_unknown_link_said_plainly(client: TestClient) -> None:

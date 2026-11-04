@@ -95,12 +95,12 @@ def rne_company(client: httpx.Client, token: str, siren: str) -> RneDetails | No
         raise RneUnavailable
     if response.status_code in (401, 403):
         raise RneExpired
-    if response.status_code == 404:
+    if response.status_code != 200:  # 404, 400… : rien à apprendre pour cette entreprise
         return None
     try:
         content = Company.model_validate(json_object(response)).formality.content
-    except ValidationError:
-        raise RneUnavailable from None
+    except ValidationError:  # format non reconnu pour celle-ci : passer aux suivantes
+        return None
     person = content.personneMorale or content.personnePhysique or content.exploitation
     return _details(person) if person else None
 

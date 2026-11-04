@@ -80,3 +80,42 @@ def test_C146_gmail_failure_keeps_nothing(mail_db: Engine) -> None:
         send(mail_db, pid, status=401)
     assert card(mail_db, pid, NOW, PARIS).mail_sent_on is None
     send(mail_db, pid)  # réessai possible
+
+
+def test_C145_old_audit_never_claims_a_missing_form(mail_db: Engine) -> None:
+    """Audits d'avant C137 : la détection manquait des formulaires, on ne l'affirme pas."""
+    import dataclasses
+
+    from tests.application.mail_helpers import AUDIT, SITE
+
+    old = dataclasses.replace(AUDIT, form_place=None, codes=("no_form", "no_social"))
+    pid = add_audited(mail_db, dataclasses.replace(SITE, audit=old))
+    ready(mail_db)
+    assert screen(mail_db, pid).blocked is not None  # plus rien de sûr à dire
+
+
+def test_C146_uncertain_send_is_kept_never_sent_twice(mail_db: Engine) -> None:
+    import httpx
+
+    from tests.fake_http import fake_client
+
+    pid = add_audited(mail_db)
+    ready(mail_db)
+
+    def lost(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "oauth2.googleapis.com":
+            return httpx.Response(200, json={"access_token": "court"})
+        raise httpx.ReadTimeout("réponse perdue", request=request)
+
+    with pytest.raises(MailBlocked, match="Messages envoyés"):
+        send_audit_mail(mail_db, BOX, fake_client(lost)[0], OAUTH, BASE, pid,
+                        "contact@martin.fr", "Objet", "Texte", NOW, PARIS)  # fmt: skip
+    assert card(mail_db, pid, NOW, PARIS).mail_sent_on == NOW
+    with pytest.raises(MailBlocked, match="déjà"):
+        send(mail_db, pid)
+
+
+def test_C146_same_address_never_written_twice(mail_db: Engine) -> None:
+    ready(mail_db)
+    send(mail_db, add_audited(mail_db))
+    assert screen(mail_db, add_audited(mail_db)).recipients == []

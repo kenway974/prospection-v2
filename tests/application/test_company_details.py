@@ -99,3 +99,27 @@ def test_C150_refused_inpi_credentials_are_not_retried(campaign_db: Engine) -> N
     assert [r.url.path for r in recorder.requests].count("/api/sso/login") == 1
     status = next(s for s in key_statuses(campaign_db, BOX) if s.service is Service.INPI)
     assert status.test_ok is False and "data.inpi.fr" in (status.test_message or "")
+
+
+def test_C150_one_odd_company_never_blocks_the_others(campaign_db: Engine) -> None:
+    pid = known(campaign_db)
+    store_key(campaign_db, BOX, Service.INPI, "k@gmail.com:secret", NOW)
+    run(campaign_db, rne_status=400)
+    assert company_of(campaign_db, pid).rne_checked  # marquée faite, la suivante passe
+
+
+def test_C93_registry_says_non_diffusible_nothing_kept(campaign_db: Engine) -> None:
+    pid = known(campaign_db)
+    store_key(campaign_db, BOX, Service.INPI, "k@gmail.com:secret", NOW)
+
+    def hidden(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "recherche-entreprises.api.gouv.fr":
+            return httpx.Response(200, json=page(result(statut_diffusion="P")))
+        return httpx.Response(200, json={"token": "jeton"})
+
+    client, recorder = fake_client(hidden)
+    detail_companies(campaign_db, BOX, client, NOW, pause=0)
+    with campaign_db.connect() as conn:
+        row = load_prospect(conn, pid)
+    assert row is not None and row.company is None and row.registry_status == "non diffusible"
+    assert all(r.url.host != "registre-national-entreprises.inpi.fr" for r in recorder.requests)

@@ -17,7 +17,7 @@ from prospection.domain.page_speed import is_slow
 from prospection.domain.site_card import LOW_AUTHORITY, site_domain
 from prospection.domain.site_report import SiteReport
 from prospection.sources.gmail import GmailOAuth
-from prospection.storage.audit_mails import opted_out, sent_at
+from prospection.storage.audit_mails import already_written, opted_out, sent_at
 from prospection.storage.mail_domains import mail_servers
 from prospection.storage.mail_settings import load_gmail, load_mail_settings
 from prospection.storage.prospect_list import load_prospect
@@ -53,6 +53,8 @@ def _codes(
     engine: Engine, box: SecretBox, client: httpx.Client, site: SiteReport, now: datetime
 ) -> list[str]:
     codes = list(site.audit.codes) if site.audit else []
+    if site.audit and site.audit.form_place is None:  # audit d'avant C137 : formulaire incertain
+        codes = [c for c in codes if c not in ("no_form", "form_contact_only")]
     if site.speed and is_slow(site.speed):
         codes.append("slow_mobile")
     domain = site_domain(site.url)
@@ -70,7 +72,8 @@ def load_context(
             raise UnknownProspect(prospect_id)
         emails = emails_of(prospect)
         servers = mail_servers(conn, [d for e in emails if (d := email_domain(e))])
-        blocked_out = opted_out(conn, [email_fingerprint(e) for e in emails])
+        hashes = [email_fingerprint(e) for e in emails]
+        blocked_out = opted_out(conn, hashes) | already_written(conn, hashes)
         settings, account, sent_on = (
             load_mail_settings(conn),
             load_gmail(conn),

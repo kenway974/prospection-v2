@@ -107,8 +107,10 @@ def match_place(company: Company, places: Sequence[Place]) -> Place | None:
 def with_registry(base: Company, found: Company | None) -> Company:
     """Compléments du registre gratuit (C149) : dirigeants et chiffres s'ils manquaient,
     labels, établissements. Rien de plus pour une entreprise non diffusible (C93)."""
-    if found is None or not found.diffusible:
+    if found is None:
         return dataclasses.replace(base, detailed=True)
+    if not found.diffusible:  # rien ne sera gardé (voir le stockage)
+        return dataclasses.replace(base, diffusible=False, detailed=True)
     return dataclasses.replace(
         base, leaders=base.leaders or found.leaders, finances=base.finances or found.finances,
         labels=found.labels, open_sites=found.open_sites, site_naf=found.site_naf, detailed=True,

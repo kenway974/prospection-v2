@@ -53,7 +53,7 @@ class _Rne:
             if found is None:
                 return with_rne(company, None, (), ())
             return with_rne(company, found.purpose, found.activities, found.domains)
-        raise RneUnavailable
+        return with_rne(company, None, (), ())  # refusée deux fois : passer aux suivantes
 
 
 def _complete(client: httpx.Client, rne: _Rne | None, company: Company) -> Company:

@@ -56,6 +56,12 @@ def opted_out(conn: Connection, hashes: list[str]) -> set[str]:
     return set(conn.execute(select(o.email_hash).where(o.email_hash.in_(hashes))).scalars())
 
 
+def already_written(conn: Connection, hashes: list[str]) -> set[str]:
+    """Adresses qui ont déjà reçu un mail d'audit (même pour un autre prospect)."""
+    s = mail_sends.c
+    return set(conn.execute(select(s.email_hash).where(s.email_hash.in_(hashes))).scalars())
+
+
 def opt_out(conn: Connection, token: str, now: datetime) -> bool:
     """Bloque l'adresse de cet envoi ; faux si le jeton est inconnu."""
     s = mail_sends.c

@@ -12,7 +12,7 @@ from zoneinfo import ZoneInfo
 import httpx
 from sqlalchemy import Engine
 
-from prospection.application.audit_mail_context import MailBlocked, MailContext, load_context
+from prospection.application.audit_mail_context import GMAIL, MailBlocked, MailContext, load_context
 from prospection.domain.audit_mail import Draft, draft_mail
 from prospection.domain.mail_message import (
     InvalidMail,
@@ -26,6 +26,7 @@ from prospection.sources.gmail import (
     GmailRefused,
     GmailRevoked,
     GmailUnavailable,
+    GmailUncertain,
     access_token,
     send_raw,
 )
@@ -37,6 +38,10 @@ __all__ = ["MailBlocked", "MailScreen", "mail_screen", "send_audit_mail"]
 REVOKED = "Connexion Gmail expirée : reliez Gmail à nouveau dans Réglages → Mail d'audit."
 DOWN = "Gmail ne répond pas : réessayez dans un instant (votre texte est gardé)."
 REFUSED = "Gmail a refusé ce mail : vérifiez l'adresse du destinataire."
+UNCERTAIN = (
+    "Envoi incertain (réponse de Gmail perdue) : regardez dans « Messages envoyés » de Gmail. "
+    "Le prospect est marqué « envoyé » pour ne jamais lui écrire deux fois."
+)
 
 
 @dataclass(frozen=True)
@@ -81,8 +86,10 @@ def send_audit_mail(
 ) -> None:  # fmt: skip
     """MailBlocked (message à afficher) si l'envoi est impossible ; rien n'est alors gardé."""
     ctx = load_context(engine, box, client, oauth, base, prospect_id, now)
-    if ctx.blocked or ctx.sent_on or oauth is None or ctx.sender is None:
-        raise MailBlocked(ctx.blocked or "Mail d'audit déjà envoyé à ce prospect.")
+    if ctx.sent_on:
+        raise MailBlocked("Mail d'audit déjà envoyé à ce prospect.")
+    if ctx.blocked or oauth is None or ctx.sender is None:
+        raise MailBlocked(ctx.blocked or GMAIL)
     address = to.strip().lower()
     if address not in ctx.recipients:
         raise MailBlocked("Choisissez une adresse de ce prospect dans la liste.")
@@ -98,11 +105,22 @@ def send_audit_mail(
                         clean_body, f"{base}/desinscription/{token}")  # fmt: skip
     try:
         _deliver(client, ctx, oauth, raw)
-    except MailBlocked:
+    except GmailUncertain:  # peut-être parti : gardé envoyé, jamais deux fois
+        note = f"Mail d'audit peut-être envoyé à {address} (à vérifier dans Gmail)"
+        _after(engine, prospect_id, f"{note} : « {clean_subject} »", ctx.reminder_days, now,
+               timezone)  # fmt: skip
+        raise MailBlocked(UNCERTAIN) from None
+    except MailBlocked:  # refus net : rien n'est parti
         with engine.begin() as conn:
             cancel_send(conn, token)
         raise
-    due = now.astimezone(ZoneInfo(timezone)).date() + timedelta(days=ctx.reminder_days)
+    note = f"Mail d'audit envoyé à {address} : « {clean_subject} »"
+    _after(engine, prospect_id, note, ctx.reminder_days, now, timezone)
+
+
+def _after(engine: Engine, prospect_id: int, note: str, days: int, now: datetime, tz: str) -> None:
+    """Note datée et rappel pour appeler le prospect (C147)."""
+    due = now.astimezone(ZoneInfo(tz)).date() + timedelta(days=days)
     with engine.begin() as conn:
-        add_note(conn, prospect_id, f"Mail d'audit envoyé à {address} : « {clean_subject} »", now)
-        plan_action(conn, prospect_id, "rappeler", due, None, now)  # C147
+        add_note(conn, prospect_id, note, now)
+        plan_action(conn, prospect_id, "rappeler", due, None, now)

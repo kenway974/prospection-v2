@@ -55,10 +55,13 @@ def test_C150_unknown_expired_or_down() -> None:
     client, _ = fake_client(json_reply(401, {}))
     with pytest.raises(RneExpired):
         rne_company(client, "jeton", "912345678")
-    for handler in (timeout, json_reply(503, {}), json_reply(200, ["liste"])):
+    for handler in (timeout, json_reply(503, {}), json_reply(429, {})):
         client, _ = fake_client(handler)
         with pytest.raises(RneUnavailable):
             rne_company(client, "jeton", "912345678")
+    for odd in (json_reply(200, ["liste"]), json_reply(400, {})):  # celle-ci seulement
+        client, _ = fake_client(odd)
+        assert rne_company(client, "jeton", "912345678") is None
 
 
 def test_C150_key_is_email_colon_password() -> None:

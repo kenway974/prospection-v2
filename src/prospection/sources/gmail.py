@@ -31,6 +31,10 @@ class GmailRevoked(Exception):
     """La connexion Gmail a expiré ou a été retirée : la refaire dans Réglages."""
 
 
+class GmailUncertain(Exception):
+    """Réponse de Gmail perdue pendant l'envoi : le mail est peut-être parti."""
+
+
 class GmailRefused(Exception):
     """Google refuse la demande (message invalide, connexion incomplète)."""
 
@@ -113,7 +117,9 @@ def send_raw(client: httpx.Client, token: str, raw: bytes) -> None:
     encoded = base64.urlsafe_b64encode(raw).decode()
     headers = {"Authorization": f"Bearer {token}"}
     response = send(client, "POST", SEND_URL, LABEL, headers=headers, json={"raw": encoded})
-    if isinstance(response, KeyCheck) or response.status_code == 429 or response.status_code >= 500:
+    if isinstance(response, KeyCheck):
+        raise GmailUncertain
+    if response.status_code == 429 or response.status_code >= 500:
         raise GmailUnavailable
     if response.status_code in (401, 403):
         raise GmailRevoked

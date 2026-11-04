@@ -6,7 +6,17 @@ prospect (droit d'opposition), l'envoi garde son jeton pour que le lien marche t
 
 from datetime import datetime
 
-from sqlalchemy import BigInteger, Column, Connection, DateTime, ForeignKey, Table, Text, select
+from sqlalchemy import (
+    BigInteger,
+    Column,
+    Connection,
+    DateTime,
+    ForeignKey,
+    Table,
+    Text,
+    delete,
+    select,
+)
 from sqlalchemy.dialects.postgresql import insert
 
 from prospection.storage.db import metadata
@@ -32,8 +42,8 @@ def record_send(
     """Faux si un mail a déjà été envoyé à ce prospect (un seul envoi, même en double clic)."""
     statement = insert(mail_sends).values(prospect_id=prospect_id, email_hash=email_hash,
                                           token=token, sent_at=now)  # fmt: skip
-    done = conn.execute(statement.on_conflict_do_nothing(index_elements=["prospect_id"]))
-    return done.rowcount == 1
+    done = statement.on_conflict_do_nothing(index_elements=["prospect_id"])
+    return conn.execute(done.returning(mail_sends.c.id)).scalar() is not None
 
 
 def sent_at(conn: Connection, prospect_id: int) -> datetime | None:
@@ -55,3 +65,8 @@ def opt_out(conn: Connection, token: str, now: datetime) -> bool:
     conn.execute(insert(mail_optouts).values(email_hash=email_hash, created_at=now)
                  .on_conflict_do_nothing(index_elements=["email_hash"]))  # fmt: skip
     return True
+
+
+def cancel_send(conn: Connection, token: str) -> None:
+    """Envoi refusé par Gmail : la réservation est retirée, un nouvel essai reste possible."""
+    conn.execute(delete(mail_sends).where(mail_sends.c.token == token))

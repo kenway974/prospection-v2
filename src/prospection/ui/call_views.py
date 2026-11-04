@@ -57,4 +57,5 @@ def card_context(
         "action": action or action_values(card), "contact": contact or contact_values(card),
         "notes": [(short_datetime(n.created_at, timezone), n.text) for n in card.notes],
         "note_text": note_text,
+        "mail_sent": short_datetime(card.mail_sent_on, timezone) if card.mail_sent_on else None,
     }  # fmt: skip

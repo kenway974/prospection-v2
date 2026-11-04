@@ -14,6 +14,13 @@ class Signals(BaseModel):
     form_services: list[str]
     form_builders: list[str]
     contact_words: list[str]
+    consent_trackers: list[str]
+    consent_tools: list[str]
+    legal_words: list[str]
+    privacy_words: list[str]
+    booking_services: list[str]
+    booking_words: list[str]
+    booking_trades: list[str]
 
 
 @cache

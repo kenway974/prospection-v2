@@ -21,3 +21,14 @@ form_services: ["docs.google.com/forms", "forms.gle", "typeform.com", "jotform",
 form_builders: ["Wix", "Squarespace", "Webflow", "Jimdo", "Weebly", "Webnode", "Site123"]
 # Mots d'un lien (adresse ou texte) vers une page de contact, du plus utile au moins utile (C138).
 contact_words: ["contact", "devis", "ecrire", "écrire", "rendez-vous", "rdv", "reserv", "réserv", "nous-joindre", "joindre"]
+# Traceurs soumis au consentement (CNIL) ; Matomo et Plausible, exemptables, n'y sont pas (C140).
+consent_trackers: ["googletagmanager.com", "google-analytics.com", "gtag(", "fbq(", "connect.facebook.net", "hotjar", "clarity.ms", "snap.licdn.com", "analytics.tiktok.com"]
+# Outils de recueil du consentement (bandeau cookies) et Consent Mode de Google (C140).
+consent_tools: ["tarteaucitron", "axept.io", "axeptio", "cookiebot", "didomi", "onetrust", "cookielaw.org", "complianz", "cookieyes", "cookie-law-info", "iubenda", "quantcast", "sirdata", "borlabs", "usercentrics", "orejime", "klaro", "cookie-notice", "moove_gdpr", "gdpr-cookie-compliance", "consentmanager", "osano", "termly", "cookiefirst", "cookie-script.com", "gtag('consent'", "gtag(\"consent\"", "gtag( 'consent'"]
+# Mots d'un lien vers les mentions légales, puis vers la politique de confidentialité (C140).
+legal_words: ["mentions-legales", "mentions_legales", "mentionslegales", "mentions légales", "mention légale", "mentions legales", "informations légales", "legal-notice", "impressum"]
+privacy_words: ["confidentialit", "donnees-personnelles", "données personnelles", "privacy", "rgpd", "gdpr", "protection-des-donnees", "protection des données", "vie privée", "vie-privee"]
+# Réservation en ligne : services connus (C142) et métiers où elle compte (mots du métier, sans accents).
+booking_services: ["planity", "calendly", "doctolib", "treatwell", "zenchef", "thefork", "lafourchette", "resengo", "booksy", "simplybook", "setmore", "rdv360", "maiia", "keldoc", "guestonline", "sevenrooms", "fresha", "salonkee", "mindbody", "acuityscheduling", "youcanbook.me", "clicrdv", "timify", "kiute", "bookingkit", "regiondo", "gymlib", "deciplus", "resamania"]
+booking_words: ["reserv", "réserv", "rendez-vous", "prendre rdv", "prise de rdv", "booking", "book now"]
+booking_trades: ["restaurant", "brasserie", "bistrot", "pizzeria", "creperie", "coiff", "barbier", "esthetic", "beaute", "onglerie", "manucure", "massage", "spa", "kine", "osteopath", "dentist", "medecin", "podolog", "orthophon", "psycholog", "sophrolog", "naturopath", "dieteticien", "coach", "salle de sport", "fitness", "yoga", "pilates", "auto ecole", "garage", "controle technique", "toilett", "veterinaire", "tatou", "photograph", "hotel", "gite", "chambre d hote", "escape game", "karting"]

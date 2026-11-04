@@ -37,9 +37,10 @@ def _contact_pages(client: httpx.Client, home: Page, url: str) -> tuple[Page, ..
 
 
 def _report(
-    client: httpx.Client, result: ReadResult, origin: Origin, place: Place,
+    client: httpx.Client, read_url: tuple[ReadResult, bool], origin: Origin, place: Place,
     keywords: tuple[str, ...], year: int,
 ) -> SiteReport:  # fmt: skip
+    result, https_failed = read_url
     if result.page is None:
         return SiteReport(origin, problem=result.problem)
     read = result.page
@@ -50,22 +51,24 @@ def _report(
     country = place.country or "FR"
     return SiteReport(
         origin, read.url,
-        audit=audit(page, read.url, read.seconds, year, read.powered_by, others),
+        audit=audit(page, read.url, read.seconds, year, read.powered_by, others, keywords,
+                    https_failed, country),
         seo=local_seo(page, keywords, address_city(place.address)),
         contacts=merge_contacts([find_contacts(p, country) for p in (page, *others)]),
     )  # fmt: skip
 
 
-def _read_url(client: httpx.Client, url: str) -> ReadResult:
+def _read_url(client: httpx.Client, url: str) -> tuple[ReadResult, bool]:
     """L'adresse donnée ; si https ne répond pas (certificat cassé…), la même en http : les
-    sites faibles, la cible, n'ont souvent pas de HTTPS."""
+    sites faibles, la cible, n'ont souvent pas de HTTPS. Vrai si https a échoué (C141)."""
     result = read_page(client, url)
     if result.page is None and result.problem == UNREACHABLE and url.startswith("https://"):
-        return read_page(client, "http://" + url.removeprefix("https://"))
-    return result
+        fallback = read_page(client, "http://" + url.removeprefix("https://"))
+        return fallback, fallback.page is not None
+    return result, False
 
 
-def _read_domain(client: httpx.Client, domain: str) -> ReadResult:
+def _read_domain(client: httpx.Client, domain: str) -> tuple[ReadResult, bool]:
     return _read_url(client, f"https://{domain}")
 
 
@@ -76,14 +79,15 @@ def _guess(client: httpx.Client, place: Place, keywords: tuple[str, ...], year: 
     with ThreadPoolExecutor(max_workers=len(domains)) as pool:
         results = list(pool.map(lambda d: _read_domain(client, d), domains))
     probable = None
-    for result in results:
+    for read_url in results:
+        result = read_url[0]
         if result.page is None:
             continue
         page = parse_page(result.page.html)
         phones = find_contacts(page, place.country or "FR").phones
         level = confirmation(page.text, place.name, place.phone, place.address, phones)
         if level == STRONG:
-            return _report(client, result, "retrouvé", place, keywords, year)
+            return _report(client, read_url, "retrouvé", place, keywords, year)
         probable = probable or (result.page.url if level else None)
     return SiteReport("aucun", probable=probable)
 

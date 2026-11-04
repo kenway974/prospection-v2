@@ -6,6 +6,7 @@ from typing import Any
 
 from prospection.domain.page_speed import PageSpeed
 from prospection.domain.site_audit import Audit
+from prospection.domain.site_codes import legacy_codes
 from prospection.domain.site_contacts import Contacts
 from prospection.domain.site_report import SiteReport
 from prospection.domain.site_seo import LocalSeo
@@ -30,13 +31,19 @@ def _decode(data: dict[str, Any]) -> SiteReport:
     audit, seo, contacts = data.get("audit"), data.get("seo"), data.get("contacts")
     return SiteReport(
         data["origin"], data.get("url"), data.get("probable"), data.get("problem"),
-        Audit(**{**audit, "problems": tuple(audit["problems"])}) if audit else None,
+        _audit(audit) if audit else None,
         LocalSeo(seo["trade"], seo["city"], tuple(seo["problems"])) if seo else None,
         Contacts(*(tuple(contacts[k]) for k in ("emails", "phones", "social")))
         if contacts else None,
         bool(data.get("parked", False)),
         decode_speed(data["speed"]) if data.get("speed") else None,
     )  # fmt: skip
+
+
+def _audit(data: dict[str, Any]) -> Audit:
+    problems = tuple(data["problems"])
+    codes = tuple(data["codes"]) if "codes" in data else legacy_codes(problems)
+    return Audit(**{**data, "problems": problems, "codes": codes})
 
 
 def decode_speed(data: dict[str, Any]) -> PageSpeed:

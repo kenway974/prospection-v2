@@ -5,6 +5,7 @@ from typing import Any
 
 from sqlalchemy import Connection
 
+from prospection.application.mail_optouts import usable_emails
 from prospection.application.prospect_view import emails_of, insights
 from prospection.domain.call_links import leader_name
 from prospection.domain.crm_record import MAX_TEXT
@@ -27,13 +28,16 @@ def _clip(values: dict[str, Any]) -> dict[str, Any]:
     return {k: v[:MAX_TEXT] if isinstance(v, str) else v for k, v in values.items()}
 
 
-def crm_values(conn: Connection, row: ProspectRow, now: datetime, today: str) -> dict[str, Any]:
-    """Colonnes de l'app ; dates en texte ISO (jour du fuseau du propriétaire)."""
+def crm_values(
+    conn: Connection, row: ProspectRow, now: datetime, today: str, pepper: bytes
+) -> dict[str, Any]:
+    """Colonnes de l'app ; dates en texte ISO (jour du fuseau du propriétaire) ; jamais une
+    adresse désinscrite (C148)."""
     day = date.fromisoformat(today)
     seen = insights(row, mail_servers(conn, [e.split("@")[-1] for e in emails_of(row)]), day)
     sure = row.company if row.company and row.registry_status == "sûr" else None
     action = open_action(conn, row.id)
-    emails = emails_of(row)
+    emails = usable_emails(conn, pepper, emails_of(row))
     data = row.data
     return _clip({
         "Entreprise": data.get("name"), "ID app": data.get("place_id"),

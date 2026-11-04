@@ -56,13 +56,13 @@ def queue_export(engine: Engine, prospect_ids: list[int], now: datetime) -> None
 
 
 def _send_one(engine: Engine, client: httpx.Client, target: NotionTarget, pid: int,
-              now: datetime, today: str) -> None:  # fmt: skip
+              now: datetime, today: str, pepper: bytes) -> None:  # fmt: skip
     with engine.connect() as conn:
         row = load_prospect(conn, pid)
         if row is None or row.status not in (INTERESTED, EXPORTED):  # C67 : relu à l'envoi
             values = None
         else:
-            values = crm_values(conn, row, now, today)
+            values = crm_values(conn, row, now, today, pepper)
     if values is None:
         with engine.begin() as conn:
             store.mark_failed(conn, pid, "N'est plus intéressé")
@@ -101,7 +101,7 @@ def send_pending(
     today, sent = now.astimezone(ZoneInfo(timezone)).date().isoformat(), 0
     for pid in ids:
         try:
-            _send_one(engine, client, target, pid, now, today)
+            _send_one(engine, client, target, pid, now, today, box.pepper)
             sent += 1
         except NotionBusy as busy:
             with engine.begin() as conn:

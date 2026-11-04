@@ -17,7 +17,7 @@ import httpx
 
 from prospection.sources.read_deadline import deadline
 
-MAX_BYTES = 500_000
+MAX_BYTES = 1_500_000  # pages lourdes des constructeurs : le formulaire est souvent en bas
 MAX_SECONDS = 8.0
 MAX_REDIRECTS = 3
 SLOW = "Site trop lent : lecture abandonnée"
@@ -38,6 +38,7 @@ class WebPage:
     html: str
     seconds: float
     powered_by: str = ""  # en-tête X-Powered-By (version de PHP…), borné
+    truncated: bool = False  # lecture arrêtée à la taille maximale : la fin manque
 
 
 @dataclass(frozen=True)
@@ -109,19 +110,20 @@ def _read(client: httpx.Client, url: str, clock: Callable[[], float]) -> ReadRes
                     return ReadResult(None, "L'adresse n'est pas une page web")
                 if response.headers.get("Content-Encoding", "identity").lower() != "identity":
                     return ReadResult(None, "Page compressée : non lue")  # bombe possible
-                body = bytearray()
+                body, cut = bytearray(), False
                 for chunk in response.iter_raw():  # jamais décompressé : taille réelle bornée
                     body += chunk
                     if clock() - start > MAX_SECONDS:
                         return ReadResult(None, SLOW)
-                    if len(body) >= MAX_BYTES:
+                    if len(body) > MAX_BYTES:
+                        cut = True
                         break
                 seconds = clock() - start
                 if seconds > MAX_SECONDS:
                     return ReadResult(None, SLOW)
                 text = _decode(bytes(body[:MAX_BYTES]), response.charset_encoding)
                 powered = response.headers.get("X-Powered-By", "")[:100]
-                return ReadResult(WebPage(url, text[:MAX_BYTES], seconds, powered))
+                return ReadResult(WebPage(url, text[:MAX_BYTES], seconds, powered, cut))
         except (httpx.TimeoutException, httpcore.TimeoutException):
             return ReadResult(None, SLOW)
         except (httpx.HTTPError, UnicodeError, LookupError):

@@ -35,3 +35,9 @@ def test_site_states_said_plainly() -> None:
     assert site_links(probable) == [("Site probable", "https://martin.fr")]
     down = SiteReport("fiche Google", problem="Site injoignable")
     assert site_lines(down) == [("Site", "Site injoignable")]
+
+
+def test_C139_form_place_shown() -> None:
+    audit = Audit(80, (), "WordPress", True, True, True, "sur une page Contact")
+    lines = site_lines(SiteReport("fiche Google", "https://m.fr", audit=audit))
+    assert ("Formulaire", "sur une page Contact") in lines

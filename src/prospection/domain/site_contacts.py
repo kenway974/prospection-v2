@@ -104,3 +104,9 @@ def _company_page(link: str) -> bool:
 def find_contacts(page: Page, country: str) -> Contacts:
     social = [link for link in page.links if _company_page(link) and web_link(link)]
     return Contacts(_emails(page), _phones(page, country or "FR"), _unique(social))
+
+
+def merge_contacts(found: list[Contacts]) -> Contacts:
+    """Contacts de plusieurs pages du même site (accueil, puis page Contact), sans doublon."""
+    return Contacts(*(_unique([x for c in found for x in getattr(c, k)])
+                      for k in ("emails", "phones", "social")))  # fmt: skip

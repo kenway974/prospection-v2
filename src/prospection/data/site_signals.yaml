@@ -15,3 +15,9 @@ technologies:
   Site123: ["site123.com", "site123.me"]
 tracking: ["googletagmanager.com", "google-analytics.com", "gtag(", "fbq(", "hotjar", "clarity.ms", "matomo", "plausible.io"]
 social: ["facebook.com", "instagram.com", "linkedin.com", "tiktok.com", "youtube.com", "x.com", "twitter.com", "pinterest."]
+# Services de formulaires intégrés (iframe ou script) : un formulaire de contact existe (C137).
+form_services: ["docs.google.com/forms", "forms.gle", "typeform.com", "jotform", "tally.so", "hsforms.net", "hsforms.com", "sibforms.com", "forms.zohopublic", "cognitoforms.com", "formstack.com", "wufoo.com", "123formbuilder", "paperform.co", "fillout.com", "elfsight", "formulaire.io", "framaforms.org"]
+# Constructeurs qui dessinent souvent leurs formulaires en JavaScript : sans formulaire vu, « non vérifié » (C138).
+form_builders: ["Wix", "Squarespace", "Webflow", "Jimdo", "Weebly", "Webnode", "Site123"]
+# Mots d'un lien (adresse ou texte) vers une page de contact, du plus utile au moins utile (C138).
+contact_words: ["contact", "devis", "ecrire", "écrire", "rendez-vous", "rdv", "reserv", "réserv", "nous-joindre", "joindre"]

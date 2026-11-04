@@ -32,7 +32,6 @@ def test_C50_C52_poor_site_lists_each_problem_in_plain_words() -> None:
     assert {
         "Pas de HTTPS",
         "Pas adapté au mobile",
-        "Pas de formulaire de contact",
         "Chargement lent (4,5 s)",
         "Pas de titre de page",
         "Pas de description pour Google",
@@ -42,7 +41,8 @@ def test_C50_C52_poor_site_lists_each_problem_in_plain_words() -> None:
         "Pas de titre principal (H1)",
         "Aucun lien vers les réseaux sociaux",
     } <= set(report.problems)
-    assert report.score == 0
+    assert report.score == 5
+    assert report.form_place == "non vérifié"  # Wix dessine ses formulaires en JavaScript (C138)
 
 
 def test_C50_hidden_from_google_is_said() -> None:

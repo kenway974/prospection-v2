@@ -1,6 +1,6 @@
 # Prospection v2 · règles du projet
 
-Outil de **sourcing de prospects** pour mon activité de freelance : trouver des entreprises (Google Maps, entreprises récemment créées), les qualifier selon des critères, les enrichir au maximum, préparer et suivre mes appels (statuts, relances, notes), exporter en CSV / Excel et les envoyer dans mon CRM (Notion ; HubSpot plus tard). **Aucun envoi de message** (mail, SMS…) : je contacte moi-même.
+Outil de **sourcing de prospects** pour mon activité de freelance : trouver des entreprises (Google Maps, entreprises récemment créées), les qualifier selon des critères, les enrichir au maximum, préparer et suivre mes appels (statuts, relances, notes), exporter en CSV / Excel et les envoyer dans mon CRM (Notion ; HubSpot plus tard). **Un seul envoi de message** : le mail d'audit, relu puis envoyé par moi depuis la fiche (bouton). Jamais d'envoi automatique ni en masse, jamais de SMS : pour le reste, je contacte moi-même.
 
 Un seul utilisateur (moi). Interface pensée **d'abord pour le mobile**. Déploiement sur Railway.
 

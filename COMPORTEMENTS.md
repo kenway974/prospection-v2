@@ -80,6 +80,8 @@ Ajouter ou retirer un comportement = modifier ce fichier (avec l'accord du propr
 **Registre officiel**
 - C44 Récupérer SIREN / SIRET, date de création, code et libellé d'activité, forme juridique, effectif, dirigeants
 - C45 Rapprocher la fiche Google de la bonne entreprise seulement si la correspondance est sûre ; sinon « à vérifier »
+- C149 La fiche dit tout ce que le registre gratuit sait de l'activité : labels (RGE, Qualiopi, Bio, ESS, patrimoine vivant…), nombre d'établissements ouverts, activité de l'établissement si elle diffère *(demandé le 04/11/2026)*
+- C150 Avec mes identifiants INPI, la fiche montre l'objet social, la description détaillée de chaque activité, sa forme d'exercice et les noms de domaine déclarés au registre national des entreprises *(demandé le 04/11/2026)*
 
 **Site web**
 - C46 Retrouver le site quand il manque sur la fiche Google (domaine deviné + confirmation sur la page)
@@ -89,6 +91,13 @@ Ajouter ou retirer un comportement = modifier ce fichier (avec l'accord du propr
 - C50 Audit rapide : HTTPS, mobile, vitesse, titre, formulaire, outil de suivi, copyright ancien
 - C51 Analyse SEO locale : le métier et la ville apparaissent-ils dans le titre, le H1, le texte, les balises des images
 - C52 Score de qualité du site avec la liste des problèmes
+- C137 Un formulaire de contact est reconnu même quand son champ email n'est pas typé « email », quand il est bas dans une page lourde, ou quand il vient d'un service de formulaires (Google Forms, Typeform, HubSpot…) *(demandé le 04/11/2026)*
+- C138 Si l'accueil n'a pas de formulaire, l'app lit jusqu'à 2 pages du site dont le lien parle de contact, devis, rendez-vous ou réservation (formulaire, emails, téléphones) ; sans certitude, elle dit « formulaire non vérifié », jamais « pas de formulaire » *(demandé le 04/11/2026)*
+- C139 L'audit dit où est le formulaire : en haut de l'accueil, plus bas sur l'accueil, seulement sur une page Contact (petit problème) ou aucun *(demandé le 04/11/2026)*
+- C140 Audit RGPD : mentions légales, politique de confidentialité quand le site collecte des données, traceurs chargés sans bandeau de consentement *(demandé le 04/11/2026)*
+- C141 Audit sécurité : HTTPS absent ou cassé (certificat invalide), messages du formulaire envoyés en clair *(demandé le 04/11/2026)*
+- C142 Audit contact : numéro affiché mais pas cliquable sur mobile ; pas de réservation en ligne pour les métiers où elle compte *(demandé le 04/11/2026)*
+- C143 Score d'autorité du domaine (Open PageRank, gratuit avec une clé), gardé 30 jours ; un site presque inconnu de Google est signalé *(demandé le 04/11/2026)*
 
 **Contact**
 - C53 Vérifier chaque email (syntaxe, domaine qui reçoit des mails, adresse jetable)
@@ -190,3 +199,10 @@ Ajouter ou retirer un comportement = modifier ce fichier (avec l'accord du propr
 ## 16. App sur le téléphone
 - C116 L'app s'installe sur Android (icône, plein écran) et reste connectée 30 jours
 - C117 La barre de navigation flottante donne accès en un geste à Aujourd'hui, Prospects, Terrain, Recherche, Réglages *(Réglages ajouté le 29/10/2026)*
+
+## 17. Mail d'audit
+- C144 Je relie mon Gmail une fois dans Réglages et je règle le mail : nom, téléphone, lien du portfolio, lien Calendly (facultatif), délai du rappel (1 à 3 jours) *(demandé le 04/11/2026)*
+- C145 Sur la fiche, « Mail d'audit » prépare un mail court : au plus 3 problèmes du site, chacun relié à son effet sur le business du prospect (règles fixes dans un fichier, adaptées au métier, chiffres en fourchette), puis portfolio et appel de 15 minutes ; je peux tout modifier *(demandé le 04/11/2026)*
+- C146 « Envoyer » part de mon Gmail vers un email valide du prospect, une seule fois par prospect ; le lien « ne plus recevoir de mails » est toujours ajouté *(demandé le 04/11/2026)*
+- C147 Après l'envoi, une note datée est ajoutée et un rappel « Rappeler » est planifié dans le délai réglé *(demandé le 04/11/2026)*
+- C148 Le lien de désinscription ouvre une page publique ; après confirmation, l'adresse n'est plus jamais utilisée, même si le prospect est supprimé *(demandé le 04/11/2026)*

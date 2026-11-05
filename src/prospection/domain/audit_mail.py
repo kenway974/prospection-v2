@@ -26,7 +26,10 @@ class MailSender:
 @dataclass(frozen=True)
 class MailPoint:
     code: str
-    text: str
+    title: str
+    problem: str
+    impact: str  # ce que ça coûte au business (adapté au métier)
+    action: str
 
 
 @dataclass(frozen=True)
@@ -60,7 +63,7 @@ def choose_points(codes: Sequence[str], keywords: Sequence[str]) -> list[MailPoi
             continue
         groups |= {point.groupe} if point.groupe else set()
         impact = next((s.impacts[code] for s in sectors if code in s.impacts), point.impact)
-        chosen.append(MailPoint(code, f"{point.probleme} {impact} {point.action}"))
+        chosen.append(MailPoint(code, point.titre, point.probleme, impact, point.action))
         if len(chosen) == MAX_POINTS:
             break
     return chosen
@@ -76,7 +79,11 @@ def draft_mail(points: Sequence[MailPoint], company: str, site: str, sender: Mai
     signature = rules.signature
     if sender.phone:
         signature += "\n" + rules.signature_telephone
-    parts = [rules.intro, *(f"{i}. {p.text}" for i, p in enumerate(points, 1)),
-             rules.portfolio, call, signature]  # fmt: skip
+    blocks = [
+        f"**{i}. {p.title}**\n- **{rules.constat} :** {p.problem}\n"
+        f"- **{rules.cout} :** {p.impact}\n- **{rules.solution} :** {p.action}"
+        for i, p in enumerate(points, 1)
+    ]
+    parts = [rules.intro, *blocks, rules.portfolio, call, signature]
     body = "\n\n".join(part.format_map(values) for part in parts)
     return Draft(rules.objet.format_map(values), body)

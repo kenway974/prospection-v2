@@ -37,7 +37,7 @@ def test_C145_draft_ready_with_usable_recipients(mail_db: Engine) -> None:
     shown = screen(mail_db, pid)
     assert shown.blocked is None and shown.draft is not None
     assert shown.recipients == ["contact@martin.fr"]  # « noreply » écarté
-    assert shown.draft.subject.endswith(": 2 points à améliorer sur votre site")
+    assert shown.draft.subject.endswith(": audit express de votre site, 2 points à corriger")
     assert "martin.fr" in shown.draft.body and "Un clic suffit" in shown.footer
 
 

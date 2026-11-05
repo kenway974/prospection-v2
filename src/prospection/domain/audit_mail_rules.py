@@ -20,6 +20,7 @@ class InvalidMailRules(ValueError):
 
 
 class Point(BaseModel):
+    titre: str = Field(min_length=1, max_length=80)
     poids: int = Field(ge=0, le=100)
     groupe: str | None = None
     probleme: str
@@ -36,6 +37,9 @@ class Sector(BaseModel):
 class MailRules(BaseModel):
     objet: str
     intro: str
+    constat: str
+    cout: str
+    solution: str
     portfolio: str
     appel_calendly: str
     appel_sans_calendly: str
@@ -64,8 +68,8 @@ def parse_rules(raw: object) -> MailRules:
         raise InvalidMailRules(f"Règles du mail mal formées : {error}") from None
     texts = [rules.objet, rules.intro, rules.portfolio, rules.appel_calendly,
              rules.appel_sans_calendly, rules.signature, rules.signature_telephone,
-             rules.pied_desinscription]  # fmt: skip
-    texts += [t for p in rules.points.values() for t in (p.probleme, p.impact, p.action)]
+             rules.pied_desinscription, rules.constat, rules.cout, rules.solution]  # fmt: skip
+    texts += [t for p in rules.points.values() for t in (p.titre, p.probleme, p.impact, p.action)]
     for name, sector in rules.secteurs.items():
         unknown = (set(sector.bonus) | set(sector.impacts)) - set(rules.points)
         if unknown:

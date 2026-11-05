@@ -18,6 +18,7 @@
   <input id="objet" name="objet" value="{{ values.objet }}" maxlength="200">
   <label for="texte">Texte (modifiable)</label>
   <textarea id="texte" name="texte" rows="18">{{ values.texte }}</textarea>
+  <p class="secondary">Mise en forme : **texte** pour le gras ; une ligne qui commence par « - » devient une puce.</p>
   <p class="secondary">Ajouté en bas du mail, toujours : « {{ screen.footer }} »</p>
   <button type="submit" class="button-primary"{% if screen.blocked %} disabled{% endif %}>Envoyer<span class="htmx-indicator"> : envoi en cours…</span></button>
 </form>

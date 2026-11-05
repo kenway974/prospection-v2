@@ -71,7 +71,18 @@ def test_C146_html_version_keeps_whole_sentences_and_stays_safe() -> None:
     assert plain is not None and rich is not None
     assert "Une phrase longue " * 10 in plain.get_content()
     html = rich.get_content()
-    assert "<p>" + ("Une phrase longue " * 10).strip() + "</p>" in html
+    assert ">" + ("Une phrase longue " * 10).strip() + "</p>" in html
     assert '<a href="https://kenny.dev/a?b=1&amp;c=2">https://kenny.dev/a?b=1&amp;c=2</a>' in html
     assert "&lt;b&gt;x&lt;/b&gt;" in html and "<b>" not in html
     assert f'<a href="{LINK}">' in html  # désinscription cliquable aussi
+
+
+def test_C145_bold_and_bullets_in_html_plain_text_stays_clean() -> None:
+    body = "**1. Un site lent**\n- **Le constat :** lent\n- **La solution :** alléger"
+    message = parsed(build_message("Kenny", "k@gmail.com", "a@b.fr", "Objet", body, LINK))
+    plain, rich = message.get_body(("plain",)), message.get_body(("html",))
+    assert plain is not None and rich is not None
+    assert plain.get_content().startswith("1. Un site lent\n- Le constat : lent")
+    html = rich.get_content()
+    assert "<strong>1. Un site lent</strong>" in html
+    assert "<strong>Le constat :</strong> lent</li>" in html and "<ul" in html

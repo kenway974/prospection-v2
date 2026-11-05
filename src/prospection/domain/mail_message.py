@@ -10,7 +10,7 @@ from email.message import EmailMessage
 from email.utils import formataddr
 
 from prospection.domain.audit_mail_rules import load_mail_rules
-from prospection.domain.mail_html import to_html
+from prospection.domain.mail_html import plain, to_html
 from prospection.domain.text import without_controls
 
 MAX_SUBJECT, MAX_BODY = 200, 20_000
@@ -51,7 +51,7 @@ def build_message(
     message["List-Unsubscribe"] = f"<{_header(unsubscribe, 500)}>"
     message["List-Unsubscribe-Post"] = "List-Unsubscribe=One-Click"
     text = f"{body}\n\n--\n{unsubscribe_footer(unsubscribe)}\n"
-    message.set_content(text)
+    message.set_content(plain(text))
     message.add_alternative(to_html(text), subtype="html")  # phrases entières dans Gmail
     return message.as_bytes()
 

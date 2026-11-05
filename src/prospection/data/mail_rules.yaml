@@ -5,19 +5,28 @@
 # {portfolio}, {calendly}, {nombre}. Un texte mal formé empêche l'app de démarrer (avec un
 # message qui dit quoi corriger).
 #
-# points.<code> : le code vient de l'audit (no_https, no_form…). « poids » : importance de base ;
+# Mise en forme : **texte** en gras ; une ligne qui commence par « - » devient une puce.
+#
+# points.<code> : le code vient de l'audit (no_https, no_form…). « titre » : court, en gras ;
+# « poids » : importance de base ;
 # « groupe » : deux points du même groupe ne sont jamais cités ensemble (le plus fort reste).
 # secteurs.<nom> : « mots » du métier (sans accents, début de mot) ; « bonus » ajouté au poids ;
 # « impacts » remplace l'effet business pour ce métier.
 
-objet: "{entreprise} : {nombre} à améliorer sur votre site"
+objet: "{entreprise} : audit express de votre site, {nombre} à corriger"
+# Autres objets possibles : « J'ai regardé le site de {entreprise} : {nombre} à corriger »,
+# « {entreprise} : ce que votre site vous fait perdre ({nombre}) ».
 intro: |-
   Bonjour,
 
-  Je suis {expediteur}, développeur web indépendant. J'ai regardé le site de {entreprise} ({site}) et voici ce qui, à mon avis, peut vous coûter des clients :
-portfolio: "Vous pouvez voir mes réalisations ici : {portfolio}"
-appel_calendly: "Si vous voulez en parler, je vous propose un appel de 15 minutes, sans engagement. Choisissez le créneau qui vous arrange : {calendly}"
-appel_sans_calendly: "Si vous voulez en parler, je vous propose un appel de 15 minutes, sans engagement : répondez simplement à ce mail et je vous rappelle."
+  Je suis {expediteur}, développeur web indépendant. J'ai passé votre site ({site}) au crible et j'ai repéré **{nombre} à corriger pour ne plus perdre de clients**. Pour chacun : ce que j'ai vu, ce que ça vous coûte et comment le régler.
+# Libellés des trois parties de chaque point (en gras dans le mail).
+constat: "Le constat"
+cout: "Ce que ça vous coûte"
+solution: "La solution"
+portfolio: "Ce que je fais pour des entreprises comme la vôtre : {portfolio}"
+appel_calendly: "**Je vous propose un appel de 15 minutes, gratuit et sans engagement**, pour vous montrer comment corriger ces points. Choisissez le créneau qui vous arrange : {calendly}"
+appel_sans_calendly: "**Je vous propose un appel de 15 minutes, gratuit et sans engagement**, pour vous montrer comment corriger ces points. Répondez simplement à ce mail avec vos disponibilités, je vous rappelle."
 signature: |-
   Bonne journée,
   {expediteur}
@@ -26,128 +35,151 @@ pied_desinscription: "Vous ne souhaitez plus recevoir de mail de ma part ? Un cl
 
 points:
   no_https:
+    titre: "Un site marqué « Non sécurisé »"
     poids: 15
     groupe: https
     probleme: "Votre site n'est pas sécurisé (pas de HTTPS)."
     impact: "Les navigateurs l'affichent « Non sécurisé » et, selon les études, entre 60 et 80 % des visiteurs font demi-tour devant ce message. Les messages envoyés par votre formulaire circulent aussi sans protection."
     action: "Un certificat HTTPS, souvent gratuit chez votre hébergeur, règle le problème."
   https_broken:
+    titre: "Un avertissement de sécurité dès l'ouverture"
     poids: 15
     groupe: https
     probleme: "Votre site ne s'ouvre pas en HTTPS (certificat absent ou invalide)."
     impact: "Les navigateurs affichent un avertissement de sécurité : entre 60 et 80 % des visiteurs repartent aussitôt, et les messages de vos clients ne sont pas protégés."
     action: "Il faut installer ou renouveler le certificat, une intervention rapide."
   no_mobile:
+    titre: "Un site difficile à lire sur téléphone"
     poids: 15
     probleme: "Votre site n'est pas adapté aux téléphones."
     impact: "Entre 55 et 70 % des visites se font aujourd'hui sur mobile : sur un site qui ne s'adapte pas, il faut zoomer et chercher, et beaucoup de clients partent chez un concurrent."
     action: "Une mise en page qui s'adapte à l'écran corrige cela."
   slow_mobile:
+    titre: "Un site trop lent sur mobile"
     poids: 12
     groupe: vitesse
     probleme: "Votre site est lent sur téléphone (mesure de Google)."
     impact: "Entre 50 et 60 % des visiteurs sur mobile quittent une page qui met plus de 3 secondes à s'afficher : ce sont des clients perdus avant même d'avoir vu votre offre."
     action: "Alléger les images et le code fait souvent gagner plusieurs secondes."
   slow:
+    titre: "Un site lent à s'afficher"
     poids: 10
     groupe: vitesse
     probleme: "Votre site met du temps à s'afficher."
     impact: "Au-delà de 3 secondes, entre 40 et 60 % des visiteurs abandonnent, surtout sur téléphone."
     action: "Alléger les images et le code fait souvent gagner plusieurs secondes."
   no_form:
+    titre: "Aucun moyen simple de vous écrire"
     poids: 15
     groupe: formulaire
     probleme: "Votre site n'a pas de formulaire de contact."
     impact: "Entre 30 et 50 % des clients préfèrent écrire plutôt qu'appeler, souvent le soir ou le week-end : sans formulaire, ces demandes partent ailleurs."
     action: "Un formulaire simple (nom, téléphone, message) visible dès l'accueil capte ces demandes."
   form_contact_only:
+    titre: "Un formulaire caché sur la page Contact"
     poids: 7
     groupe: formulaire
     probleme: "Votre formulaire n'apparaît que sur la page Contact."
     impact: "Un visiteur pressé qui arrive sur l'accueil ne le voit pas, et il ne cherche pas longtemps."
     action: "Un bouton « Demander un devis » ou un court formulaire visible dès l'arrivée capte ces demandes."
   phone_not_clickable:
+    titre: "Un numéro qu'on ne peut pas appeler d'un geste"
     poids: 6
     probleme: "Votre numéro n'est pas cliquable sur téléphone."
     impact: "Entre 70 et 80 % des recherches locales sur mobile se terminent par un appel ou une visite dans la journée : obligé de recopier le numéro, une partie des clients abandonne."
     action: "Rendre le numéro cliquable prend quelques minutes."
   no_booking:
+    titre: "Pas de réservation en ligne"
     poids: 10
     probleme: "Votre site ne permet pas de réserver en ligne."
     impact: "Entre 40 et 60 % des réservations se font en dehors des heures d'ouverture : sans réservation en ligne, ces clients réservent chez un concurrent qui la propose."
     action: "Un module de réservation relié à votre agenda se met en place facilement."
   noindex:
+    titre: "Un site invisible sur Google"
     poids: 15
     probleme: "Votre site est caché aux moteurs de recherche (balise « noindex »)."
     impact: "Il n'apparaît pas sur Google : les clients qui vous cherchent ne le trouvent pas."
     action: "Il suffit de retirer ce réglage, souvent oublié après la mise en ligne."
   low_authority:
+    titre: "Un site que Google connaît à peine"
     poids: 8
     probleme: "Google connaît encore peu votre site."
     impact: "Il ressort rarement dans les recherches : vos clients potentiels tombent d'abord sur vos concurrents."
     action: "Quelques pages bien écrites sur vos services et votre ville, et des liens depuis vos réseaux, changent la donne."
   no_title:
+    titre: "Pas de titre dans les résultats Google"
     poids: 8
     groupe: google
     probleme: "Votre site n'a pas de titre pour Google."
     impact: "Google affiche alors un texte au hasard dans ses résultats : moins de clics, moins de clients."
     action: "Un titre clair avec votre métier et votre ville suffit."
   no_description:
+    titre: "Une présentation au hasard dans Google"
     poids: 4
     groupe: google
     probleme: "Votre site n'a pas de description pour Google."
     impact: "Dans les résultats, Google affiche un extrait au hasard au lieu d'un texte qui donne envie de cliquer."
     action: "Deux phrases sur ce que vous faites et où, et le tour est joué."
   thin_content:
+    titre: "Trop peu de texte pour être trouvé"
     poids: 6
     probleme: "Votre site contient très peu de texte."
     impact: "Google a du mal à comprendre ce que vous faites et où : vous ressortez peu dans les recherches locales."
     action: "Une page par service, avec votre ville, améliore nettement la visibilité."
   outdated:
+    titre: "Un site qui semble abandonné"
     poids: 7
     probleme: "Votre site semble ne plus être mis à jour."
     impact: "Un site qui paraît abandonné fait douter : l'entreprise existe-t-elle encore ? Une partie des visiteurs ne prend pas le risque."
     action: "Un rafraîchissement du contenu et du design redonne confiance."
   legacy_ga:
+    titre: "Des statistiques arrêtées depuis 2023"
     poids: 6
     groupe: suivi
     probleme: "Votre site utilise l'ancien Google Analytics, arrêté en 2023."
     impact: "Vous n'avez plus aucune statistique : impossible de savoir combien de clients vous trouvent par Internet."
     action: "Passer à la nouvelle version prend peu de temps."
   no_tracking:
+    titre: "Aucune statistique de visite"
     poids: 4
     groupe: suivi
     probleme: "Votre site n'a aucun outil de statistiques."
     impact: "Vous ne savez pas combien de personnes le visitent ni d'où elles viennent : difficile de savoir s'il vous rapporte des clients."
     action: "Un outil de mesure simple et respectueux du RGPD s'installe rapidement."
   old_wordpress:
+    titre: "Un WordPress qui n'est plus à jour"
     poids: 9
     groupe: maintenance
     probleme: "Votre site tourne sur une ancienne version de WordPress."
     impact: "Les vieilles versions ont des failles connues : un piratage peut afficher des publicités douteuses ou faire disparaître votre site."
     action: "Une mise à jour et une sauvegarde régulière protègent le site."
   old_php:
+    titre: "Un serveur sans correctifs de sécurité"
     poids: 9
     groupe: maintenance
     probleme: "Le serveur de votre site utilise une version de PHP qui n'est plus mise à jour."
     impact: "Elle ne reçoit plus de correctifs de sécurité : le site devient une cible facile pour les pirates."
     action: "Une mise à jour du serveur règle le problème."
   mixed_content:
+    titre: "Des éléments chargés sans sécurité"
     poids: 6
     probleme: "Certains éléments de votre site sont chargés sans sécurité."
     impact: "Le cadenas peut disparaître et le navigateur afficher un avertissement, ce qui fait fuir une partie des visiteurs."
     action: "Corriger les adresses de ces fichiers suffit."
   no_legal_notice:
+    titre: "Pas de mentions légales"
     poids: 9
     probleme: "Je n'ai pas trouvé de mentions légales sur votre site."
     impact: "Elles sont obligatoires pour tout site professionnel (loi pour la confiance dans l'économie numérique) : la loi prévoit jusqu'à 75 000 € d'amende, 375 000 € pour une société."
     action: "Une page de mentions légales se rédige en une heure."
   no_privacy_policy:
+    titre: "Pas de politique de confidentialité"
     poids: 9
     probleme: "Je n'ai pas trouvé de politique de confidentialité."
     impact: "Votre site recueille des données (formulaire, statistiques) : le RGPD impose d'expliquer à vos clients ce que vous en faites, et la CNIL peut sanctionner."
     action: "Une page claire, liée depuis le formulaire, vous met en règle."
   no_cookie_consent:
+    titre: "Des cookies déposés sans accord"
     poids: 9
     probleme: "Votre site dépose des traceurs (statistiques, publicité) sans demander l'accord des visiteurs."
     impact: "La CNIL a déjà sanctionné des entreprises de toutes tailles pour des cookies déposés sans consentement."

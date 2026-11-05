@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Prospection · confidentialité{% endblock %}
+{% block content %}
+<h1 class="large-title">Prospection</h1>
+<p>Outil privé d'un développeur web indépendant, utilisé par lui seul : il repère des entreprises dont le site pourrait être amélioré, prépare ses appels et, s'il le décide, leur envoie un mail d'audit de leur site.</p>
+<section class="group form" aria-labelledby="titre-confidentialite">
+  <h2 class="row-title" id="titre-confidentialite">Politique de confidentialité</h2>
+  <p><strong>Données utilisées.</strong> Uniquement des informations professionnelles publiques : fiche Google de l'entreprise, registre des entreprises (Sirène, INPI), contenu public de son site (emails et téléphones affichés). Les entrepreneurs qui ont refusé la diffusion de leurs données dans Sirène sont respectés.</p>
+  <p><strong>Accès Gmail.</strong> L'app demande seulement le droit d'envoyer des mails (gmail.send) et de connaître l'adresse du compte. Elle ne lit jamais la boîte de réception, ni aucun mail, contact ou fichier. Chaque mail est relu puis envoyé à la main, un seul par entreprise ; jamais d'envoi automatique ni en masse. L'accès peut être retiré à tout moment depuis l'app ou sur myaccount.google.com/permissions.</p>
+  <p><strong>Utilisation des données Google.</strong> Les données reçues des API Google servent seulement à envoyer ces mails. Elles ne sont ni vendues, ni partagées, ni utilisées pour de la publicité ou pour entraîner des modèles d'intelligence artificielle.</p>
+  <p><strong>Conservation et sécurité.</strong> Les données sont stockées dans une base privée, chiffrée pour les clés et jetons d'accès. Les entreprises non retenues sont supprimées automatiquement après 6 mois sans activité (réglage par défaut).</p>
+  <p><strong>Vos droits (RGPD).</strong> Chaque mail contient un lien pour se désinscrire : l'adresse n'est alors plus jamais utilisée. Vous pouvez aussi demander l'accès à vos données ou leur suppression en répondant simplement au mail reçu ; la suppression est faite sans délai.</p>
+</section>
+{% endblock %}

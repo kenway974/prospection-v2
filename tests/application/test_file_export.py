@@ -11,7 +11,7 @@ from prospection.application.file_export import campaign_csv, campaign_xlsx
 from prospection.application.prospect_listing import prospect_list
 from prospection.domain.criteria import Verdict
 from prospection.storage.prospects import insert_prospect
-from tests.application.campaign_helpers import NOW
+from tests.application.campaign_helpers import BOX, NOW
 from tests.application.test_call_tracking import add
 from tests.storage.test_campaigns import PLACE
 
@@ -34,7 +34,9 @@ def read_csv(data: bytes) -> list[list[str]]:
 
 def test_C62_C64_C89_csv_sorted_by_score_and_neutralized(campaign_db: Engine) -> None:
     campaign_id = campaign_with_prospects(campaign_db)
-    header, *rows = read_csv(campaign_csv(campaign_db, campaign_id, "prospects", NOW))
+    header, *rows = read_csv(
+        campaign_csv(campaign_db, campaign_id, "prospects", NOW, pepper=BOX.pepper)
+    )
     assert header[:3] == ["Score", "Entreprise", "Raison"]
     assert [r[1] for r in rows] == ['\'=HYPERLINK("x")', "Atelier"]  # meilleur score d'abord
     assert int(rows[0][0]) >= int(rows[1][0])
@@ -42,14 +44,18 @@ def test_C62_C64_C89_csv_sorted_by_score_and_neutralized(campaign_db: Engine) ->
 
 def test_C65_excluded_listed_with_their_reason(campaign_db: Engine) -> None:
     campaign_id = campaign_with_prospects(campaign_db)
-    header, *rows = read_csv(campaign_csv(campaign_db, campaign_id, "exclus", NOW))
+    header, *rows = read_csv(
+        campaign_csv(campaign_db, campaign_id, "exclus", NOW, pepper=BOX.pepper)
+    )
     assert header == ["Entreprise", "Raison de l'exclusion", "Adresse", "Métier", "Fiche Google"]
     assert rows == [["Franchise Café", "Franchise ou chaîne (Café)", "Lyon", "cuisiniste", ""]]
 
 
 def test_C63_C65_excel_two_sheets(campaign_db: Engine) -> None:
     campaign_id = campaign_with_prospects(campaign_db)
-    book = openpyxl.load_workbook(io.BytesIO(campaign_xlsx(campaign_db, campaign_id, NOW)))
+    book = openpyxl.load_workbook(
+        io.BytesIO(campaign_xlsx(campaign_db, campaign_id, NOW, pepper=BOX.pepper))
+    )
     assert book.sheetnames == ["Prospects", "Exclus"]
     cell = book["Prospects"]["B2"]
     assert cell.value == '=HYPERLINK("x")' and cell.data_type == "s"  # texte, jamais formule
@@ -59,8 +65,8 @@ def test_C63_C65_excel_two_sheets(campaign_db: Engine) -> None:
 def test_C118_file_export_changes_no_status(campaign_db: Engine) -> None:
     campaign_id = campaign_with_prospects(campaign_db)
     before = [r.status for r in prospect_list(campaign_db, None, "", "trouves").rows]
-    campaign_csv(campaign_db, campaign_id, "prospects", NOW)
-    campaign_xlsx(campaign_db, campaign_id, NOW)
+    campaign_csv(campaign_db, campaign_id, "prospects", NOW, pepper=BOX.pepper)
+    campaign_xlsx(campaign_db, campaign_id, NOW, pepper=BOX.pepper)
     assert [r.status for r in prospect_list(campaign_db, None, "", "trouves").rows] == before
 
 
@@ -70,5 +76,7 @@ def test_C64_export_day_is_the_owner_day(campaign_db: Engine) -> None:
 
     campaign_id = campaign_with_prospects(campaign_db)
     late = datetime(2026, 10, 27, 23, 30, tzinfo=UTC)  # 28 octobre à Paris
-    data = campaign_csv(campaign_db, campaign_id, "prospects", late, "Europe/Paris")
+    data = campaign_csv(
+        campaign_db, campaign_id, "prospects", late, "Europe/Paris", pepper=BOX.pepper
+    )
     assert data.startswith(b"\xef\xbb\xbf")

@@ -11,6 +11,7 @@ from pydantic_settings import BaseSettings
 
 if TYPE_CHECKING:
     from prospection.application.backup import BackupTarget
+    from prospection.sources.gmail import GmailOAuth
     from prospection.sources.web_push import VapidKeys
 
 LOCAL_HOSTS = ("127.0.0.1", "localhost")
@@ -38,10 +39,28 @@ class Settings(BaseSettings):
     vapid_public_key: str | None = None
     vapid_private_key: SecretStr | None = None
     vapid_subject: str | None = None  # mailto:vous@exemple.fr
+    # Mail d'audit (C144) : identifiants de l'app Google (console Google Cloud, OAuth)
+    gmail_client_id: str | None = None
+    gmail_client_secret: SecretStr | None = None
+    public_url: str | None = None  # https://… ; sinon le domaine donné par Railway
+    railway_public_domain: str | None = None
 
-    @field_validator("backup_s3_url")
+    def gmail_oauth(self) -> "GmailOAuth | None":
+        from prospection.sources.gmail import GmailOAuth
+
+        if not (self.gmail_client_id and self.gmail_client_secret):
+            return None
+        return GmailOAuth(self.gmail_client_id, self.gmail_client_secret.get_secret_value())
+
+    def public_base(self) -> str | None:
+        """Adresse publique de l'app (retour de Google, lien de désinscription)."""
+        if self.public_url:
+            return self.public_url.rstrip("/")
+        return f"https://{self.railway_public_domain}" if self.railway_public_domain else None
+
+    @field_validator("backup_s3_url", "public_url")
     @classmethod
-    def _backup_url_is_https(cls, url: str | None) -> str | None:
+    def _url_is_https(cls, url: str | None) -> str | None:
         if url is not None and urlsplit(url).scheme != "https":
             raise ValueError("adresse https:// attendue")
         return url

@@ -33,7 +33,7 @@ def test_google_site_retried_in_http_when_https_is_broken() -> None:
     place = dataclasses.replace(AZ, website="https://azenergie.fr/")
     report = check_site(server({"http://azenergie.fr": (SITE, {})}), place, ("electricien",), 2026)
     assert report.url == "http://azenergie.fr/" and report.audit is not None
-    assert "Pas de HTTPS" in report.audit.problems
+    assert "https_broken" in report.audit.codes  # C141
 
 
 def test_hosting_placeholder_counts_as_no_site() -> None:

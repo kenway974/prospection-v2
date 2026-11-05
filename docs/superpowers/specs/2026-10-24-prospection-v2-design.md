@@ -34,7 +34,7 @@ La v2 devient donc le **poste de travail quotidien de prospection** : trouver, q
 - App installable (PWA) sur Android, qui ne perd jamais une saisie.
 
 **Non-objectifs**
-- Aucun envoi de message (mail, SMS) : le propriétaire contacte lui-même (règle de CLAUDE.md).
+- Un seul envoi de message : le mail d'audit, relu et envoyé par le propriétaire depuis la fiche (spec 2026-11-04-mail-audit-design.md) ; aucun envoi automatique ni en masse.
 - Pas de suivi client après le « Intéressé » : devis, projet, facturation restent dans le CRM.
 - Pas d'IA générative (coût, imprévisibilité) ; on pourra y revenir plus tard.
 - Pas de mode hors connexion (le propriétaire a toujours du réseau quand il appelle).

@@ -21,6 +21,8 @@
   {% if card.crm_url %}<a class="button-secondary" href="{{ card.crm_url }}" target="_blank" rel="noopener noreferrer">Fiche Notion</a>{% endif %}
   {% if seen %}<a class="button-secondary" href="{{ seen.linkedin }}" target="_blank" rel="noopener noreferrer">Dirigeant sur LinkedIn</a>{% endif %}
 </div>
+{% if mail_sent %}<p class="secondary">Mail d'audit envoyé le {{ mail_sent }}</p>
+{% elif p.site and p.site.audit %}<div class="links"><a class="button-secondary" href="/prospects/{{ p.id }}/mail">Mail d'audit</a></div>{% endif %}
 {% include "_suivi.html" %}
 {% include "_notes.html" %}
 {% include "_contact.html" %}

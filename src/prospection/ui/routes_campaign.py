@@ -16,7 +16,8 @@ from prospection.application.campaigns import (
 from prospection.application.file_export import campaign_csv, campaign_xlsx
 from prospection.config import Settings
 from prospection.domain.google_cost import Pricing
-from prospection.ui.deps import get_engine, get_now, get_pricing, get_settings, templates
+from prospection.storage.secret_box import SecretBox
+from prospection.ui.deps import get_box, get_engine, get_now, get_pricing, get_settings, templates
 from prospection.ui.formatting import euros, short_datetime
 from prospection.ui.session import require_session
 
@@ -75,7 +76,7 @@ def campaign_progress(
 def stop(
     campaign_id: int,
     engine: Engine = Depends(get_engine), now: datetime = Depends(get_now),  # noqa: B008
-    settings: Settings = Depends(get_settings),  # noqa: B008
+    settings: Settings = Depends(get_settings), box: SecretBox = Depends(get_box),  # noqa: B008
 ) -> Response:  # fmt: skip
     _progress(engine, campaign_id)
     request_stop(engine, campaign_id, now)
@@ -91,12 +92,12 @@ def _download(data: bytes, kind: str, name: str) -> Response:
 def export_csv(
     campaign_id: int, liste: str = "prospects",
     engine: Engine = Depends(get_engine), now: datetime = Depends(get_now),  # noqa: B008
-    settings: Settings = Depends(get_settings),  # noqa: B008
+    settings: Settings = Depends(get_settings), box: SecretBox = Depends(get_box),  # noqa: B008
 ) -> Response:  # fmt: skip
     """C62, C65, C66 : prospects ou exclus ; aucun statut modifié (C118)."""
     _progress(engine, campaign_id)
     which = "exclus" if liste == "exclus" else "prospects"
-    data = campaign_csv(engine, campaign_id, which, now, settings.timezone)
+    data = campaign_csv(engine, campaign_id, which, now, settings.timezone, pepper=box.pepper)
     return _download(data, "text/csv; charset=utf-8", f"campagne-{campaign_id}-{which}.csv")
 
 
@@ -104,8 +105,8 @@ def export_csv(
 def export_xlsx(
     campaign_id: int,
     engine: Engine = Depends(get_engine), now: datetime = Depends(get_now),  # noqa: B008
-    settings: Settings = Depends(get_settings),  # noqa: B008
+    settings: Settings = Depends(get_settings), box: SecretBox = Depends(get_box),  # noqa: B008
 ) -> Response:  # fmt: skip
     _progress(engine, campaign_id)
-    data = campaign_xlsx(engine, campaign_id, now, settings.timezone)
+    data = campaign_xlsx(engine, campaign_id, now, settings.timezone, pepper=box.pepper)
     return _download(data, XLSX, f"campagne-{campaign_id}.xlsx")

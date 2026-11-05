@@ -7,6 +7,7 @@ from zoneinfo import ZoneInfo
 
 from sqlalchemy import Engine
 
+from prospection.application.authority import known_authority
 from prospection.application.prospect_view import (
     Insights,
     emails_of,
@@ -16,8 +17,9 @@ from prospection.domain.call_status import proposed_action
 from prospection.domain.company_card import registry_lines
 from prospection.domain.email_check import email_domain
 from prospection.domain.place import web_link
-from prospection.domain.site_card import site_lines, site_links
+from prospection.domain.site_card import authority_line, site_domain, site_lines, site_links
 from prospection.storage import prospect_list as store
+from prospection.storage.audit_mails import sent_at
 from prospection.storage.call_tracking import Action, Note, notes, open_action
 from prospection.storage.crm_exports import crm_link
 from prospection.storage.mail_domains import mail_servers
@@ -46,6 +48,7 @@ class Card:
     site_links: list[tuple[str, str]] = field(default_factory=list)
     insights: Insights | None = None  # score, raison, drapeaux, confiance, emails
     crm_url: str | None = None  # fiche créée dans le CRM (C72)
+    mail_sent_on: datetime | None = None  # mail d'audit déjà envoyé (C146)
 
 
 def tel_link(phone: object) -> str | None:
@@ -77,15 +80,20 @@ def card(
         domains = [d for e in emails_of(prospect) if (d := email_domain(e))]
         servers = mail_servers(conn, domains)
         crm_url = web_link(crm_link(conn, prospect_id))
+        mail_sent_on = sent_at(conn, prospect_id)
     today = now.astimezone(ZoneInfo(timezone)).date()
     proposal = None if action else proposed_action(prospect.status, today)
     position, previous_id, next_id = _neighbours(queue, prospect_id)
     site = prospect.site
     website = web_link(site.url if site and site.url else prospect.data.get("website"))
+    lines = site_lines(site)
+    domain = site_domain(site.url) if site and site.audit else None
+    if domain and (rank := known_authority(engine, domain)) is not None:
+        lines.append(authority_line(rank))
     return Card(
         prospect, tel_link(prospect.data.get("phone")), website,
         web_link(prospect.data.get("maps_url")), found_notes, action, proposal,
         registry_lines(prospect.company, prospect.registry_status), position,
-        len(queue), previous_id, next_id, site_lines(site), site_links(site),
-        insights(prospect, servers, today), crm_url,
+        len(queue), previous_id, next_id, lines, site_links(site),
+        insights(prospect, servers, today), crm_url, mail_sent_on,
     )  # fmt: skip

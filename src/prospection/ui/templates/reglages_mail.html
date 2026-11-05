@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Mail d'audit · Prospection{% endblock %}
+{% block content %}
+<a href="/reglages" class="back">Réglages</a>
+<h1 class="large-title">Mail d'audit</h1>
+<p class="empty">Depuis la fiche d'un prospect, le bouton « Mail d'audit » prépare un mail court sur son site. Vous le relisez, puis il part de votre Gmail.</p>
+<section class="group form" aria-labelledby="titre-gmail">
+  <h2 class="row-title" id="titre-gmail">Gmail</h2>
+  {% if address %}
+  <p class="row ok" role="status">Relié à {{ address }}</p>
+  <form method="post" action="/reglages/gmail/deconnecter"><button type="submit" class="button-danger">Délier Gmail</button></form>
+  {% elif can_connect %}
+  <p class="secondary">Google vous demandera l'accord pour envoyer des mails en votre nom. L'app ne lit jamais votre boîte.</p>
+  <a class="button-primary" href="/reglages/gmail/connecter">Relier mon Gmail</a>
+  {% else %}
+  <p class="notice">Gmail n'est pas encore configuré : ajoutez GMAIL_CLIENT_ID et GMAIL_CLIENT_SECRET dans les variables de Railway (voir le guide de déploiement), puis revenez ici.</p>
+  {% endif %}
+  {% if gmail_error %}<p class="error" role="alert">{{ gmail_error }}</p>{% endif %}
+</section>
+<form method="post" action="/reglages/mail" class="group form">
+  <label for="nom">Votre nom (signature)</label>
+  <input id="nom" name="nom" autocomplete="name" value="{{ values.nom }}"{% if errors.name %} aria-invalid="true" aria-describedby="erreur-nom"{% endif %}>
+  {% if errors.name %}<p class="error" id="erreur-nom" role="alert">{{ errors.name }}</p>{% endif %}
+  <label for="telephone">Votre téléphone (facultatif)</label>
+  <input id="telephone" name="telephone" inputmode="tel" autocomplete="tel" value="{{ values.telephone }}"{% if errors.phone %} aria-invalid="true" aria-describedby="erreur-telephone"{% endif %}>
+  {% if errors.phone %}<p class="error" id="erreur-telephone" role="alert">{{ errors.phone }}</p>{% endif %}
+  <label for="portfolio">Lien de votre portfolio</label>
+  <input id="portfolio" name="portfolio" inputmode="url" placeholder="https://…" value="{{ values.portfolio }}"{% if errors.portfolio %} aria-invalid="true" aria-describedby="erreur-portfolio"{% endif %}>
+  {% if errors.portfolio %}<p class="error" id="erreur-portfolio" role="alert">{{ errors.portfolio }}</p>{% endif %}
+  <label for="calendly">Lien Calendly pour réserver l'appel (facultatif)</label>
+  <input id="calendly" name="calendly" inputmode="url" placeholder="https://calendly.com/…" value="{{ values.calendly }}"{% if errors.calendly %} aria-invalid="true" aria-describedby="erreur-calendly"{% endif %}>
+  {% if errors.calendly %}<p class="error" id="erreur-calendly" role="alert">{{ errors.calendly }}</p>{% endif %}
+  <label for="jours">Rappel pour appeler le prospect après l'envoi</label>
+  <select id="jours" name="jours">
+    {% for d in ["1", "2", "3"] %}<option value="{{ d }}"{% if values.jours == d %} selected{% endif %}>Dans {{ d }} jour{{ "s" if d != "1" }}</option>{% endfor %}
+  </select>
+  {% if errors.days %}<p class="error" role="alert">{{ errors.days }}</p>{% endif %}
+  <button type="submit" class="button-primary">Enregistrer</button>
+</form>
+{% endblock %}

@@ -26,3 +26,17 @@ effectifs:
   "51": 2 000 à 4 999 salariés
   "52": 5 000 à 9 999 salariés
   "53": 10 000 salariés et plus
+# Compléments du registre (API Recherche d'entreprises) affichés comme labels (C149).
+labels:
+  est_rge: "RGE (Reconnu garant de l'environnement)"
+  est_qualiopi: "Qualiopi (formation certifiée)"
+  est_bio: "Bio"
+  est_ess: "Économie sociale et solidaire"
+  est_patrimoine_vivant: "Entreprise du patrimoine vivant"
+  est_societe_mission: "Société à mission"
+  est_organisme_formation: "Organisme de formation"
+  est_entrepreneur_spectacle: "Entrepreneur de spectacles"
+  est_finess: "Établissement sanitaire ou social (FINESS)"
+  est_siae: "Structure d'insertion par l'activité économique"
+  est_alim_confiance: "Contrôle sanitaire Alim'Confiance"
+  est_achats_responsables: "Label Relations fournisseurs et achats responsables"

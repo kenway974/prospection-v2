@@ -39,6 +39,7 @@ class _Siege(BaseModel):
     liste_enseignes: list[str] | None = None
     nom_commercial: str | None = None
     statut_diffusion_etablissement: str | None = None
+    activite_principale: str | None = None
 
 
 class _Leader(BaseModel):
@@ -53,7 +54,7 @@ class _Bilan(BaseModel):
     resultat_net: int | None = None
 
 
-class _Result(BaseModel):
+class RegistryResult(BaseModel):
     siren: str
     nom_complet: str | None = None
     nom_raison_sociale: str | None = None
@@ -67,6 +68,8 @@ class _Result(BaseModel):
     dirigeants: list[_Leader] | None = None
     finances: dict[str, _Bilan] | None = None
     matching_etablissements: list[Any] | None = None
+    complements: dict[str, Any] | None = None
+    nombre_etablissements_ouverts: int | None = None
 
 
 def _sites(raw: list[Any] | None) -> tuple[tuple[str, str], ...]:
@@ -94,7 +97,7 @@ def _finances(raw: dict[str, _Bilan] | None) -> tuple[int, int | None, int | Non
     return years[-1], latest.ca, latest.resultat_net
 
 
-def to_company(r: _Result) -> Company:
+def to_company(r: RegistryResult) -> Company:
     siege = r.siege or _Siege()
     diffusible = r.statut_diffusion != "P" and siege.statut_diffusion_etablissement != "P"
     others = [
@@ -135,7 +138,7 @@ def search_companies(client: httpx.Client, name: str, postal: str | None) -> lis
     raw_results = body.get("results")
     for raw in raw_results if isinstance(raw_results, list) else []:
         try:
-            companies.append(to_company(_Result.model_validate(raw)))
+            companies.append(to_company(RegistryResult.model_validate(raw)))
         except ValidationError:
             continue
     return companies

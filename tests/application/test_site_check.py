@@ -83,4 +83,4 @@ def test_C46_site_only_in_http_still_found() -> None:
 
     report = check(fake_client(handler)[0])
     assert report.origin == "retrouvé" and report.url == "http://azenergie.fr"
-    assert report.audit is not None and "Pas de HTTPS" in report.audit.problems
+    assert report.audit is not None and "https_broken" in report.audit.codes  # C141

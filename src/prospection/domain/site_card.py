@@ -36,6 +36,8 @@ def site_lines(report: SiteReport | None) -> list[tuple[str, str]]:
     audit, lines = report.audit, [("Origine", ORIGINS.get(report.origin, report.origin))]
     lines += [("Score", f"{audit.score}/100"), ("Technologie", audit.technology or "inconnue"),
               ("Problèmes", " ; ".join(audit.problems) or "aucun")]  # fmt: skip
+    if audit.form_place:
+        lines.append(("Formulaire", audit.form_place))
     if report.seo:
         lines.append(
             ("SEO local", " ; ".join(report.seo.problems) or "métier et ville bien placés")
@@ -70,3 +72,18 @@ def site_links(report: SiteReport | None) -> list[tuple[str, str]]:
         if url := web_link(social):
             links.append((_network(url), url))
     return links
+
+
+LOW_AUTHORITY = 2.0  # sur 10 : site presque inconnu de Google (C143)
+
+
+def authority_line(rank: float) -> tuple[str, str]:
+    value = f"{int(rank * 10) / 10:.1f}/10".replace(".", ",")
+    low = " : presque inconnu de Google" if rank < LOW_AUTHORITY else ""
+    return ("Autorité (Open PageRank)", value + low)
+
+
+def site_domain(url: str | None) -> str | None:
+    """Domaine d'un site, sans « www. » : clé de l'autorité (C143)."""
+    host = (urlsplit(url).hostname or "").lower() if url else ""
+    return host.removeprefix("www.") or None

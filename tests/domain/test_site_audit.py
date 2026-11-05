@@ -11,6 +11,8 @@ GOOD = (
 <script src="https://www.googletagmanager.com/gtag/js?id=G-1"></script></head>
 <body><h1>Boulangerie Martin</h1><form><input type="email"></form>
 <a href="https://www.facebook.com/boulangeriemartin">Facebook</a>
+<a href="/mentions-legales">Mentions légales</a><a href="/confidentialite">Vie privée</a>
+<script src="/tarteaucitron/tarteaucitron.js"></script>
 <p>"""
     + "pain " * 250
     + "</p><footer>© 2026 Boulangerie Martin</footer></body></html>"
@@ -32,7 +34,6 @@ def test_C50_C52_poor_site_lists_each_problem_in_plain_words() -> None:
     assert {
         "Pas de HTTPS",
         "Pas adapté au mobile",
-        "Pas de formulaire de contact",
         "Chargement lent (4,5 s)",
         "Pas de titre de page",
         "Pas de description pour Google",
@@ -43,6 +44,7 @@ def test_C50_C52_poor_site_lists_each_problem_in_plain_words() -> None:
         "Aucun lien vers les réseaux sociaux",
     } <= set(report.problems)
     assert report.score == 0
+    assert report.form_place == "non vérifié"  # Wix dessine ses formulaires en JavaScript (C138)
 
 
 def test_C50_hidden_from_google_is_said() -> None:

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Mail d'audit · {{ screen.name }} · Prospection{% endblock %}
+{% block content %}
+<a href="/prospects/{{ screen.prospect_id }}" class="back">{{ screen.name }}</a>
+<h1 class="large-title">Mail d'audit</h1>
+{% if sent %}
+<p class="notice" role="status">Mail d'audit envoyé le {{ sent }} : un seul envoi par prospect.</p>
+{% else %}
+{% if screen.blocked %}<p class="notice" role="status">{{ screen.blocked }}</p>{% endif %}
+{% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+<form method="post" action="/prospects/{{ screen.prospect_id }}/mail" class="group form">
+  {% if screen.sender %}<p class="secondary">Envoyé depuis {{ screen.sender }}</p>{% endif %}
+  <label for="a">Destinataire</label>
+  <select id="a" name="a">
+    {% for email in screen.recipients %}<option value="{{ email }}"{% if values.a == email %} selected{% endif %}>{{ email }}</option>{% endfor %}
+  </select>
+  <label for="objet">Objet</label>
+  <input id="objet" name="objet" value="{{ values.objet }}" maxlength="200">
+  <label for="texte">Texte (modifiable)</label>
+  <textarea id="texte" name="texte" rows="18">{{ values.texte }}</textarea>
+  <p class="secondary">Ajouté en bas du mail, toujours : « {{ screen.footer }} »</p>
+  <button type="submit" class="button-primary"{% if screen.blocked %} disabled{% endif %}>Envoyer<span class="htmx-indicator"> : envoi en cours…</span></button>
+</form>
+{% endif %}
+{% endblock %}

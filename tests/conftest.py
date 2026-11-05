@@ -15,6 +15,7 @@ from prospection.domain.services import Service
 from tests.application.campaign_helpers import BOX as CAMPAIGN_BOX
 from tests.application.campaign_helpers import NOW as CAMPAIGN_NOW
 from tests.application.campaign_helpers import TABLES as CAMPAIGN_TABLES
+from tests.application.mail_helpers import mail_db  # noqa: F401 (fixture du mail d'audit)
 
 SERVER_URL = os.environ.get(
     "TEST_DATABASE_URL", "postgresql+psycopg://postgres:postgres@localhost:5432/postgres"

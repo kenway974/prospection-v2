@@ -3,7 +3,7 @@ formulaire de contact, ancien Google Analytics, page d'hébergeur, signaux d'un 
 
 from prospection.domain.html_page import parse_page
 from prospection.domain.site_audit import audit, is_placeholder
-from tests.domain.test_site_audit import GOOD
+from tests.domain.test_site_audit import GOOD, RICH_FORM
 
 YEAR = 2026
 
@@ -13,12 +13,12 @@ def problems(html: str, url: str = "https://resto.fr", powered_by: str = "") -> 
 
 
 def test_search_or_login_form_is_not_a_contact_form() -> None:
-    search = GOOD.replace('<form><input type="email"></form>',
+    search = GOOD.replace(RICH_FORM,
                           '<form role="search"><input type="search" name="s"></form>'
                           '<form><input name="log"><input type="password"></form>')  # fmt: skip
     assert "Pas de formulaire de contact" in problems(search)
     quote = GOOD.replace(
-        '<form><input type="email"></form>',
+        RICH_FORM,
         '<form><input name="nom"><textarea name="message"></textarea></form>',
     )
     assert "Pas de formulaire de contact" not in problems(quote)

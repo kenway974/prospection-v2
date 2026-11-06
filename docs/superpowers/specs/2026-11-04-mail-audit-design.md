@@ -11,6 +11,7 @@ Sur la fiche d'un prospect, je veux un bouton qui prépare un **mail court** : l
 - Envoi depuis **Gmail** (`kapignolet18@gmail.com`), relié une fois à l'app.
 - Bouton « Mail d'audit » → mail **pré-rédigé** (objet + texte), **modifiable**, puis bouton « Envoyer ».
 - Mail **court et direct**, lien vers le **portfolio**, proposition d'un **appel de 15 minutes**, lien **Calendly** facultatif (pas encore créé : le champ reste vide tant qu'il n'existe pas).
+- *(06/11/2026)* Mails **plus concis** ; l'appel à l'action devient « Pour plus d'infos, appelez-moi au … : je vous explique tout, c'est gratuit et sans engagement » (sans téléphone réglé : « répondez à ce mail »).
 - Rédaction par **règles fixes** dans un fichier modifiable (`data/mail_rules.yaml`) : pour chaque problème, une phrase « problème → conséquence business → ce qu'il faudrait faire ».
 - Chiffres donnés **en fourchette**, sans source citée.
 - Après l'envoi : **rappel pour appeler** le prospect 1 à 3 jours plus tard (réglable).

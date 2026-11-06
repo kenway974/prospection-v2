@@ -75,15 +75,14 @@ def draft_mail(points: Sequence[MailPoint], company: str, site: str, sender: Mai
     values = {"entreprise": company, "site": site, "expediteur": sender.name,
               "telephone": sender.phone or "", "portfolio": sender.portfolio,
               "calendly": sender.calendly or "", "nombre": count, "lien": ""}  # fmt: skip
-    call = rules.appel_calendly if sender.calendly else rules.appel_sans_calendly
-    signature = rules.signature
-    if sender.phone:
-        signature += "\n" + rules.signature_telephone
+    call = rules.appel_telephone if sender.phone else rules.appel_sans_telephone  # C155
+    if sender.calendly:
+        call += "\n" + rules.calendly
     blocks = [
         f"**{i}. {p.title}**\n- **{rules.constat} :** {p.problem}\n"
         f"- **{rules.cout} :** {p.impact}\n- **{rules.solution} :** {p.action}"
         for i, p in enumerate(points, 1)
     ]
-    parts = [rules.intro, *blocks, rules.portfolio, call, signature]
+    parts = [rules.intro, *blocks, call, rules.portfolio, rules.signature]
     body = "\n\n".join(part.format_map(values) for part in parts)
     return Draft(rules.objet.format_map(values), body)

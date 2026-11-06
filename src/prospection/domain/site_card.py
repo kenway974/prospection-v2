@@ -37,7 +37,8 @@ def site_lines(report: SiteReport | None) -> list[tuple[str, str]]:
     lines += [("Score", f"{audit.score}/100"), ("Technologie", audit.technology or "inconnue"),
               ("Problèmes", " ; ".join(audit.problems) or "aucun")]  # fmt: skip
     if audit.form_place:
-        lines.append(("Formulaire", audit.form_place))
+        detail = f" · {audit.form_detail}" if audit.form_detail else ""
+        lines.append(("Formulaire", audit.form_place + detail))
     if report.seo:
         lines.append(
             ("SEO local", " ; ".join(report.seo.problems) or "métier et ville bien placés")

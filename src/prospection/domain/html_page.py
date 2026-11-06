@@ -7,7 +7,7 @@ réaffiché : les textes repris sont neutralisés à l'affichage (règle 5).
 from dataclasses import dataclass, field
 from html.parser import HTMLParser
 
-from prospection.domain.form_fields import field_kind
+from prospection.domain.form_fields import field_kind, trade_field
 
 MAX_ITEMS = 300
 MAX_TEXT = 100_000
@@ -34,6 +34,7 @@ class Page:
     truncated: bool = False  # page coupée à la lecture : la fin n'a pas été vue
     anchors: tuple[tuple[str, str], ...] = ()  # liens : (adresse, texte affiché)
     classes: dict[str, float] = field(default_factory=dict)  # classe CSS → position (0 à 1)
+    form_business: int = 0  # champs du métier du formulaire de contact le plus détaillé (C153)
 
 
 class _Reader(HTMLParser):
@@ -42,7 +43,7 @@ class _Reader(HTMLParser):
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
         self.title, self.forms, self.email_inputs, self.size = "", 0, 0, 0
-        self.h1_count = self.images = self.form_start = 0
+        self.h1_count = self.images = self.form_start = self.business = self.best_business = 0
         self.form: set[str] | None = None  # champs du formulaire en cours
         self.first_form: int | None = None  # position (en caractères) du premier formulaire
         self.anchor: list[str] | None = None  # lien en cours : [adresse, texte]
@@ -67,8 +68,8 @@ class _Reader(HTMLParser):
             self.metas.setdefault(a["name"].lower(), a.get("content", "")[:500])
         elif tag == "form":
             self.form = {"search"} if a.get("role", "").lower() == "search" else set()
-            self.form_start = self.size
-        elif tag in ("input", "textarea"):
+            self.form_start, self.business = self.size, 0
+        elif tag in ("input", "textarea", "select"):
             self._field(tag, a)
         if tag == "h1":
             self.h1_count += 1
@@ -87,6 +88,7 @@ class _Reader(HTMLParser):
         kind = field_kind(tag, a)
         if self.form is not None:
             self.form.add(kind)
+            self.business += trade_field(kind, a)
         elif kind in ("email", "textarea"):
             self.email_inputs += 1
             self.first_form = self.size if self.first_form is None else self.first_form
@@ -96,6 +98,7 @@ class _Reader(HTMLParser):
             "password", "search",
         }:  # fmt: skip
             self.forms += 1
+            self.best_business = max(self.best_business, self.business)
             self.first_form = self.form_start if self.first_form is None else self.first_form
         self.form = None
 
@@ -139,5 +142,5 @@ def parse_page(html: str, truncated: bool = False) -> Page:
         html, " ".join(reader.title.split())[:MAX_TITLE], reader.metas, h1, reader.forms,
         reader.email_inputs, reader.h1_count, reader.images, tuple(reader.links),
         tuple(reader.alts), tuple(reader.sources), text, at, truncated, tuple(reader.anchors),
-        classes,
+        classes, reader.best_business,
     )  # fmt: skip

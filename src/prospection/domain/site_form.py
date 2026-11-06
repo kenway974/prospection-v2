@@ -13,6 +13,8 @@ from prospection.domain.site_signals import signals
 
 HOME_TOP, HOME = "en haut de l'accueil", "plus bas sur l'accueil"
 CONTACT_PAGE, NONE, UNKNOWN = "sur une page Contact", "aucun", "non vérifié"
+BASIC, DETAILED = "basique (nom, email, message)", "devis détaillé (questions du métier)"
+MIN_TRADE_FIELDS = 2  # à partir de 2 questions sur le besoin : formulaire de devis (C153)
 FOUND = (HOME_TOP, HOME, CONTACT_PAGE)
 TOP_SHARE = 0.25  # moins d'un quart du texte avant le formulaire : visible dès l'arrivée
 MAX_PAGES = 2
@@ -70,3 +72,12 @@ def contact_links(page: Page, url: str) -> list[str]:
             found.append((rank, len(found), target))
     unique = list(dict.fromkeys(target for _, _, target in sorted(found)))
     return unique[:MAX_PAGES]
+
+
+def form_detail(home: Page, others: Sequence[Page]) -> str | None:
+    """Basique ou devis détaillé, d'après le formulaire le plus complet vu ; None si aucun
+    champ n'est visible (widget, service, page dessinée en JavaScript)."""
+    seen = [p for p in (home, *others) if p.forms > 0]
+    if not seen:
+        return None
+    return DETAILED if max(p.form_business for p in seen) >= MIN_TRADE_FIELDS else BASIC

@@ -10,6 +10,7 @@ from time import monotonic
 import httpx
 
 from prospection.domain.html_page import Page, parse_page
+from prospection.domain.not_site import not_a_site
 from prospection.domain.place import Place, web_link
 from prospection.domain.site_audit import audit, is_placeholder
 from prospection.domain.site_contacts import find_contacts, merge_contacts
@@ -104,6 +105,11 @@ def check_site(
 ) -> SiteReport:
     """Rapport du site ; jamais d'exception pour un site absent ou en panne."""
     url = web_link(place.website)
-    if url:
+    network = not_a_site(url) if url else None
+    if url and network is None:
         return _report(client, _read_url(client, url), "fiche Google", place, keywords, year)
-    return _guess(client, place, keywords, year)
+    found = _guess(client, place, keywords, year)
+    if network is None or found.url:
+        return found
+    problem = f"La fiche Google renvoie vers {network} : pas de vrai site"  # C154
+    return SiteReport("aucun", probable=found.probable, problem=problem, parked=True)

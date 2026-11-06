@@ -41,10 +41,10 @@ class MailRules(BaseModel):
     cout: str
     solution: str
     portfolio: str
-    appel_calendly: str
-    appel_sans_calendly: str
+    appel_telephone: str
+    appel_sans_telephone: str
+    calendly: str
     signature: str
-    signature_telephone: str
     pied_desinscription: str
     points: dict[str, Point]
     secteurs: dict[str, Sector] = {}
@@ -66,8 +66,8 @@ def parse_rules(raw: object) -> MailRules:
         rules = MailRules.model_validate(raw)
     except ValidationError as error:
         raise InvalidMailRules(f"Règles du mail mal formées : {error}") from None
-    texts = [rules.objet, rules.intro, rules.portfolio, rules.appel_calendly,
-             rules.appel_sans_calendly, rules.signature, rules.signature_telephone,
+    texts = [rules.objet, rules.intro, rules.portfolio, rules.appel_telephone,
+             rules.appel_sans_telephone, rules.calendly, rules.signature,
              rules.pied_desinscription, rules.constat, rules.cout, rules.solution]  # fmt: skip
     texts += [t for p in rules.points.values() for t in (p.titre, p.probleme, p.impact, p.action)]
     for name, sector in rules.secteurs.items():

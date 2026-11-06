@@ -207,3 +207,7 @@ Ajouter ou retirer un comportement = modifier ce fichier (avec l'accord du propr
 - C147 Après l'envoi, une note datée est ajoutée et un rappel « Rappeler » est planifié dans le délai réglé *(demandé le 04/11/2026)*
 - C148 Le lien de désinscription ouvre une page publique ; après confirmation, plus aucun mail n'est envoyé à cette adresse, même si le prospect est supprimé *(demandé le 04/11/2026)*
 - C151 Une page publique (sans connexion) décrit l'app et sa politique de confidentialité : elle sert de page d'accueil et de règles de confidentialité pour l'écran de consentement Google *(demandé le 05/11/2026)*
+- C152 Un site affiché seulement par JavaScript (Base44, Lovable, Bolt…) n'est jamais jugé « sans texte » ni « sans formulaire » : l'audit dit que son contenu est à vérifier à la main *(demandé le 06/11/2026)*
+- C153 L'audit distingue un formulaire basique (nom, email, message) d'un formulaire de devis détaillé (champs du métier : type de travaux, surface, photos, date…) *(demandé le 06/11/2026)*
+- C154 Une fiche Google qui renvoie vers un réseau social ou un annuaire (Instagram, Facebook, Linktree, PagesJaunes…) compte comme « sans site » *(demandé le 06/11/2026)*
+- C155 Les mails d'audit sont plus concis et finissent par « appelez-moi pour plus d'infos, c'est gratuit et sans engagement » *(demandé le 06/11/2026)*

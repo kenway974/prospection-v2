@@ -20,7 +20,8 @@ from prospection.domain.site_findings import (
     ageing_findings,
     basic_findings,
 )
-from prospection.domain.site_form import CONTACT_PAGE, FOUND, NONE, form_place
+from prospection.domain.site_form import CONTACT_PAGE, FOUND, NONE, UNKNOWN, form_place
+from prospection.domain.site_js import BLIND, JS_ONLY, is_js_app
 from prospection.domain.site_privacy import privacy_findings
 from prospection.domain.site_reach import reach_findings
 from prospection.domain.site_signals import signals
@@ -86,6 +87,9 @@ def audit(
     https, mobile = url.lower().startswith("https://"), "viewport" in page.metas
     tech = technology(page, url)
     place = form_place(page, others, tech)
+    js_app = is_js_app(page)
+    if js_app and place not in FOUND:
+        place = UNKNOWN  # C152 : le formulaire est peut-être dessiné par JavaScript
     found = _security(https, https_failed, place in FOUND)
     if not mobile:
         found.append(("no_mobile", "Pas adapté au mobile", CRITICAL))
@@ -97,6 +101,8 @@ def audit(
     found += ageing_findings(page, url, powered_by)
     found += privacy_findings(page, collects=place in FOUND)
     found += reach_findings(page, find_contacts(page, country).phones, keywords)
+    if js_app:  # C152 : on ne juge pas ce qu'on ne voit pas
+        found = [f for f in found if f[0] not in BLIND] + [JS_ONLY]
     score = max(0, 100 - sum(weight for _, _, weight in found))
     problems, codes = tuple(t for _, t, _ in found), tuple(c for c, _, _ in found)
     return Audit(score, problems, tech, https, mobile, place != NONE, place, codes)

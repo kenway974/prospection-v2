@@ -166,6 +166,12 @@ points:
     probleme: "Certains éléments de votre site sont chargés sans sécurité."
     impact: "Le cadenas peut disparaître et le navigateur afficher un avertissement, ce qui fait fuir une partie des visiteurs."
     action: "Corriger les adresses de ces fichiers suffit."
+  js_only:
+    titre: "Un site que Google lit mal"
+    poids: 8
+    probleme: "Votre site s'affiche entièrement par JavaScript : la page lue par les moteurs de recherche est presque vide."
+    impact: "Google le lit moins bien, et les assistants IA comme les aperçus de partage n'y voient rien : vous ressortez moins."
+    action: "Générer les pages côté serveur règle le problème."
   no_legal_notice:
     titre: "Pas de mentions légales"
     poids: 9

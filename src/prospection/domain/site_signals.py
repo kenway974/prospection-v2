@@ -23,6 +23,7 @@ class Signals(BaseModel):
     booking_trades: list[str]
     form_widgets: list[str]
     form_apps: list[str]
+    js_app_roots: list[str]
 
 
 @cache

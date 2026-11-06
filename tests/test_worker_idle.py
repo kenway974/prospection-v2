@@ -30,3 +30,23 @@ def test_C149_idle_worker_completes_companies_then_pauses(
     clock[0] = NOW + timedelta(minutes=11)
     worker.work_once()
     assert len(calls) == 3
+
+
+def test_C152_idle_worker_reaudits_old_sites_then_pauses(
+    campaign_db: Engine, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import prospection.idle_work as idle
+
+    monkeypatch.setattr(idle, "detail_companies", lambda *a, **k: 0)
+    results, calls, clock = [2, 0, 0], [], [NOW]
+
+    def reaudit(*args: object) -> int:
+        calls.append(args)
+        return results.pop(0)
+
+    monkeypatch.setattr(idle, "reaudit_sites", reaudit)
+    worker = Worker(campaign_db, BOX, fake_client(pages())[0], PRICING, now=lambda: clock[0])
+    assert worker.work_once() is True
+    worker.work_once()
+    worker.work_once()
+    assert len(calls) == 2

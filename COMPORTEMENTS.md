@@ -207,3 +207,4 @@ Ajouter ou retirer un comportement = modifier ce fichier (avec l'accord du propr
 - C147 Après l'envoi, une note datée est ajoutée et un rappel « Rappeler » est planifié dans le délai réglé *(demandé le 04/11/2026)*
 - C148 Le lien de désinscription ouvre une page publique ; après confirmation, plus aucun mail n'est envoyé à cette adresse, même si le prospect est supprimé *(demandé le 04/11/2026)*
 - C151 Une page publique (sans connexion) décrit l'app et sa politique de confidentialité : elle sert de page d'accueil et de règles de confidentialité pour l'écran de consentement Google *(demandé le 05/11/2026)*
+- C152 Les sites audités avant la nouvelle détection (formulaire, RGPD, contact) sont réaudités automatiquement par la tâche de fond, gratuitement, en gardant la vitesse déjà mesurée *(demandé le 06/11/2026)*

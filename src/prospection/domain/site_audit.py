@@ -20,13 +20,22 @@ from prospection.domain.site_findings import (
     ageing_findings,
     basic_findings,
 )
-from prospection.domain.site_form import CONTACT_PAGE, FOUND, NONE, UNKNOWN, form_place
+from prospection.domain.site_form import (
+    BASIC,
+    CONTACT_PAGE,
+    FOUND,
+    NONE,
+    UNKNOWN,
+    form_detail,
+    form_place,
+)
 from prospection.domain.site_js import BLIND, JS_ONLY, is_js_app
 from prospection.domain.site_privacy import privacy_findings
 from prospection.domain.site_reach import reach_findings
 from prospection.domain.site_signals import signals
 
 __all__ = ["LEGACY_GA", "Audit", "audit", "is_placeholder", "technology"]
+BASIC_FORM = "Formulaire basique (nom, email, message) : aucune question sur le besoin"
 ONLY_CONTACT = "Formulaire seulement sur une page Contact : invisible depuis l'accueil"
 NO_HTTPS, BROKEN_HTTPS = "Pas de HTTPS", "Pas de HTTPS (ou certificat invalide)"
 CLEAR_FORM = " : les messages du formulaire circulent en clair"
@@ -49,6 +58,7 @@ class Audit:
     contact_form: bool  # aucun manque constaté (« non vérifié » compte comme présent)
     form_place: str | None = None  # où est le formulaire (C139) ; None : audit ancien
     codes: tuple[str, ...] = ()  # code de chaque problème, dans le même ordre
+    form_detail: str | None = None  # basique ou devis détaillé (C153)
 
 
 def technology(page: Page, url: str) -> str | None:
@@ -98,6 +108,9 @@ def audit(
     found += basic_findings(page, seconds, current_year)
     if place == CONTACT_PAGE:
         found.append(("form_contact_only", ONLY_CONTACT, MINOR))
+    detail = form_detail(page, others)
+    if detail == BASIC:
+        found.append(("form_basic", BASIC_FORM, MINOR))
     found += ageing_findings(page, url, powered_by)
     found += privacy_findings(page, collects=place in FOUND)
     found += reach_findings(page, find_contacts(page, country).phones, keywords)
@@ -105,4 +118,4 @@ def audit(
         found = [f for f in found if f[0] not in BLIND] + [JS_ONLY]
     score = max(0, 100 - sum(weight for _, _, weight in found))
     problems, codes = tuple(t for _, t, _ in found), tuple(c for c, _, _ in found)
-    return Audit(score, problems, tech, https, mobile, place != NONE, place, codes)
+    return Audit(score, problems, tech, https, mobile, place != NONE, place, codes, detail)

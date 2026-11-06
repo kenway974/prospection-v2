@@ -82,6 +82,13 @@ points:
     probleme: "Votre formulaire n'apparaît que sur la page Contact."
     impact: "Un visiteur pressé qui arrive sur l'accueil ne le voit pas, et il ne cherche pas longtemps."
     action: "Un bouton « Demander un devis » ou un court formulaire visible dès l'arrivée capte ces demandes."
+  form_basic:
+    titre: "Un formulaire qui ne pose aucune question"
+    poids: 6
+    groupe: formulaire
+    probleme: "Votre formulaire demande seulement nom, email et message."
+    impact: "Vous devez rappeler chaque client pour comprendre son besoin, et les demandes vagues se perdent."
+    action: "Quelques questions du métier (type de travaux, surface, photos) donnent des demandes prêtes à chiffrer."
   phone_not_clickable:
     titre: "Un numéro qu'on ne peut pas appeler d'un geste"
     poids: 6
@@ -210,7 +217,8 @@ secteurs:
       no_mobile: "Vos clients vous cherchent « près de moi » sur leur téléphone, souvent juste avant de venir : entre 55 et 70 % des visites se font sur mobile, et un site illisible les envoie chez le voisin."
   urgence:
     mots: [plombier, chauffagiste, chauffage, electricien, serrurier, couvreur, toiture, vitrier, depann, macon, menuisier, peintre, carreleur, plaquiste, renovation, climatisation, desembouage, isolation, debouchage, assainissement, artisan]
-    bonus: {no_form: 8, form_contact_only: 10, phone_not_clickable: 10, no_mobile: 8, slow_mobile: 5}
+    bonus: {no_form: 8, form_contact_only: 10, form_basic: 6, phone_not_clickable: 10, no_mobile: 8, slow_mobile: 5}
     impacts:
+      form_basic: "Avec seulement nom et message, vous rappelez chaque client pour savoir de quoi il a besoin : autant d'appels qui ne rapportent rien."
       form_contact_only: "Une personne qui a une fuite ou une panne veut vous joindre tout de suite : si le formulaire de devis n'est pas sous ses yeux dès l'accueil, elle appelle le suivant dans la liste."
       phone_not_clickable: "En cas d'urgence, vos clients appellent depuis leur téléphone : s'ils doivent recopier votre numéro, une partie appelle directement un concurrent."

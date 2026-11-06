@@ -3,13 +3,19 @@
 from prospection.domain.html_page import parse_page
 from prospection.domain.site_audit import audit
 
+RICH_FORM = (  # formulaire de commande : questions du métier (C153)
+    '<form><input type="email"><select name="commande"></select>'
+    '<input type="date" name="retrait"></form>'
+)
 GOOD = (
     """<html><head><title>Boulangerie Martin à Lyon</title>
 <meta name="viewport" content="width=device-width">
 <meta name="description" content="Pain au levain">
 <meta name="generator" content="WordPress 6.6">
 <script src="https://www.googletagmanager.com/gtag/js?id=G-1"></script></head>
-<body><h1>Boulangerie Martin</h1><form><input type="email"></form>
+<body><h1>Boulangerie Martin</h1>"""
+    + RICH_FORM
+    + """
 <a href="https://www.facebook.com/boulangeriemartin">Facebook</a>
 <a href="/mentions-legales">Mentions légales</a><a href="/confidentialite">Vie privée</a>
 <script src="/tarteaucitron/tarteaucitron.js"></script>

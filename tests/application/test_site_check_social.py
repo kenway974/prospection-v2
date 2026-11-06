@@ -3,7 +3,8 @@
 import dataclasses
 
 from prospection.application.site_verdict import WITH_SITE_REASON, with_site
-from prospection.domain.criteria import Verdict
+from prospection.domain.criteria import Criteria, Verdict
+from tests.application.campaign_helpers import request
 from tests.application.test_site_check import AZ, SITE, check, site
 from tests.fake_http import fake_client
 from tests.sources.test_web_reader import raw
@@ -31,7 +32,5 @@ def test_C154_real_site_still_found_from_the_name() -> None:
     assert report.origin == "retrouvé" and report.url == "https://azenergie.fr"
 
 
-def _criteria():  # type: ignore[no-untyped-def]
-    from tests.application.campaign_helpers import request
-
+def _criteria() -> Criteria:
     return request().criteria

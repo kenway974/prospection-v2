@@ -50,12 +50,13 @@ def _fits(c: Condition, f: LeadFacts, sectors: list[str]) -> bool:
     return all(checks)
 
 
-def matching_hooks(facts: LeadFacts, keywords: Sequence[str]) -> list[str]:
-    """Accroches qui s'appliquent, la préférée d'abord (aucune si rien de notable)."""
+def matching_hooks(facts: LeadFacts, keywords: Sequence[str]) -> list[tuple[str, str]]:
+    """Accroches qui s'appliquent (modèle, texte rempli), la préférée d'abord."""
     rules = load_mail_rules()
     sectors = sectors_for(rules, keywords)
     values = {
         "entreprise": facts.company, "avis": str(facts.reviews), "ans": str(_years(facts) or ""),
         "note": f"{facts.rating:.1f}".replace(".", ",") if facts.rating is not None else "",
     }  # fmt: skip
-    return [h.texte.format_map(values) for h in rules.accroches if _fits(h.quand, facts, sectors)]
+    return [(h.texte, h.texte.format_map(values)) for h in rules.accroches
+            if _fits(h.quand, facts, sectors)]  # fmt: skip

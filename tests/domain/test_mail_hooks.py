@@ -2,7 +2,13 @@
 
 from datetime import date
 
-from prospection.domain.mail_hooks import LeadFacts, matching_hooks
+from prospection.domain.mail_hooks import LeadFacts
+from prospection.domain.mail_hooks import matching_hooks as _pairs
+
+
+def matching_hooks(facts: LeadFacts, keywords: tuple[str, ...]) -> list[str]:
+    return [filled for _, filled in _pairs(facts, keywords)]
+
 
 TODAY = date(2026, 11, 7)
 FACTS = LeadFacts("Martin Paysage", 4.8, 52, None, (), True, TODAY)

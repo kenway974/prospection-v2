@@ -13,9 +13,12 @@
 # secteurs.<nom> : « mots » du métier (sans accents, début de mot) ; « bonus » ajouté au poids ;
 # « impacts » remplace l'effet business pour ce métier.
 
-objet: "{entreprise} : audit express de votre site, {nombre} à corriger"
-# Autres objets possibles : « J'ai regardé le site de {entreprise} : {nombre} à corriger »,
-# « {entreprise} : ce que votre site vous fait perdre ({nombre}) ».
+# Objets (C162) : l'app les fait tourner, le moins utilisé d'abord ; la page Stats dit lequel
+# amène le plus de conversations. Ajoutez-en, retirez-en : au moins un.
+objets:
+  - "{entreprise} : audit express de votre site, {nombre} à corriger"
+  - "J'ai regardé le site de {entreprise} : {nombre} à corriger"
+  - "{entreprise} : ce qui vous fait perdre des clients en ligne"
 salutation: "Bonjour,"
 intro: "Je suis {expediteur}, développeur web. J'ai regardé votre site ({site}) : **{nombre} à corriger** pour ne plus perdre de clients."
 intro_sans_site: "Je suis {expediteur}, développeur web. J'ai regardé la présence en ligne de {entreprise} : **{nombre} à corriger** pour ne plus perdre de clients."

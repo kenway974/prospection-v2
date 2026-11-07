@@ -13,6 +13,7 @@ from prospection.application.mail_bounce import mark_bounced
 from prospection.application.prospect_card import UnknownProspect
 from prospection.application.site_reaudit import request_reaudit
 from prospection.config import Settings
+from prospection.domain.mail_versions import decode_versions, encode_versions
 from prospection.storage.secret_box import SecretBox
 from prospection.ui.deps import (
     get_box,
@@ -46,8 +47,9 @@ def _page(
         "objet": draft.subject if draft else "", "texte": draft.body if draft else "",
     }  # fmt: skip
     sent = short_datetime(screen.sent_on, settings.timezone) if screen.sent_on else None
+    versions = encode_versions(screen.versions) if screen.versions else ""
     context = {"tab": "prospects", "screen": screen, "values": values, "error": error,
-               "sent": sent}  # fmt: skip
+               "sent": sent, "versions": versions}  # fmt: skip
     return templates.TemplateResponse(request, "mail.html", context, status_code=code)
 
 
@@ -83,12 +85,14 @@ def reaudit(prospect_id: int, engine: Engine = ENGINE, now: datetime = NOW) -> R
 def send_mail(
     request: Request, prospect_id: int, a: str = Form("", max_length=320),
     objet: str = Form("", max_length=1000), texte: str = Form("", max_length=40_000),
+    versions: str = Form("", max_length=40),
     engine: Engine = ENGINE, box: SecretBox = BOX, client: httpx.Client = CLIENT,
     settings: Settings = SETTINGS, now: datetime = NOW,
 ) -> Response:  # fmt: skip
     try:
         send_audit_mail(engine, box, client, settings.gmail_oauth(), settings.public_base(),
-                        prospect_id, a, objet, texte, now, settings.timezone)  # fmt: skip
+                        prospect_id, a, objet, texte, now, settings.timezone,
+                        decode_versions(versions))  # fmt: skip
     except UnknownProspect:
         raise HTTPException(status_code=404) from None
     except MailBlocked as blocked:

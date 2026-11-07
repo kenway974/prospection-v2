@@ -29,6 +29,7 @@ from prospection.ui import (
     routes_search,
     routes_selection,
     routes_settings,
+    routes_stats,
     routes_unsubscribe,
 )
 from prospection.ui.cookies import SessionRefreshMiddleware
@@ -53,7 +54,7 @@ def create_app(settings: Settings, engine: Engine) -> FastAPI:
         routes_exclusions, routes_search, routes_campaign, routes_prospects, routes_selection,
         routes_calls, routes_export, routes_field, routes_followup, routes_dashboard,
         routes_privacy, routes_push, routes_mail_settings, routes_mail, routes_unsubscribe,
-        routes_public_info,
+        routes_public_info, routes_stats,
     )  # fmt: skip
     for module in modules:
         app.include_router(module.router)

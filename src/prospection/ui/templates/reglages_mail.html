@@ -8,6 +8,7 @@
   <h2 class="row-title" id="titre-gmail">Gmail</h2>
   {% if address %}
   <p class="row ok" role="status">Relié à {{ address }}</p>
+  {% if reconnect %}<p class="notice" role="status">Pour repérer les réponses à vos mails d'audit, Gmail doit être relié à nouveau : « Délier Gmail », puis « Relier mon Gmail » et acceptez le nouvel accès (voir qui a répondu, jamais le contenu).</p>{% endif %}
   <form method="post" action="/reglages/gmail/deconnecter"><button type="submit" class="button-danger">Délier Gmail</button></form>
   {% elif can_connect %}
   <p class="secondary">Google vous demandera l'accord pour envoyer des mails en votre nom. L'app ne lit jamais votre boîte.</p>

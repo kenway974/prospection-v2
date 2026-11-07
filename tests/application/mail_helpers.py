@@ -1,5 +1,6 @@
 """Prospect audité, réglages du mail et faux Google pour les tests du mail d'audit."""
 
+import dataclasses
 import json
 from collections.abc import Iterator
 
@@ -29,7 +30,13 @@ CONTACTS = Contacts(("contact@martin.fr", "noreply@martin.fr"), (), ())
 SITE = SiteReport("fiche Google", "http://martin.fr/", audit=AUDIT, contacts=CONTACTS)
 
 
-def add_audited(engine: Engine, site: SiteReport | None = SITE) -> int:
+def add_audited(
+    engine: Engine, site: SiteReport | None = SITE, contacts_email: str | None = None
+) -> int:
+    """`contacts_email` : une autre adresse que celle du site d'exemple (une adresse ne reçoit
+    qu'un mail d'audit)."""
+    if site is not None and contacts_email:
+        site = dataclasses.replace(site, contacts=Contacts((contacts_email,), (), ()))
     with engine.begin() as conn:
         campaign_id = create_campaign(conn, request(), STEPS, NOW)
         insert_prospect(conn, campaign_id, PLACE, "plombier", Verdict(True, (), ()), NOW, site)
@@ -47,7 +54,7 @@ def google(send_status: int = 200) -> tuple[httpx.Client, Recorder]:
     def handler(request: httpx.Request) -> httpx.Response:
         if request.url.host == "oauth2.googleapis.com":
             return httpx.Response(200, json={"access_token": "court"})
-        return httpx.Response(send_status, json={"id": "m1"})
+        return httpx.Response(send_status, json={"id": "m1", "threadId": "fil-1"})
 
     return fake_client(handler)
 
@@ -66,5 +73,6 @@ def mail_db(campaign_db: Engine) -> Iterator[Engine]:
         conn.exec_driver_sql(
             "DELETE FROM mail_optouts; DELETE FROM mail_sends; UPDATE mail_settings SET "
             "sender_name = NULL, phone = NULL, portfolio = NULL, calendly = NULL, "
-            "reminder_days = 2, gmail_address = NULL, gmail_token = NULL, gmail_connected_at = NULL"
+            "reminder_days = 2, gmail_address = NULL, gmail_token = NULL, "
+            "gmail_connected_at = NULL, replies_blocked = false"
         )

@@ -25,6 +25,7 @@ from prospection.application.site_verdict import SiteChecker, skip_sites
 from prospection.application.speed_check import SpeedJob
 from prospection.domain.google_cost import Pricing, load_pricing
 from prospection.idle_work import IdleWork
+from prospection.sources.gmail import GmailOAuth
 from prospection.sources.mail_domain import mail_server
 from prospection.storage.secret_box import SecretBox
 
@@ -39,11 +40,12 @@ class Worker:
         mail_lookup: Callable[[str], str | None] | None = None, timezone: str = "Europe/Paris",
         backup: Callable[[datetime], object] | None = None,
         push: Callable[[datetime], object] | None = None, speed: SpeedJob | None = None,
+        gmail: GmailOAuth | None = None,
     ) -> None:  # fmt: skip
         self.engine, self.box, self.client, self.pricing = engine, box, client, pricing
         self.now, self.sites, self.mail_lookup = now, sites, mail_lookup
         self.timezone = timezone
-        self.idle = IdleWork(engine, box, client, pricing, now, mail_lookup, sites)
+        self.idle = IdleWork(engine, box, client, pricing, now, mail_lookup, sites, gmail)
         self.reminders, self.periodic = regular_jobs(
             engine, box, client, pricing, timezone, backup, now(), push, speed
         )
@@ -124,7 +126,8 @@ def main() -> None:  # pragma: no cover (point d'entrée, testé en bout en bout
         push = push_job(settings.vapid_keys(), engine, client, settings.timezone)
         worker = Worker(engine, box, client, load_pricing(), sites=sites, mail_lookup=lookup,
                         timezone=settings.timezone, backup=backup, push=push,
-                        speed=SpeedJob(engine, box, client))  # fmt: skip
+                        speed=SpeedJob(engine, box, client),
+                        gmail=settings.gmail_oauth())  # fmt: skip
         logger.info("Tâche de fond démarrée")
         worker.run_forever(stop)
         if worker.speed:  # arrêt propre : la mesure en cours finit avant la fermeture

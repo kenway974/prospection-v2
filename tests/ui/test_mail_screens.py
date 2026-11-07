@@ -80,3 +80,21 @@ def test_C145_blocked_screen_says_what_to_do(
     pid = add_audited(mail_db)
     page = html.unescape(client.get(f"/prospects/{pid}/mail").text)
     assert "Réglages → Mail d'audit" in page and "disabled" in page
+
+
+def test_C162_versions_of_the_shown_draft_travel_with_the_send(
+    web: tuple[TestClient, Recorder], mail_db: Engine
+) -> None:
+    from prospection.storage.mail_send_log import all_sends
+
+    client, _ = web
+    pid = add_audited(mail_db)
+    ready(mail_db)
+    page = client.get(f"/prospects/{pid}/mail").text
+    assert 'name="versions" value="o0-a' in page
+    client.post(f"/prospects/{pid}/mail", headers=ORIGIN, data={
+        "a": "contact@martin.fr", "objet": "Objet à moi", "texte": "Texte à moi",
+        "versions": "o2-a-1-s1"})  # fmt: skip
+    with mail_db.connect() as conn:
+        [sent] = all_sends(conn)
+    assert sent.structure == "courte" and sent.edited and sent.hook_version is None

@@ -8,6 +8,7 @@ from datetime import datetime
 
 from sqlalchemy import (
     BigInteger,
+    Boolean,
     Column,
     Connection,
     DateTime,
@@ -20,8 +21,9 @@ from sqlalchemy import (
     text,
     update,
 )
-from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, insert
 
+from prospection.domain.mail_versions import SendDetails
 from prospection.storage.db import metadata
 
 TS = DateTime(timezone=True)
@@ -31,6 +33,9 @@ mail_sends = Table(
     Column("prospect_id", BigInteger, ForeignKey("prospects.id", ondelete="SET NULL")),
     Column("email_hash", Text, nullable=False), Column("token", Text, nullable=False, unique=True),
     Column("sent_at", TS, nullable=False), Column("bounced_at", TS),  # C157 : refusé
+    Column("subject_version", Text), Column("hook_version", Text), Column("structure", Text),
+    Column("edited", Boolean), Column("points", ARRAY(Text)), Column("profile", JSONB),  # C162
+    Column("thread_id", Text), Column("replied_at", TS), Column("reply_checked_at", TS),  # C163
     Index("mail_sends_one_active", "prospect_id", unique=True,
           postgresql_where=text("bounced_at IS NULL")),
 )  # fmt: skip
@@ -42,11 +47,17 @@ mail_optouts = Table(
 
 
 def record_send(
-    conn: Connection, prospect_id: int, email_hash: str, token: str, now: datetime
-) -> bool:
+    conn: Connection, prospect_id: int, email_hash: str, token: str, now: datetime,
+    details: SendDetails | None = None,
+) -> bool:  # fmt: skip
     """Faux si un mail a déjà été envoyé à ce prospect (un seul envoi, même en double clic)."""
+    extra = {} if details is None else {
+        "subject_version": details.versions.subject, "hook_version": details.versions.hook,
+        "structure": details.versions.structure, "edited": details.edited,
+        "points": list(details.points), "profile": details.profile,
+    }  # fmt: skip
     statement = insert(mail_sends).values(prospect_id=prospect_id, email_hash=email_hash,
-                                          token=token, sent_at=now)  # fmt: skip
+                                          token=token, sent_at=now, **extra)  # fmt: skip
     done = statement.on_conflict_do_nothing(index_elements=["prospect_id"], index_where=_ACTIVE)
     return conn.execute(done.returning(mail_sends.c.id)).scalar() is not None
 

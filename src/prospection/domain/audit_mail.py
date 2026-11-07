@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from prospection.domain.audit_mail_rules import load_mail_rules, sectors_for
 
 MAX_POINTS = 3
+STRUCTURES = ("détaillée", "courte")  # constat, impact, solution ; ou une phrase par point
 
 
 @dataclass(frozen=True)
@@ -61,9 +62,10 @@ def choose_points(codes: Sequence[str], keywords: Sequence[str]) -> list[MailPoi
 
 def draft_mail(
     points: Sequence[MailPoint], company: str, site: str, sender: MailSender,
-    hook: str | None = None,
+    hook: str | None = None, subject: str | None = None, structure: str = STRUCTURES[0],
 ) -> Draft:  # fmt: skip
-    """`site` vide : prospect sans site (C161) ; `hook` : accroche personnalisée (C160)."""
+    """`site` vide : prospect sans site (C161) ; `hook` : accroche personnalisée (C160) ;
+    `subject` (modèle d'objet) et `structure` : versions choisies (C162)."""
     rules = load_mail_rules()
     count = f"{len(points)} point{'s' if len(points) > 1 else ''}"
     values = {"entreprise": company, "site": site, "expediteur": sender.name,
@@ -75,6 +77,8 @@ def draft_mail(
     blocks = [
         f"**{i}. {p.title}**\n- **{rules.constat} :** {p.problem}\n"
         f"- **{rules.cout} :** {p.impact}\n- **{rules.solution} :** {p.action}"
+        if structure == STRUCTURES[0]
+        else f"**{i}. {p.title}**\n{p.impact} {p.action}"
         for i, p in enumerate(points, 1)
     ]
     intro = rules.intro if site else rules.intro_sans_site
@@ -82,4 +86,4 @@ def draft_mail(
     filled = [part.format_map(values) for part in parts]
     opening = [rules.salutation.format_map(values), *([hook] if hook else [])]  # déjà rempli
     body = "\n\n".join([*opening, *filled])
-    return Draft(rules.objet.format_map(values), body)
+    return Draft((subject or rules.objets[0]).format_map(values), body)

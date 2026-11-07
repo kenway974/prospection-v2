@@ -14,6 +14,7 @@ from prospection.application.mail_settings import (
     disconnect_gmail,
     finish_gmail,
     load_settings_screen,
+    replies_need_reconnect,
     start_gmail,
 )
 from prospection.config import Settings
@@ -51,6 +52,7 @@ def _page(
                        "jours": str(saved.reminder_days)}  # fmt: skip
     context = {"tab": "settings", "values": shown, "errors": errors or {},
                "address": connected_address(engine), "gmail_error": gmail_error,
+               "reconnect": replies_need_reconnect(engine),
                "can_connect": bool(settings.gmail_oauth() and settings.public_base())}  # fmt: skip
     return templates.TemplateResponse(request, "reglages_mail.html", context, status_code=code)
 

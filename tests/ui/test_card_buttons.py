@@ -10,11 +10,10 @@ from tests.application.campaign_helpers import NOW
 from tests.application.mail_helpers import add_audited, ready
 from tests.application.test_audit_mail import PARIS, send
 from tests.fake_http import Recorder
-from tests.ui.test_mail_screens import web  # noqa: F401 (client avec faux Google)
 from tests.ui.test_settings_keys import ORIGIN
 
 
-def test_C156_reaudit_button_queues_the_audit(web: tuple[TestClient, Recorder],  # noqa: F811
+def test_C156_reaudit_button_queues_the_audit(web: tuple[TestClient, Recorder],
                                                mail_db: Engine) -> None:  # fmt: skip
     client, _ = web
     pid = add_audited(mail_db)
@@ -26,7 +25,7 @@ def test_C156_reaudit_button_queues_the_audit(web: tuple[TestClient, Recorder], 
     assert card(mail_db, pid, NOW, PARIS).reaudit_pending
 
 
-def test_C157_bounce_button_after_a_sent_mail(web: tuple[TestClient, Recorder],  # noqa: F811
+def test_C157_bounce_button_after_a_sent_mail(web: tuple[TestClient, Recorder],
                                               mail_db: Engine) -> None:  # fmt: skip
     client, _ = web
     pid = add_audited(mail_db)
@@ -39,7 +38,7 @@ def test_C157_bounce_button_after_a_sent_mail(web: tuple[TestClient, Recorder], 
 
 
 def test_C161_listing_block_and_mail_button_without_site(
-    web: tuple[TestClient, Recorder],  # noqa: F811
+    web: tuple[TestClient, Recorder],
     mail_db: Engine,
 ) -> None:
     client, _ = web

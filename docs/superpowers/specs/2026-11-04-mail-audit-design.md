@@ -48,3 +48,13 @@ Sur la fiche d'un prospect, je veux un bouton qui prépare un **mail court** : l
 - Formulaires dessinés en JavaScript : reconnus à la trace exacte qu'ils laissent dans le HTML (classe du widget : Ninja Forms, Squarespace, Weebly, Jimdo, Webflow, Wix ; identifiant de l'application Wix Forms), sans lancer de navigateur. Un navigateur par site a été écarté : lourd sur Railway et risqué (il chargerait n'importe quelle adresse, y compris interne). Un formulaire sans aucune trace reste « non vérifié » si la page vient d'un constructeur connu.
 - Open PageRank : service tiers gratuit, quota limité ; une panne n'empêche pas le mail.
 - Gmail : tant que l'app Google est en mode « Test », Google coupe la connexion au bout de 7 jours. La passer « En production » (sans validation Google, un avertissement s'affiche à la connexion) supprime cette limite. Expliqué dans le guide de déploiement.
+
+## Ajouts du 06/11/2026 (C152 à C164)
+
+- Sites affichés par JavaScript, formulaire basique ou détaillé, réseaux sociaux et annuaires « sans site », mails plus concis (C152 à C155).
+- « Refaire l'audit » à la demande, par la tâche de fond (C156) ; « Mail refusé », manuel ou repéré dans la conversation Gmail (C157).
+- Formulaire enterré, bouton « Devis » en haut, qualité du formulaire et questions attendues par métier (`form_expectations` dans `site_signals.yaml`) (C158, C159).
+- Accroches tirées des faits (avis, ancienneté, labels) et audit de la fiche Google ; mail possible sans site (C160, C161).
+- Statistiques : versions tournantes (objets, accroches, structures), profil du lead à l'envoi, réponses repérées par les en-têtes Gmail (droit `gmail.metadata`, jamais le contenu), page Stats ; une conversation = réponse ou appel abouti ; pas d'ouvertures (pixel espion : consentement CNIL, chiffres faussés par Apple Mail) (C162 à C164).
+- Décidé par moi : seuil de 10 envois avant de classer ; réponses revues toutes les 6 h pendant 30 jours ; plus de 6 champs obligatoires = formulaire trop long ; formulaire « en bas de la page Contact » au-delà de la moitié du texte.
+- Pas fait : lecture des sites en JavaScript via PageSpeed (voir le compte rendu).

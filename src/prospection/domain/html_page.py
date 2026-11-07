@@ -7,7 +7,7 @@ réaffiché : les textes repris sont neutralisés à l'affichage (règle 5).
 from dataclasses import dataclass, field
 from html.parser import HTMLParser
 
-from prospection.domain.form_fields import field_kind, trade_field
+from prospection.domain.form_fields import FormState, FormSummary, field_kind
 
 MAX_ITEMS = 300
 MAX_TEXT = 100_000
@@ -34,7 +34,8 @@ class Page:
     truncated: bool = False  # page coupée à la lecture : la fin n'a pas été vue
     anchors: tuple[tuple[str, str], ...] = ()  # liens : (adresse, texte affiché)
     classes: dict[str, float] = field(default_factory=dict)  # classe CSS → position (0 à 1)
-    form_business: int = 0  # champs du métier du formulaire de contact le plus détaillé (C153)
+    best_form: FormSummary | None = None  # formulaire de contact le plus détaillé (C153, C159)
+    anchors_at: tuple[float, ...] = ()  # position de chaque lien (0 à 1), dans l'ordre (C158)
 
 
 class _Reader(HTMLParser):
@@ -43,11 +44,13 @@ class _Reader(HTMLParser):
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
         self.title, self.forms, self.email_inputs, self.size = "", 0, 0, 0
-        self.h1_count = self.images = self.form_start = self.business = self.best_business = 0
-        self.form: set[str] | None = None  # champs du formulaire en cours
+        self.h1_count = self.images = self.form_start = 0
+        self.form: FormState | None = None  # formulaire en cours
+        self.best: FormSummary | None = None
         self.first_form: int | None = None  # position (en caractères) du premier formulaire
         self.anchor: list[str] | None = None  # lien en cours : [adresse, texte]
         self.anchors: list[tuple[str, str]] = []
+        self.anchors_at: list[int] = []
         self.classes: dict[str, int] = {}  # première position de chaque classe CSS
         self.metas: dict[str, str] = {}
         self.h1: list[str] = []
@@ -67,8 +70,8 @@ class _Reader(HTMLParser):
         if tag == "meta" and a.get("name") and len(self.metas) < MAX_ITEMS:
             self.metas.setdefault(a["name"].lower(), a.get("content", "")[:500])
         elif tag == "form":
-            self.form = {"search"} if a.get("role", "").lower() == "search" else set()
-            self.form_start, self.business = self.size, 0
+            self.form = FormState(a.get("role", "").lower() == "search")
+            self.form_start = self.size
         elif tag in ("input", "textarea", "select"):
             self._field(tag, a)
         if tag == "h1":
@@ -78,6 +81,7 @@ class _Reader(HTMLParser):
         elif tag == "a" and a.get("href") and len(self.links) < MAX_ITEMS:
             self.links.append(a["href"][:500])
             self.anchor = [a["href"][:500], ""]
+            self.anchors_at.append(self.size)
         if tag == "img" and a.get("alt") and len(self.alts) < MAX_ITEMS:
             self.alts.append(a["alt"][:300])
         src = a.get("src") or (a.get("href") if tag == "link" else "")
@@ -85,20 +89,18 @@ class _Reader(HTMLParser):
             self.sources.append(src[:500])
 
     def _field(self, tag: str, a: dict[str, str]) -> None:
-        kind = field_kind(tag, a)
         if self.form is not None:
-            self.form.add(kind)
-            self.business += trade_field(kind, a)
-        elif kind in ("email", "textarea"):
+            self.form.field(tag, a)
+        elif field_kind(tag, a) in ("email", "textarea"):
             self.email_inputs += 1
             self.first_form = self.size if self.first_form is None else self.first_form
 
     def end_form(self) -> None:
-        if self.form and self.form & {"email", "tel", "textarea"} and not self.form & {
-            "password", "search",
-        }:  # fmt: skip
+        if self.form and self.form.is_contact():
             self.forms += 1
-            self.best_business = max(self.best_business, self.business)
+            found = self.form.summary()
+            if self.best is None or found.trade_fields > self.best.trade_fields:
+                self.best = found
             self.first_form = self.form_start if self.first_form is None else self.first_form
         self.form = None
 
@@ -118,6 +120,8 @@ class _Reader(HTMLParser):
         if self.depth["title"]:
             self.title = (self.title + data)[:MAX_TITLE]
             return
+        if self.form is not None:
+            self.form.data(data)
         if self.anchor is not None and len(self.anchor[1]) < MAX_TITLE:
             self.anchor[1] += " " + data[:MAX_TITLE]
         if self.depth["h1"] and len(self.h1) < MAX_ITEMS:
@@ -142,5 +146,5 @@ def parse_page(html: str, truncated: bool = False) -> Page:
         html, " ".join(reader.title.split())[:MAX_TITLE], reader.metas, h1, reader.forms,
         reader.email_inputs, reader.h1_count, reader.images, tuple(reader.links),
         tuple(reader.alts), tuple(reader.sources), text, at, truncated, tuple(reader.anchors),
-        classes, reader.best_business,
+        classes, reader.best, tuple(x / total for x in reader.anchors_at[: len(reader.anchors)]),
     )  # fmt: skip

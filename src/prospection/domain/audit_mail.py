@@ -5,14 +5,13 @@ ce métier, chacun dit en trois temps (problème, effet sur le business, ce qu'i
 Le texte reste modifiable avant l'envoi ; la désinscription est ajoutée à l'envoi (C146).
 """
 
-import re
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-from prospection.domain.audit_mail_rules import MailRules, load_mail_rules
-from prospection.domain.trades import normalize
+from prospection.domain.audit_mail_rules import load_mail_rules, sectors_for
 
 MAX_POINTS = 3
+STRUCTURES = ("détaillée", "courte")  # constat, impact, solution ; ou une phrase par point
 
 
 @dataclass(frozen=True)
@@ -38,18 +37,10 @@ class Draft:
     body: str
 
 
-def _sectors(rules: MailRules, keywords: Sequence[str]) -> list[str]:
-    words = " ".join(normalize(k) for k in keywords)
-    return [
-        name for name, sector in rules.secteurs.items()
-        if any(re.search(rf"\b{re.escape(normalize(w))}", words) for w in sector.mots)
-    ]  # fmt: skip
-
-
 def choose_points(codes: Sequence[str], keywords: Sequence[str]) -> list[MailPoint]:
     """Problèmes de l'audit (codes) → au plus 3 points, du plus lourd au plus léger."""
     rules = load_mail_rules()
-    sectors = [rules.secteurs[name] for name in _sectors(rules, keywords)]
+    sectors = [rules.secteurs[name] for name in sectors_for(rules, keywords)]
 
     def weight(code: str) -> int:
         return rules.points[code].poids + sum(s.bonus.get(code, 0) for s in sectors)
@@ -69,7 +60,12 @@ def choose_points(codes: Sequence[str], keywords: Sequence[str]) -> list[MailPoi
     return chosen
 
 
-def draft_mail(points: Sequence[MailPoint], company: str, site: str, sender: MailSender) -> Draft:
+def draft_mail(
+    points: Sequence[MailPoint], company: str, site: str, sender: MailSender,
+    hook: str | None = None, subject: str | None = None, structure: str = STRUCTURES[0],
+) -> Draft:  # fmt: skip
+    """`site` vide : prospect sans site (C161) ; `hook` : accroche personnalisée (C160) ;
+    `subject` (modèle d'objet) et `structure` : versions choisies (C162)."""
     rules = load_mail_rules()
     count = f"{len(points)} point{'s' if len(points) > 1 else ''}"
     values = {"entreprise": company, "site": site, "expediteur": sender.name,
@@ -81,8 +77,13 @@ def draft_mail(points: Sequence[MailPoint], company: str, site: str, sender: Mai
     blocks = [
         f"**{i}. {p.title}**\n- **{rules.constat} :** {p.problem}\n"
         f"- **{rules.cout} :** {p.impact}\n- **{rules.solution} :** {p.action}"
+        if structure == STRUCTURES[0]
+        else f"**{i}. {p.title}**\n{p.impact} {p.action}"
         for i, p in enumerate(points, 1)
     ]
-    parts = [rules.intro, *blocks, call, rules.portfolio, rules.signature]
-    body = "\n\n".join(part.format_map(values) for part in parts)
-    return Draft(rules.objet.format_map(values), body)
+    intro = rules.intro if site else rules.intro_sans_site
+    parts = [intro, *blocks, call, rules.portfolio, rules.signature]
+    filled = [part.format_map(values) for part in parts]
+    opening = [rules.salutation.format_map(values), *([hook] if hook else [])]  # déjà rempli
+    body = "\n\n".join([*opening, *filled])
+    return Draft((subject or rules.objets[0]).format_map(values), body)

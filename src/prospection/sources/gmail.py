@@ -1,7 +1,8 @@
 """Gmail : connexion OAuth Google et envoi par l'API Gmail en HTTPS (C144, C146).
 
-Droits demandés : envoyer des mails (gmail.send) et connaître l'adresse du compte (openid
-email), rien d'autre : l'app ne lit jamais la boîte. L'envoi SMTP est bloqué sur Railway (hors
+Droits demandés : envoyer des mails (gmail.send), connaître l'adresse du compte (openid
+email) et voir les en-têtes d'une conversation (gmail.metadata : qui a répondu au mail d'audit) ;
+l'app ne lit jamais le contenu d'un mail. L'envoi SMTP est bloqué sur Railway (hors
 offre Pro) : l'API HTTPS le remplace. Réponses validées ; aucun jeton dans les journaux.
 """
 
@@ -20,7 +21,9 @@ AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 TOKEN_URL = "https://oauth2.googleapis.com/token"  # noqa: S105 (adresse, pas un secret)
 REVOKE_URL = "https://oauth2.googleapis.com/revoke"
 SEND_URL = "https://gmail.googleapis.com/gmail/v1/users/me/messages/send"
-SCOPES = "openid email https://www.googleapis.com/auth/gmail.send"
+# Envoyer ; connaître l'adresse du compte ; voir les en-têtes d'une conversation (réponses, C163)
+SCOPES = ("openid email https://www.googleapis.com/auth/gmail.send "
+          "https://www.googleapis.com/auth/gmail.metadata")  # fmt: skip
 LABEL = "Gmail"
 
 
@@ -114,7 +117,8 @@ def access_token(client: httpx.Client, oauth: GmailOAuth, refresh_token: str) ->
     return token
 
 
-def send_raw(client: httpx.Client, token: str, raw: bytes) -> None:
+def send_raw(client: httpx.Client, token: str, raw: bytes) -> str | None:
+    """Envoie ; rend l'identifiant de la conversation Gmail (None si absent)."""
     encoded = base64.urlsafe_b64encode(raw).decode()
     headers = {"Authorization": f"Bearer {token}"}
     response = send(client, "POST", SEND_URL, LABEL, headers=headers, json={"raw": encoded})
@@ -126,6 +130,8 @@ def send_raw(client: httpx.Client, token: str, raw: bytes) -> None:
         raise GmailRevoked
     if response.status_code != 200:
         raise GmailRefused
+    thread = (json_object(response) or {}).get("threadId")
+    return thread[:100] if isinstance(thread, str) and thread else None
 
 
 def revoke(client: httpx.Client, refresh_token: str) -> bool:

@@ -2,6 +2,7 @@
 {% block title %}Prospects · Prospection{% endblock %}
 {% block content %}
 <h1 class="large-title">Prospects</h1>
+<p><a href="/stats" class="button-secondary">Stats des mails d'audit</a></p>
 {% if deleted %}<p class="secondary" role="status">{{ deleted }} prospect{{ "s" if deleted > 1 }} supprimé{{ "s" if deleted > 1 }}.</p>{% endif %}
 <p><a href="/exporter">Exporter les intéressés vers Notion</a></p>
 {% if not any_prospect %}

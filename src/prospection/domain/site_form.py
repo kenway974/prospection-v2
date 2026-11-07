@@ -80,4 +80,5 @@ def form_detail(home: Page, others: Sequence[Page]) -> str | None:
     seen = [p for p in (home, *others) if p.forms > 0]
     if not seen:
         return None
-    return DETAILED if max(p.form_business for p in seen) >= MIN_TRADE_FIELDS else BASIC
+    best = max((p.best_form.trade_fields for p in seen if p.best_form), default=0)
+    return DETAILED if best >= MIN_TRADE_FIELDS else BASIC

@@ -13,13 +13,19 @@
 # secteurs.<nom> : « mots » du métier (sans accents, début de mot) ; « bonus » ajouté au poids ;
 # « impacts » remplace l'effet business pour ce métier.
 
-objet: "{entreprise} : audit express de votre site, {nombre} à corriger"
-# Autres objets possibles : « J'ai regardé le site de {entreprise} : {nombre} à corriger »,
-# « {entreprise} : ce que votre site vous fait perdre ({nombre}) ».
-intro: |-
-  Bonjour,
-
-  Je suis {expediteur}, développeur web. J'ai regardé votre site ({site}) : **{nombre} à corriger** pour ne plus perdre de clients.
+# Objets (C162) : l'app les fait tourner, le moins utilisé d'abord ; la page Stats dit lequel
+# amène le plus de conversations. Ajoutez-en, retirez-en : au moins un.
+objets:
+  - "{entreprise} : audit express de votre site, {nombre} à corriger"
+  - "J'ai regardé le site de {entreprise} : {nombre} à corriger"
+  - "{entreprise} : ce qui vous fait perdre des clients en ligne"
+# Objets pour un prospect sans site (C161) : jamais « votre site ».
+objets_sans_site:
+  - "{entreprise} : {nombre} à corriger pour gagner des clients en ligne"
+  - "{entreprise} : ce qui vous fait perdre des clients en ligne"
+salutation: "Bonjour,"
+intro: "Je suis {expediteur}, développeur web. J'ai regardé votre site ({site}) : **{nombre} à corriger** pour ne plus perdre de clients."
+intro_sans_site: "Je suis {expediteur}, développeur web. J'ai regardé la présence en ligne de {entreprise} : **{nombre} à corriger** pour ne plus perdre de clients."
 # Libellés des trois parties de chaque point (en gras dans le mail).
 constat: "Constat"
 cout: "Impact"
@@ -89,6 +95,32 @@ points:
     probleme: "Votre formulaire demande seulement nom, email et message."
     impact: "Vous devez rappeler chaque client pour comprendre son besoin."
     action: "Quelques questions du métier (travaux, surface, photos)."
+  form_buried:
+    titre: "Un formulaire tout en bas de la page Contact"
+    poids: 8
+    groupe: formulaire
+    probleme: "Votre formulaire est tout en bas de la page Contact."
+    impact: "Il faut le chercher : beaucoup de visiteurs abandonnent avant."
+    action: "Le placer en haut de la page, ou dès l'accueil."
+  no_cta_top:
+    titre: "Pas de bouton « Devis » en haut du site"
+    poids: 7
+    probleme: "Aucun bouton « Devis » ou « Rendez-vous » n'est visible en haut de l'accueil."
+    impact: "Le visiteur doit chercher comment vous contacter : une partie abandonne."
+    action: "Un bouton bien visible dès l'arrivée."
+  form_too_long:
+    titre: "Un formulaire trop long"
+    poids: 5
+    groupe: formulaire
+    probleme: "Votre formulaire demande trop de champs obligatoires."
+    impact: "Chaque champ en plus fait abandonner une partie des visiteurs."
+    action: "Garder l'essentiel obligatoire, le reste facultatif."
+  form_no_consent:
+    titre: "Un formulaire sans mention RGPD"
+    poids: 7
+    probleme: "Votre formulaire ne dit pas ce que deviennent les données envoyées."
+    impact: "Le RGPD l'impose : la CNIL peut sanctionner."
+    action: "Une phrase et un lien vers votre politique de confidentialité."
   phone_not_clickable:
     titre: "Un numéro qu'on ne peut pas appeler d'un geste"
     poids: 6
@@ -179,6 +211,36 @@ points:
     probleme: "Votre site s'affiche entièrement par JavaScript."
     impact: "Google le lit mal, et les assistants IA n'y voient rien."
     action: "Générer les pages côté serveur."
+  no_site:
+    titre: "Pas de site internet"
+    poids: 16
+    probleme: "Vous n'avez pas de site internet."
+    impact: "La plupart des clients comparent en ligne avant d'appeler : sans site, ils choisissent un concurrent."
+    action: "Un site simple, avec vos services, vos avis et un formulaire de devis."
+  gmb_few_reviews:
+    titre: "Peu d'avis Google"
+    poids: 9
+    probleme: "Votre fiche Google a peu d'avis."
+    impact: "Les clients font davantage confiance aux entreprises qui ont beaucoup d'avis."
+    action: "Demander un avis à chaque client satisfait, avec un lien direct."
+  gmb_low_rating:
+    titre: "Une note Google à remonter"
+    poids: 8
+    probleme: "Votre note Google est en dessous de 4/5."
+    impact: "Beaucoup de clients écartent les entreprises sous 4 étoiles."
+    action: "Répondre aux avis et solliciter vos clients satisfaits."
+  gmb_no_hours:
+    titre: "Des horaires absents de Google"
+    poids: 6
+    probleme: "Vos horaires n'apparaissent pas sur votre fiche Google."
+    impact: "Dans le doute, le client appelle un concurrent qui affiche les siens."
+    action: "Renseigner les horaires sur la fiche, quelques minutes."
+  gmb_few_photos:
+    titre: "Peu de photos sur Google"
+    poids: 5
+    probleme: "Votre fiche Google a peu de photos."
+    impact: "Les fiches avec photos reçoivent nettement plus de demandes."
+    action: "Ajouter des photos de vos réalisations et de votre équipe."
   no_legal_notice:
     titre: "Pas de mentions légales"
     poids: 9
@@ -222,3 +284,27 @@ secteurs:
       form_basic: "Vous rappelez chaque client pour savoir de quoi il a besoin."
       form_contact_only: "En cas de fuite ou de panne, le client contacte le premier qu'il peut joindre."
       phone_not_clickable: "En urgence, s'il doit recopier votre numéro, il appelle un concurrent."
+
+# Accroches (C160) : première phrase du mail, la première qui s'applique l'emporte. Critères
+# possibles : note_min, avis_min, avec_site (vrai/faux), age_max_mois, age_min_ans, label
+# (est_rge, est_qualiopi…), secteur (nom d'un secteur ci-dessus). Variables : {note}, {avis},
+# {ans}, {entreprise}.
+accroches:
+  - quand: {note_min: 4.5, avis_min: 10, avec_site: true}
+    texte: "{note} ★ sur {avis} avis Google : vos clients sont ravis, votre site doit le montrer."
+  - quand: {note_min: 4.5, avis_min: 10, avec_site: false}
+    texte: "{note} ★ sur {avis} avis Google : vos clients sont ravis, un site les ferait venir encore plus."
+  - quand: {age_max_mois: 12}
+    texte: "Félicitations pour le lancement de {entreprise} !"
+  - quand: {label: est_rge, secteur: urgence}
+    texte: "Vous êtes certifié RGE : c'est un argument fort pour vos clients, à mettre en avant en ligne."
+  - quand: {label: est_qualiopi, avec_site: true}
+    texte: "Vous êtes certifié Qualiopi : un gage de sérieux que votre site doit montrer."
+  - quand: {label: est_patrimoine_vivant}
+    texte: "Entreprise du patrimoine vivant : un savoir-faire rare, à montrer en ligne."
+  - quand: {note_min: 4.3, avis_min: 20, secteur: accueil, avec_site: true}
+    texte: "Vos clients vous notent {note}/5 : votre site doit donner la même envie de venir."
+  - quand: {avis_min: 50}
+    texte: "Plus de {avis} avis Google : vous avez une vraie réputation à faire valoir en ligne."
+  - quand: {age_min_ans: 20, avec_site: true}
+    texte: "{ans} ans d'activité : une expérience que votre site doit montrer."

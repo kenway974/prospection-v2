@@ -36,7 +36,10 @@ def test_C144_consent_page_asks_only_to_send_mails() -> None:
     url = authorize_url(OAUTH, REDIRECT, "etat-123")
     query = parse_qs(urlsplit(url).query)
     assert url.startswith("https://accounts.google.com/o/oauth2/v2/auth?")
-    assert query["scope"] == ["openid email https://www.googleapis.com/auth/gmail.send"]
+    assert query["scope"] == [
+        "openid email https://www.googleapis.com/auth/gmail.send "
+        "https://www.googleapis.com/auth/gmail.metadata"
+    ]
     assert query["state"] == ["etat-123"] and query["access_type"] == ["offline"]
     assert query["redirect_uri"] == [REDIRECT] and query["client_id"] == ["id-client"]
 
@@ -100,3 +103,29 @@ def test_C144_access_withdrawn_at_google() -> None:
     assert revoke(client, "jeton-long") is True  # déjà retiré chez Google
     client, _ = fake_client(timeout)
     assert revoke(client, "jeton-long") is False
+
+
+def test_C163_thread_headers_only() -> None:
+    from prospection.sources.gmail_threads import GmailScopeMissing, thread_messages
+
+    thread = {"messages": [
+        {"payload": {"headers": [{"name": "From", "value": "Kenny <kapignolet18@gmail.com>"}]}},
+        {"payload": {"headers": [{"name": "From", "value": "Martin <contact@martin.fr>"},
+                                 {"name": "Subject", "value": "Re: votre site"}]}},
+    ]}  # fmt: skip
+    client, recorder = fake_client(json_reply(200, thread))
+    assert thread_messages(client, "court", "fil-1") == [
+        {"from": "Kenny <kapignolet18@gmail.com>"},
+        {"from": "Martin <contact@martin.fr>", "subject": "Re: votre site"},
+    ]  # fmt: skip
+    request = recorder.requests[0]
+    assert request.url.path == "/gmail/v1/users/me/threads/fil-1"
+    assert request.url.params["format"] == "metadata"
+    assert request.url.params.get_list("metadataHeaders") == ["From", "Subject", "Auto-Submitted"]
+    client, _ = fake_client(json_reply(404, {}))
+    assert thread_messages(client, "court", "fil-1") == []
+    scope = {"error": {"code": 403, "status": "PERMISSION_DENIED",
+                       "details": [{"reason": "ACCESS_TOKEN_SCOPE_INSUFFICIENT"}]}}  # fmt: skip
+    client, _ = fake_client(json_reply(403, scope))
+    with pytest.raises(GmailScopeMissing):
+        thread_messages(client, "court", "fil-1")

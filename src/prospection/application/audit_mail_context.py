@@ -1,31 +1,32 @@
 """Tout ce qu'il faut savoir avant d'écrire ou d'envoyer le mail d'audit (C145, C146)."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 
 import httpx
 from sqlalchemy import Engine
 
-from prospection.application.authority import domain_authority
+from prospection.application.mail_material import MailMaterial, mail_material
 from prospection.application.prospect_card import UnknownProspect
 from prospection.application.prospect_view import emails_of
-from prospection.domain.audit_mail import MailPoint, MailSender, choose_points
+from prospection.domain.audit_mail import STRUCTURES, Draft, MailPoint, MailSender, draft_mail
+from prospection.domain.audit_mail_rules import load_mail_rules
 from prospection.domain.email_check import UNCHECKED, VALID, check_email, email_domain
 from prospection.domain.mail_message import email_fingerprint
 from prospection.domain.mail_settings import sender_of
-from prospection.domain.page_speed import is_slow
-from prospection.domain.site_card import LOW_AUTHORITY, site_domain
-from prospection.domain.site_report import SiteReport
+from prospection.domain.mail_stats import least_used
+from prospection.domain.mail_versions import MailVersions
 from prospection.sources.gmail import GmailOAuth
 from prospection.storage.audit_mails import already_written, opted_out, sent_at
 from prospection.storage.mail_domains import mail_servers
+from prospection.storage.mail_send_log import version_counts
 from prospection.storage.mail_settings import load_gmail, load_mail_settings
 from prospection.storage.prospect_list import load_prospect
 from prospection.storage.secret_box import SecretBox, UnreadableSecret
 
 SETTINGS = "Réglez d'abord votre nom et votre portfolio dans Réglages → Mail d'audit."
 GMAIL = "Reliez votre Gmail dans Réglages → Mail d'audit."
-NO_AUDIT = "Pas d'audit du site pour ce prospect : rien à dire dans ce mail."
+NO_AUDIT = "Ni audit du site ni fiche Google pour ce prospect : rien à dire dans ce mail."
 NOTHING = "L'audit n'a relevé aucun point à signaler : pas de mail à envoyer."
 NO_EMAIL = "Aucun email utilisable : ajoutez-en un dans « Contact » sur la fiche."
 NO_BASE = "Adresse publique de l'app inconnue : ajoutez PUBLIC_URL dans Railway."
@@ -47,19 +48,19 @@ class MailContext:
     reminder_days: int
     sent_on: datetime | None
     blocked: str | None
+    versions: MailVersions | None = None  # versions proposées, les moins utilisées (C162)
+    hooks: dict[str, str] = field(default_factory=dict)  # accroches possibles : modèle → texte
+    material: MailMaterial | None = None
 
 
-def _codes(
-    engine: Engine, box: SecretBox, client: httpx.Client, site: SiteReport, now: datetime
-) -> list[str]:
-    codes = list(site.audit.codes) if site.audit else []
-    if site.audit and site.audit.form_place is None:  # audit d'avant C137 : formulaire incertain
-        codes = [c for c in codes if c not in ("no_form", "form_contact_only")]
-    if site.speed and is_slow(site.speed):
-        codes.append("slow_mobile")
-    domain = site_domain(site.url)
-    rank = domain_authority(engine, box, client, domain, now) if domain else None
-    return [*codes, *(["low_authority"] if rank is not None and rank < LOW_AUTHORITY else [])]
+def _versions(material: MailMaterial, counts: dict[str, dict[str, int]]) -> MailVersions:
+    """Les versions les moins utilisées jusqu'ici (C162)."""
+    rules = load_mail_rules()
+    templates = [template for template, _ in material.hooks]
+    hook = least_used(templates, counts.get("hook", {})) if templates else None
+    subjects = rules.objets if material.site else rules.objets_sans_site  # C161 : jamais « site »
+    return MailVersions(least_used(subjects, counts.get("subject", {})), hook,
+                        least_used(STRUCTURES, counts.get("structure", {})))  # fmt: skip
 
 
 def load_context(
@@ -79,16 +80,12 @@ def load_context(
             load_gmail(conn),
             sent_at(conn, prospect_id),
         )
+        counts = version_counts(conn)
     checks = [check_email(e, servers.get(email_domain(e) or "")) for e in emails]
     recipients = [c.email for c in checks if c.status in (VALID, UNCHECKED)
                   and email_fingerprint(c.email, box.pepper) not in blocked_out]  # fmt: skip
-    site = prospect.site
-    audited = site is not None and site.audit is not None and site.url is not None
-    points = (
-        choose_points(_codes(engine, box, client, site, now), prospect.keywords)
-        if site and audited
-        else []
-    )
+    material = mail_material(engine, box, client, prospect, now)
+    points = material.points
     try:
         token = box.decrypt(account.token) if account else None
     except UnreadableSecret:
@@ -96,11 +93,20 @@ def load_context(
     sender = sender_of(settings)
     problems = [
         (sender is None, SETTINGS), (not (oauth and token), GMAIL), (not base, NO_BASE),
-        (not audited, NO_AUDIT), (audited and not points, NOTHING), (not recipients, NO_EMAIL),
+        (not points, NOTHING if material.audited else NO_AUDIT), (not recipients, NO_EMAIL),
     ]  # fmt: skip
     blocked = next((message for failed, message in problems if failed), None)
     return MailContext(
-        str(prospect.data.get("name") or ""), site_domain(site.url if site else None) or "",
-        points, recipients, sender, account.address if account else None, token,
-        settings.reminder_days, sent_on, blocked,
+        str(prospect.data.get("name") or ""), material.site, points, recipients, sender,
+        account.address if account else None, token, settings.reminder_days, sent_on, blocked,
+        _versions(material, counts), dict(material.hooks), material,
     )  # fmt: skip
+
+
+def draft_for(ctx: MailContext, versions: MailVersions | None) -> Draft | None:
+    """Brouillon avec ces versions (C162) ; None s'il n'y a rien à dire ou pas d'expéditeur."""
+    v = versions or ctx.versions
+    if not ctx.points or ctx.sender is None or v is None:
+        return None
+    hook = ctx.hooks.get(v.hook) if v.hook else None
+    return draft_mail(ctx.points, ctx.company, ctx.site, ctx.sender, hook, v.subject, v.structure)

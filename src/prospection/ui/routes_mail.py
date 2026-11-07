@@ -1,5 +1,6 @@
 """Mail d'audit d'un prospect : relecture puis envoi depuis Gmail (C145 à C147)."""
 
+from contextlib import suppress
 from datetime import datetime
 
 import httpx
@@ -8,8 +9,11 @@ from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlalchemy import Engine
 
 from prospection.application.audit_mail import MailBlocked, mail_screen, send_audit_mail
+from prospection.application.mail_bounce import mark_bounced
 from prospection.application.prospect_card import UnknownProspect
+from prospection.application.site_reaudit import request_reaudit
 from prospection.config import Settings
+from prospection.domain.mail_versions import decode_versions, encode_versions
 from prospection.storage.secret_box import SecretBox
 from prospection.ui.deps import (
     get_box,
@@ -43,8 +47,9 @@ def _page(
         "objet": draft.subject if draft else "", "texte": draft.body if draft else "",
     }  # fmt: skip
     sent = short_datetime(screen.sent_on, settings.timezone) if screen.sent_on else None
+    versions = encode_versions(screen.versions) if screen.versions else ""
     context = {"tab": "prospects", "screen": screen, "values": values, "error": error,
-               "sent": sent}  # fmt: skip
+               "sent": sent, "versions": versions}  # fmt: skip
     return templates.TemplateResponse(request, "mail.html", context, status_code=code)
 
 
@@ -56,16 +61,38 @@ def mail_page(
     return _page(request, engine, box, client, settings, prospect_id, now)
 
 
+@router.post("/{prospect_id}/mail/refuse")
+def mail_refused(
+    prospect_id: int, engine: Engine = ENGINE, box: SecretBox = BOX, now: datetime = NOW
+) -> Response:
+    """C157 : le serveur du destinataire a refusé le mail."""
+    with suppress(MailBlocked):  # déjà marqué ou jamais envoyé : la fiche le montre
+        mark_bounced(engine, prospect_id, now, box.pepper)
+    return RedirectResponse(f"/prospects/{prospect_id}", status_code=303)
+
+
+@router.post("/{prospect_id}/audit")
+def reaudit(prospect_id: int, engine: Engine = ENGINE, now: datetime = NOW) -> Response:
+    """C156 : nouvel audit du site, fait par la tâche de fond."""
+    try:
+        request_reaudit(engine, prospect_id, now)
+    except UnknownProspect:
+        raise HTTPException(status_code=404) from None
+    return RedirectResponse(f"/prospects/{prospect_id}#titre-site", status_code=303)
+
+
 @router.post("/{prospect_id}/mail")
 def send_mail(
     request: Request, prospect_id: int, a: str = Form("", max_length=320),
     objet: str = Form("", max_length=1000), texte: str = Form("", max_length=40_000),
+    versions: str = Form("", max_length=40),
     engine: Engine = ENGINE, box: SecretBox = BOX, client: httpx.Client = CLIENT,
     settings: Settings = SETTINGS, now: datetime = NOW,
 ) -> Response:  # fmt: skip
     try:
         send_audit_mail(engine, box, client, settings.gmail_oauth(), settings.public_base(),
-                        prospect_id, a, objet, texte, now, settings.timezone)  # fmt: skip
+                        prospect_id, a, objet, texte, now, settings.timezone,
+                        decode_versions(versions))  # fmt: skip
     except UnknownProspect:
         raise HTTPException(status_code=404) from None
     except MailBlocked as blocked:

@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from sqlalchemy import (
+    Boolean,
     CheckConstraint,
     Column,
     Connection,
@@ -27,6 +28,7 @@ mail_settings = Table(
     Column("reminder_days", SmallInteger, nullable=False, server_default="2"),
     Column("gmail_address", Text), Column("gmail_token", LargeBinary),
     Column("gmail_connected_at", DateTime(timezone=True)),
+    Column("replies_blocked", Boolean, nullable=False, server_default="false"),  # C163
     CheckConstraint("id = 1", name="mail_settings_single_row"),
 )  # fmt: skip
 _ROW = mail_settings.c.id == 1
@@ -69,4 +71,14 @@ def save_gmail(
 ) -> None:
     """Relie (adresse, jeton chiffré, date) ou délie (tout à None) le compte Gmail."""
     conn.execute(update(mail_settings).where(_ROW).values(
-        gmail_address=address, gmail_token=token, gmail_connected_at=now))  # fmt: skip
+        gmail_address=address, gmail_token=token, gmail_connected_at=now,
+        replies_blocked=False))  # fmt: skip
+
+
+def replies_blocked(conn: Connection) -> bool:
+    """Vrai si Gmail doit être relié à nouveau pour repérer les réponses (C163)."""
+    return bool(conn.execute(select(mail_settings.c.replies_blocked).where(_ROW)).scalar())
+
+
+def block_replies(conn: Connection) -> None:
+    conn.execute(update(mail_settings).where(_ROW).values(replies_blocked=True))

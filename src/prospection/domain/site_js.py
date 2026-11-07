@@ -15,6 +15,7 @@ MAX_WORDS = 20  # au-delà, la page a un vrai contenu lisible
 BLIND = frozenset({
     "no_form", "form_contact_only", "thin_content", "no_h1", "no_social", "outdated",
     "no_legal_notice", "no_privacy_policy", "phone_not_clickable", "no_booking",
+    "form_buried", "no_cta_top", "form_too_long", "form_no_consent",
 })  # fmt: skip
 JS_ONLY: Finding = (
     "js_only",

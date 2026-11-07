@@ -10,6 +10,7 @@
 {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
 <form method="post" action="/prospects/{{ screen.prospect_id }}/mail" class="group form">
   {% if screen.sender %}<p class="secondary">Envoyé depuis {{ screen.sender }}</p>{% endif %}
+  <input type="hidden" name="versions" value="{{ versions }}">
   <label for="a">Destinataire</label>
   <select id="a" name="a">
     {% for email in screen.recipients %}<option value="{{ email }}"{% if values.a == email %} selected{% endif %}>{{ email }}</option>{% endfor %}

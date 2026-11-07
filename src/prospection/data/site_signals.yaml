@@ -66,3 +66,55 @@ not_sites:
   planity.com: Planity
   treatwell.fr: Treatwell
   doctolib.fr: Doctolib
+# Boutons d'action en haut de l'accueil (devis, rendez-vous…) : « Contact » du menu ne compte pas (C158).
+cta_words: ["devis", "estimation", "rendez-vous", "rdv", "reserv", "réserv", "appel gratuit", "rappel", "contactez"]
+# Questions utiles d'un formulaire selon le métier (C159) : mots du métier (sans accents, début de
+# mot), puis chaque question attendue → mots qui la trouvent dans le formulaire (noms, textes, type).
+form_expectations:
+  batiment:
+    mots: [plombier, chauffagiste, chauffage, electricien, serrurier, couvreur, toiture, macon, menuisier, peintre, carreleur, plaquiste, renovation, isolation, climatisation, desembouage, charpent, facade, cuisiniste, terrass, vitrier, depann]
+    champs:
+      type de travaux: [travaux, prestation, intervention, service, besoin, projet, select]
+      adresse ou code postal: [adresse, postal, ville, commune, cp]
+      photos: [photo, file, image, piece jointe, pièce jointe]
+      délai souhaité: [delai, délai, urgence, quand, date]
+  paysage:
+    mots: [paysag, jardin, elagu, espaces verts, espace vert, arbor, taille de haie]
+    champs:
+      surface: [surface, superficie, m2, m², metrage, métrage]
+      type d'entretien: [prestation, entretien, travaux, service, besoin, select]
+      photos: [photo, file, image]
+      adresse ou code postal: [adresse, postal, ville, commune]
+  restauration:
+    mots: [restaurant, brasserie, bistrot, pizzeria, creperie, traiteur]
+    champs:
+      date: [date, jour]
+      heure: [heure, horaire, time]
+      nombre de personnes: [personne, couvert, convive, nombre, number]
+  beaute:
+    mots: [coiff, barbier, esthetic, beaute, onglerie, institut, spa, massage, tatou]
+    champs:
+      prestation: [prestation, soin, service, select]
+      date souhaitée: [date, jour, creneau, créneau]
+  sante:
+    mots: [kine, osteopath, dentist, medecin, podolog, orthophon, psycholog, sophrolog, naturopath, dieteticien, infirmi]
+    champs:
+      motif: [motif, raison, besoin, symptome, symptôme, select]
+      date souhaitée: [date, jour, creneau, créneau]
+  auto:
+    mots: [garage, carrosserie, mecani, controle technique, pneu, depannage auto]
+    champs:
+      véhicule: [vehicule, véhicule, modele, modèle, marque, immatriculation]
+      prestation: [prestation, service, entretien, reparation, réparation, select]
+  demenagement:
+    mots: [demenag]
+    champs:
+      date: [date, jour]
+      volume: [volume, m3, m³, piece, pièce]
+      adresses de départ et d'arrivée: [depart, départ, arrivee, arrivée, adresse]
+  nettoyage:
+    mots: [nettoyage, menage, proprete]
+    champs:
+      surface: [surface, superficie, m2, m²]
+      fréquence: [frequence, fréquence, regulier, régulier]
+      adresse ou code postal: [adresse, postal, ville]

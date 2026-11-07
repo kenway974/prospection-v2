@@ -10,7 +10,7 @@ def test_C151_public_page_without_login(client: TestClient) -> None:
     response = client.get("/confidentialite-app", follow_redirects=False)
     assert response.status_code == 200
     page = html.unescape(response.text)
-    for said in ("Politique de confidentialité", "ne lit jamais", "désinscri",
-                 "gmail.send", "RGPD", "supprim"):  # fmt: skip
+    for said in ("Politique de confidentialité", "ne lit jamais le contenu", "désinscri",
+                 "gmail.send", "gmail.metadata", "RGPD", "supprim"):  # fmt: skip
         assert said in page, said
     assert 'href="/"' not in page.split("<main")[1]  # pas de menu de l'app hors connexion

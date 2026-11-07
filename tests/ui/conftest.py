@@ -29,3 +29,6 @@ def settings(database_url: str) -> Settings:
 def client(settings: Settings, engine: Engine) -> Iterator[TestClient]:
     with TestClient(create_app(settings, engine), base_url="https://testserver") as test_client:
         yield test_client
+
+
+from tests.ui.test_mail_screens import web  # noqa: E402, F401 (client avec faux Google)

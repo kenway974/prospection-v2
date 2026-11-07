@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Stats des mails · Prospection{% endblock %}
+{% block content %}
+<a href="/prospects" class="back">Prospects</a>
+<h1 class="large-title">Stats des mails d'audit</h1>
+{% set s = screen %}
+{% if not s.sends and not s.bounced %}
+<p class="empty">Aucun mail d'audit envoyé pour l'instant. Envoyez-en depuis la fiche d'un prospect : cette page dira ensuite quels objets, accroches et profils de leads mènent à une conversation.</p>
+{% else %}
+<section class="group" aria-labelledby="titre-total">
+  <h2 class="row-title form" id="titre-total">En tout</h2>
+  <p class="row"><span>{{ s.sends }} envoi{{ "s" if s.sends > 1 }}</span><span class="secondary">{{ s.conversations }} conversation{{ "s" if s.conversations > 1 }} · {{ s.replies }} réponse{{ "s" if s.replies > 1 }} par mail{% if s.bounced %} · {{ s.bounced }} refusé{{ "s" if s.bounced > 1 }}{% endif %}</span></p>
+  <p class="secondary">Conversation : réponse au mail, ou appel où quelqu'un a répondu (intéressé, à rappeler, pas intéressé). Les ouvertures ne sont pas mesurées. Sous {{ min_sends }} envois, un chiffre ne permet pas de conclure.</p>
+</section>
+{% for title, rows in s.sections %}{% if rows %}
+<section class="group" aria-labelledby="titre-{{ loop.index }}">
+  <h2 class="row-title form" id="titre-{{ loop.index }}">{{ title }}</h2>
+  {% for r in rows %}<p class="row"><span>{{ r.label }}</span><span class="secondary">{% if r.enough %}<strong>{{ r.rate }} %</strong> · {% endif %}{{ r.conversations }} sur {{ r.sends }}{% if not r.enough %} · pas assez d'envois pour conclure{% endif %}</span></p>{% endfor %}
+</section>
+{% endif %}{% endfor %}
+{% endif %}
+{% endblock %}

@@ -109,3 +109,16 @@ def test_C144_disconnect_says_when_google_did_not_confirm(
         client.app.dependency_overrides[get_http_client] = lambda: fake_client(timeout)[0]  # type: ignore[attr-defined]
         page = html.unescape(client.post("/reglages/gmail/deconnecter", headers=ORIGIN).text)
         assert "myaccount.google.com/permissions" in page and "kapignolet18" not in page
+
+
+def test_C163_settings_ask_to_reconnect_gmail_for_replies(
+    mail_client: TestClient, engine: Engine
+) -> None:
+    from prospection.storage.mail_settings import block_replies, save_gmail
+    from tests.application.campaign_helpers import BOX
+
+    with engine.begin() as conn:
+        save_gmail(conn, "kapignolet18@gmail.com", BOX.encrypt("jeton"), NOW)
+        block_replies(conn)
+    page = html.unescape(mail_client.get("/reglages/mail").text)
+    assert "repérer les réponses" in page and "Délier Gmail" in page

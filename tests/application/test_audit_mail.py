@@ -6,6 +6,7 @@ import pytest
 from sqlalchemy import Engine
 
 from prospection.application.audit_mail import MailBlocked, mail_screen, send_audit_mail
+from prospection.application.audit_mail_context import load_context
 from prospection.application.prospect_card import card
 from tests.application.campaign_helpers import BOX, NOW
 from tests.application.mail_helpers import (
@@ -37,16 +38,17 @@ def test_C145_draft_ready_with_usable_recipients(mail_db: Engine) -> None:
     shown = screen(mail_db, pid)
     assert shown.blocked is None and shown.draft is not None
     assert shown.recipients == ["contact@martin.fr"]  # « noreply » écarté
-    assert shown.draft.subject.endswith(": audit express de votre site, 2 points à corriger")
+    assert shown.draft.subject.endswith(": audit express de votre site, 3 points à corriger")
     assert "martin.fr" in shown.draft.body and "Un clic suffit" in shown.footer
 
 
 def test_C145_says_what_to_do_when_something_is_missing(mail_db: Engine) -> None:
     pid = add_audited(mail_db)
     assert "Réglages → Mail d'audit" in (screen(mail_db, pid).blocked or "")
-    no_site = add_audited(mail_db, None)
+    not_read = add_audited(mail_db, None)  # site pas encore lu : fiche Google seule (C161)
     ready(mail_db)
-    assert "audit" in (screen(mail_db, no_site).blocked or "")
+    shown = screen(mail_db, not_read)
+    assert shown.draft is not None and "Aucun email utilisable" in (shown.blocked or "")
 
 
 def test_C146_C147_sent_once_then_note_and_callback(mail_db: Engine) -> None:
@@ -91,7 +93,8 @@ def test_C145_old_audit_never_claims_a_missing_form(mail_db: Engine) -> None:
     old = dataclasses.replace(AUDIT, form_place=None, codes=("no_form", "no_social"))
     pid = add_audited(mail_db, dataclasses.replace(SITE, audit=old))
     ready(mail_db)
-    assert screen(mail_db, pid).blocked is not None  # plus rien de sûr à dire
+    ctx = load_context(mail_db, BOX, google()[0], OAUTH, BASE, pid, NOW)
+    assert "no_form" not in [p.code for p in ctx.points]  # plus rien de sûr à dire
 
 
 def test_C146_uncertain_send_is_kept_never_sent_twice(mail_db: Engine) -> None:

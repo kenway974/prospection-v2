@@ -5,7 +5,7 @@ from prospection.domain.site_audit import audit
 
 RICH_FORM = (  # formulaire de commande : questions du métier (C153)
     '<form><input type="email"><select name="commande"></select>'
-    '<input type="date" name="retrait"></form>'
+    '<input type="date" name="retrait"><input type="checkbox" name="rgpd"></form>'
 )
 GOOD = (
     """<html><head><title>Boulangerie Martin à Lyon</title>

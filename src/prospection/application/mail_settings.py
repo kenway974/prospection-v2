@@ -73,3 +73,9 @@ def disconnect_gmail(engine: Engine, box: SecretBox, client: httpx.Client) -> bo
     with engine.begin() as conn:
         store.save_gmail(conn, None, None, None)
     return token is None or revoke(client, token)
+
+
+def replies_need_reconnect(engine: Engine) -> bool:
+    """Gmail relié sans le droit de voir les en-têtes : à relier à nouveau (C163)."""
+    with engine.connect() as conn:
+        return store.replies_blocked(conn)

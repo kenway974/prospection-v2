@@ -56,7 +56,8 @@ def test_C163_reply_found_and_noted(mail_db: Engine) -> None:
 
 def test_C163_server_refusal_marks_the_mail_refused(mail_db: Engine) -> None:
     pid = sent_one(mail_db)
-    run(mail_db, gmail([ME, "Mail Delivery Subsystem <mailer-daemon@googlemail.com>"]))
+    failure = {"From": DAEMON, "Subject": "Delivery Status Notification (Failure)"}
+    run(mail_db, headers_gmail([{"From": ME}, failure]))
     shown = card(mail_db, pid, NOW, PARIS)
     assert shown.mail_sent_on is None and "refusé par le serveur" in shown.notes[0].text
 
@@ -67,3 +68,37 @@ def test_C163_missing_right_asks_to_reconnect_gmail(mail_db: Engine) -> None:
     with mail_db.connect() as conn:
         assert replies_blocked(conn)
     assert run(mail_db, gmail([ME, "x@y.fr"]), hours=7) == 0  # plus d'essai avant de relier
+
+
+def headers_gmail(messages: list[dict[str, str]]) -> Callable[[httpx.Request], httpx.Response]:
+    def answer(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "oauth2.googleapis.com":
+            return httpx.Response(200, json={"access_token": "court"})
+        found = [{"payload": {"headers": [{"name": k, "value": v} for k, v in m.items()]}}
+                 for m in messages]  # fmt: skip
+        return httpx.Response(200, json={"messages": found})
+
+    return answer
+
+
+DAEMON = "Mail Delivery Subsystem <mailer-daemon@googlemail.com>"
+
+
+def test_C163_delay_notice_is_not_a_refusal(mail_db: Engine) -> None:
+    pid = sent_one(mail_db)
+    delay = {"From": DAEMON, "Subject": "Delivery Status Notification (Delay)"}
+    run(mail_db, headers_gmail([{"From": ME}, delay]))
+    assert card(mail_db, pid, NOW, PARIS).mail_sent_on is not None  # toujours en cours
+
+
+def test_C163_auto_reply_and_lookalike_address_handled(mail_db: Engine) -> None:
+    sent_one(mail_db)
+    away = {"From": "Martin <contact@martin.fr>", "Subject": "Réponse automatique : absent",
+            "Auto-Submitted": "auto-replied"}  # fmt: skip
+    lookalike = {"From": "X <xkapignolet18@gmail.com>", "Subject": "Re: votre site"}
+    run(mail_db, headers_gmail([{"From": ME}, away]))
+    with mail_db.connect() as conn:
+        assert not all_sends(conn)[0].replied  # réponse automatique : pas une conversation
+    run(mail_db, headers_gmail([{"From": ME}, lookalike]), hours=7)
+    with mail_db.connect() as conn:
+        assert all_sends(conn)[0].replied  # une autre adresse, même si elle contient la mienne

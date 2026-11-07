@@ -33,3 +33,20 @@ def test_C162_versions_rotate_and_each_send_is_recorded(mail_db: Engine) -> None
     assert [s.edited for s in sends] == [False, True]
     assert sends[0].thread_id == "fil-1" and sends[0].points
     assert sends[0].profile["site"] == "avec site" and sends[0].profile["métier"] == "plombier"
+
+
+def test_C162_no_site_prospect_never_gets_a_site_subject(mail_db: Engine) -> None:
+    from prospection.domain.site_report import SiteReport
+
+    ready(mail_db)
+    no_site = SiteReport("aucun", contacts=None)
+    pid = add_audited(mail_db, no_site)
+    with mail_db.begin() as conn:
+        conn.exec_driver_sql(
+            "UPDATE prospects SET contact_email = 'patron@martin.fr' WHERE id = %(id)s", {"id": pid}
+        )
+    shown = screen(mail_db, pid)
+    assert shown.draft is not None and "site" not in shown.draft.subject.lower()
+    assert (
+        shown.versions is not None and shown.versions.subject in load_mail_rules().objets_sans_site
+    )

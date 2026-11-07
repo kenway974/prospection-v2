@@ -19,6 +19,10 @@ objets:
   - "{entreprise} : audit express de votre site, {nombre} à corriger"
   - "J'ai regardé le site de {entreprise} : {nombre} à corriger"
   - "{entreprise} : ce qui vous fait perdre des clients en ligne"
+# Objets pour un prospect sans site (C161) : jamais « votre site ».
+objets_sans_site:
+  - "{entreprise} : {nombre} à corriger pour gagner des clients en ligne"
+  - "{entreprise} : ce qui vous fait perdre des clients en ligne"
 salutation: "Bonjour,"
 intro: "Je suis {expediteur}, développeur web. J'ai regardé votre site ({site}) : **{nombre} à corriger** pour ne plus perdre de clients."
 intro_sans_site: "Je suis {expediteur}, développeur web. J'ai regardé la présence en ligne de {entreprise} : **{nombre} à corriger** pour ne plus perdre de clients."
@@ -294,13 +298,13 @@ accroches:
     texte: "Félicitations pour le lancement de {entreprise} !"
   - quand: {label: est_rge, secteur: urgence}
     texte: "Vous êtes certifié RGE : c'est un argument fort pour vos clients, à mettre en avant en ligne."
-  - quand: {label: est_qualiopi}
+  - quand: {label: est_qualiopi, avec_site: true}
     texte: "Vous êtes certifié Qualiopi : un gage de sérieux que votre site doit montrer."
   - quand: {label: est_patrimoine_vivant}
     texte: "Entreprise du patrimoine vivant : un savoir-faire rare, à montrer en ligne."
-  - quand: {note_min: 4.3, avis_min: 20, secteur: accueil}
+  - quand: {note_min: 4.3, avis_min: 20, secteur: accueil, avec_site: true}
     texte: "Vos clients vous notent {note}/5 : votre site doit donner la même envie de venir."
   - quand: {avis_min: 50}
     texte: "Plus de {avis} avis Google : vous avez une vraie réputation à faire valoir en ligne."
-  - quand: {age_min_ans: 20}
+  - quand: {age_min_ans: 20, avec_site: true}
     texte: "{ans} ans d'activité : une expérience que votre site doit montrer."

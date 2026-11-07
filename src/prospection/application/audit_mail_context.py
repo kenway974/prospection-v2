@@ -58,7 +58,8 @@ def _versions(material: MailMaterial, counts: dict[str, dict[str, int]]) -> Mail
     rules = load_mail_rules()
     templates = [template for template, _ in material.hooks]
     hook = least_used(templates, counts.get("hook", {})) if templates else None
-    return MailVersions(least_used(rules.objets, counts.get("subject", {})), hook,
+    subjects = rules.objets if material.site else rules.objets_sans_site  # C161 : jamais « site »
+    return MailVersions(least_used(subjects, counts.get("subject", {})), hook,
                         least_used(STRUCTURES, counts.get("structure", {})))  # fmt: skip
 
 

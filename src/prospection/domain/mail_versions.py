@@ -30,7 +30,8 @@ def encode_versions(v: MailVersions) -> str:
     rules = load_mail_rules()
     hooks = [h.texte for h in rules.accroches]
     hook = hooks.index(v.hook) if v.hook in hooks else -1
-    return f"o{rules.objets.index(v.subject)}-a{hook}-s{STRUCTURES.index(v.structure)}"
+    subjects = [*rules.objets, *rules.objets_sans_site]
+    return f"o{subjects.index(v.subject)}-a{hook}-s{STRUCTURES.index(v.structure)}"
 
 
 def decode_versions(code: str) -> MailVersions | None:
@@ -40,7 +41,8 @@ def decode_versions(code: str) -> MailVersions | None:
     if not found:
         return None
     subject, hook, structure = (int(x) for x in found.groups())
-    if subject >= len(rules.objets) or hook >= len(rules.accroches) or structure >= len(STRUCTURES):
+    subjects = [*rules.objets, *rules.objets_sans_site]
+    if subject >= len(subjects) or hook >= len(rules.accroches) or structure >= len(STRUCTURES):
         return None
     hook_text = rules.accroches[hook].texte if hook >= 0 else None
-    return MailVersions(rules.objets[subject], hook_text, STRUCTURES[structure])
+    return MailVersions(subjects[subject], hook_text, STRUCTURES[structure])

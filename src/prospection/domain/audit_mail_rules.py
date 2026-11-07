@@ -57,6 +57,7 @@ class Hook(BaseModel):
 
 class MailRules(BaseModel):
     objets: list[str] = Field(min_length=1)
+    objets_sans_site: list[str] = Field(min_length=1)
     salutation: str
     intro: str
     intro_sans_site: str
@@ -90,9 +91,12 @@ def parse_rules(raw: object) -> MailRules:
         rules = MailRules.model_validate(raw)
     except ValidationError as error:
         raise InvalidMailRules(f"Règles du mail mal formées : {error}") from None
-    texts = [*rules.objets, rules.salutation, rules.intro, rules.intro_sans_site, rules.portfolio,
-             rules.appel_telephone, rules.appel_sans_telephone, rules.calendly, rules.signature,
-             rules.pied_desinscription, rules.constat, rules.cout, rules.solution]  # fmt: skip
+    texts = [
+        *rules.objets, *rules.objets_sans_site, rules.salutation, rules.intro,
+        rules.intro_sans_site, rules.portfolio, rules.appel_telephone,
+        rules.appel_sans_telephone, rules.calendly, rules.signature, rules.pied_desinscription,
+        rules.constat, rules.cout, rules.solution,
+    ]  # fmt: skip
     texts += [t for p in rules.points.values() for t in (p.titre, p.probleme, p.impact, p.action)]
     for name, sector in rules.secteurs.items():
         unknown = (set(sector.bonus) | set(sector.impacts)) - set(rules.points)

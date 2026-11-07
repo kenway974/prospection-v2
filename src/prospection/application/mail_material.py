@@ -55,7 +55,7 @@ def mail_material(
     company = prospect.company if prospect.registry_status == "sûr" else None
     facts = LeadFacts(
         place.name, place.rating, place.review_count, company.created if company else None,
-        company.labels if company else (), audited, now.date(),
+        company.labels if company else (), site is not None and site.url is not None, now.date(),
     )  # fmt: skip
     domain = site_domain(site.url) if site and audited else None
     score, _ = opportunity(signals_for(prospect, now.date()))

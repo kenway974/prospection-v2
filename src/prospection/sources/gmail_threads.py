@@ -13,12 +13,15 @@ class GmailScopeMissing(Exception):
     """Gmail n'a pas encore le droit de voir les en-têtes : relier Gmail à nouveau."""
 
 
-def thread_senders(client: httpx.Client, token: str, thread_id: str) -> list[str]:
-    """En-tête « From » de chaque message de la conversation, dans l'ordre ; jamais le
-    contenu (C163). Conversation supprimée : liste vide."""
+HEADERS = ("From", "Subject", "Auto-Submitted")
+
+
+def thread_messages(client: httpx.Client, token: str, thread_id: str) -> list[dict[str, str]]:
+    """En-têtes From, Subject et Auto-Submitted de chaque message de la conversation (noms en
+    minuscules), dans l'ordre ; jamais le contenu (C163). Conversation supprimée : []."""
     response = send(client, "GET", THREAD_URL + thread_id, LABEL,
                     headers={"Authorization": f"Bearer {token}"},
-                    params={"format": "metadata", "metadataHeaders": "From"})  # fmt: skip
+                    params={"format": "metadata", "metadataHeaders": list(HEADERS)})  # fmt: skip
     if isinstance(response, KeyCheck) or response.status_code == 429 or response.status_code >= 500:
         raise GmailUnavailable
     if response.status_code == 404:
@@ -28,10 +31,11 @@ def thread_senders(client: httpx.Client, token: str, thread_id: str) -> list[str
     if response.status_code in (401, 403):
         raise GmailRevoked
     messages = (json_object(response) or {}).get("messages")
-    senders = []
+    found = []
     for message in messages if isinstance(messages, list) else []:
         headers = (message.get("payload") or {}).get("headers") if isinstance(message, dict) else []
-        for header in headers if isinstance(headers, list) else []:
-            if isinstance(header, dict) and str(header.get("name", "")).lower() == "from":
-                senders.append(str(header.get("value", ""))[:300])
-    return senders
+        found.append({
+            str(h.get("name", "")).lower(): str(h.get("value", ""))[:300]
+            for h in (headers if isinstance(headers, list) else []) if isinstance(h, dict)
+        })  # fmt: skip
+    return found

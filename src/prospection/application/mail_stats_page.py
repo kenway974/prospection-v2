@@ -28,7 +28,8 @@ class StatsScreen:
 
 def _result(sent: SentMail) -> SendResult:
     facts: dict[str, object] = {
-        "objet": sent.subject_version, "accroche": sent.hook_version or "sans accroche",
+        "objet": sent.subject_version,  # envois d'avant les versions (0018) : non classés
+        "accroche": None if sent.subject_version is None else sent.hook_version or "sans accroche",
         "structure": sent.structure,
         "texte": None if sent.edited is None else ("modifié" if sent.edited else "tel quel"),
         "points": list(sent.points), **sent.profile,

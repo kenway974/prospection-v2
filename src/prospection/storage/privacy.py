@@ -10,6 +10,7 @@ from sqlalchemy.dialects.postgresql import insert
 
 from prospection.domain.privacy import PURGEABLE, erasure_key
 from prospection.domain.trades import normalize
+from prospection.storage.audit_mails import mail_sends
 from prospection.storage.schema_calls import call_session, prospect_actions, prospect_notes
 from prospection.storage.schema_campaigns import campaign_events, exclusion_names, prospects
 from prospection.storage.schema_followup import alerts
@@ -24,6 +25,9 @@ def _forget(conn: Connection, rows: Sequence[Any]) -> None:
     d'appel figée : « Suivant » ne mène plus à une fiche supprimée."""
     if not rows:
         return
+    m = mail_sends.c  # C162 : profil, points et conversation oubliés avec le prospect
+    conn.execute(update(mail_sends).where(m.prospect_id.is_(None))
+                 .values(profile=None, points=None, thread_id=None))  # fmt: skip
     gone, s = {r[0] for r in rows}, call_session.c
     queue = conn.scalar(select(s.queue).where(s.id == 1))
     if queue:

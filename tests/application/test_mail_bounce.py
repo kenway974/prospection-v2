@@ -34,3 +34,17 @@ def test_C157_nothing_to_mark_without_a_sent_mail(mail_db: Engine) -> None:
     pid = add_audited(mail_db)
     with pytest.raises(MailBlocked, match="Aucun mail"):
         mark_bounced(mail_db, pid, NOW, BOX.pepper)
+
+
+def test_C162_deleting_the_prospect_forgets_its_profile(mail_db: Engine) -> None:
+    from prospection.storage.mail_send_log import all_sends
+    from prospection.storage.privacy import delete_prospects
+
+    pid = add_audited(mail_db)
+    ready(mail_db)
+    send(mail_db, pid)
+    with mail_db.begin() as conn:
+        delete_prospects(conn, [pid])
+    with mail_db.connect() as conn:
+        [sent] = all_sends(conn)
+    assert sent.profile == {} and sent.points == () and sent.thread_id is None

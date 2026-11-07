@@ -35,7 +35,8 @@ def run_reaudits(engine: Engine, checker: SiteChecker, now: datetime) -> int:
         else:
             if report is None:
                 break
-            report = dataclasses.replace(report, speed=old.speed if old else None)
+            same_site = old is not None and old.url == report.url  # vitesse de ce site-là
+            report = dataclasses.replace(report, speed=old.speed if same_site and old else None)
         with engine.begin() as conn:
             store.done(conn, prospect_id, report)
         done += 1

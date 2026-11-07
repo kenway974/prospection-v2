@@ -7,6 +7,11 @@ import yaml
 from pydantic import BaseModel
 
 
+class Expectation(BaseModel):
+    mots: list[str]
+    champs: dict[str, list[str]]
+
+
 class Signals(BaseModel):
     technologies: dict[str, list[str]]
     tracking: list[str]
@@ -25,6 +30,8 @@ class Signals(BaseModel):
     form_apps: list[str]
     js_app_roots: list[str]
     not_sites: dict[str, str]
+    cta_words: list[str]
+    form_expectations: dict[str, Expectation]
 
 
 @cache

@@ -29,13 +29,14 @@ from prospection.domain.site_form import (
     form_detail,
     form_place,
 )
+from prospection.domain.site_form_quality import best_form, form_findings, missing_questions
 from prospection.domain.site_js import BLIND, JS_ONLY, is_js_app
 from prospection.domain.site_privacy import privacy_findings
 from prospection.domain.site_reach import reach_findings
 from prospection.domain.site_signals import signals
 
 __all__ = ["LEGACY_GA", "Audit", "audit", "is_placeholder", "technology"]
-BASIC_FORM = "Formulaire basique (nom, email, message) : aucune question sur le besoin"
+BASIC_FORM = "Formulaire basique (nom, email, message)"
 ONLY_CONTACT = "Formulaire seulement sur une page Contact : invisible depuis l'accueil"
 NO_HTTPS, BROKEN_HTTPS = "Pas de HTTPS", "Pas de HTTPS (ou certificat invalide)"
 CLEAR_FORM = " : les messages du formulaire circulent en clair"
@@ -77,6 +78,13 @@ def is_placeholder(page: Page) -> bool:
     return bool(_PLACEHOLDER.search(head))
 
 
+def _basic_text(page: Page, others: Sequence[Page], keywords: Sequence[str]) -> str:
+    """« Formulaire basique… », avec les questions utiles au métier qui manquent (C159)."""
+    form = best_form([page, *others])
+    missing = missing_questions(form, keywords) if form else []
+    return BASIC_FORM + (f" : il manque {', '.join(missing)}" if missing else "")
+
+
 def _security(https: bool, https_failed: bool, has_form: bool) -> list[Finding]:
     """C141 : HTTPS absent, cassé, et ce que cela expose (messages du formulaire)."""
     if https:
@@ -110,7 +118,8 @@ def audit(
         found.append(("form_contact_only", ONLY_CONTACT, MINOR))
     detail = form_detail(page, others)
     if detail == BASIC:
-        found.append(("form_basic", BASIC_FORM, MINOR))
+        found.append(("form_basic", _basic_text(page, others, keywords), MINOR))
+    found += form_findings(page, others, place)
     found += ageing_findings(page, url, powered_by)
     found += privacy_findings(page, collects=place in FOUND)
     found += reach_findings(page, find_contacts(page, country).phones, keywords)

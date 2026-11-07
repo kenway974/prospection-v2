@@ -213,3 +213,5 @@ Ajouter ou retirer un comportement = modifier ce fichier (avec l'accord du propr
 - C155 Les mails d'audit sont plus concis et finissent par « appelez-moi pour plus d'infos, c'est gratuit et sans engagement » *(demandé le 06/11/2026)*
 - C156 Sur la fiche, « Refaire l'audit » demande un nouvel audit du site à la tâche de fond (gratuit) ; la fiche dit qu'il est en cours, la vitesse déjà mesurée est gardée *(demandé le 06/11/2026)*
 - C157 Sur la fiche, « Mail refusé » note le refus, permet un nouvel envoi vers une autre adresse (jamais la même) et donne l'accroche d'appel ; un refus signalé par Gmail dans le fil du mail est repéré automatiquement *(demandé le 06/11/2026)*
+- C158 L'audit dit si le formulaire est tout en bas de la page Contact et s'il manque un bouton « Devis » (ou réservation) visible en haut de l'accueil *(demandé le 06/11/2026)*
+- C159 L'audit juge la qualité du formulaire : trop de champs obligatoires, pas de mention RGPD, questions utiles au métier qui manquent (surface, photos, date…, selon le corps de métier) *(demandé le 06/11/2026)*

@@ -89,6 +89,32 @@ points:
     probleme: "Votre formulaire demande seulement nom, email et message."
     impact: "Vous devez rappeler chaque client pour comprendre son besoin."
     action: "Quelques questions du métier (travaux, surface, photos)."
+  form_buried:
+    titre: "Un formulaire tout en bas de la page Contact"
+    poids: 8
+    groupe: formulaire
+    probleme: "Votre formulaire est tout en bas de la page Contact."
+    impact: "Il faut le chercher : beaucoup de visiteurs abandonnent avant."
+    action: "Le placer en haut de la page, ou dès l'accueil."
+  no_cta_top:
+    titre: "Pas de bouton « Devis » en haut du site"
+    poids: 7
+    probleme: "Aucun bouton « Devis » ou « Rendez-vous » n'est visible en haut de l'accueil."
+    impact: "Le visiteur doit chercher comment vous contacter : une partie abandonne."
+    action: "Un bouton bien visible dès l'arrivée."
+  form_too_long:
+    titre: "Un formulaire trop long"
+    poids: 5
+    groupe: formulaire
+    probleme: "Votre formulaire demande trop de champs obligatoires."
+    impact: "Chaque champ en plus fait abandonner une partie des visiteurs."
+    action: "Garder l'essentiel obligatoire, le reste facultatif."
+  form_no_consent:
+    titre: "Un formulaire sans mention RGPD"
+    poids: 7
+    probleme: "Votre formulaire ne dit pas ce que deviennent les données envoyées."
+    impact: "Le RGPD l'impose : la CNIL peut sanctionner."
+    action: "Une phrase et un lien vers votre politique de confidentialité."
   phone_not_clickable:
     titre: "Un numéro qu'on ne peut pas appeler d'un geste"
     poids: 6

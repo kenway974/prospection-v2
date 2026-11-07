@@ -64,6 +64,7 @@ prospects = Table(
     Column("refresh_taken_at", TS),
     Column("speed_checked_at", TS),  # vitesse mobile : dernier essai
     Column("speed_attempts", SmallInteger, nullable=False, server_default="0"),
+    Column("reaudit_requested_at", TS),  # nouvel audit du site demandé (C156)
     UniqueConstraint("campaign_id", "place_id", name="uq_prospect_place"),
 )  # fmt: skip
 

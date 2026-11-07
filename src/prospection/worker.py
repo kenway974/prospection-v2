@@ -43,7 +43,7 @@ class Worker:
         self.engine, self.box, self.client, self.pricing = engine, box, client, pricing
         self.now, self.sites, self.mail_lookup = now, sites, mail_lookup
         self.timezone = timezone
-        self.idle = IdleWork(engine, box, client, pricing, now, mail_lookup)
+        self.idle = IdleWork(engine, box, client, pricing, now, mail_lookup, sites)
         self.reminders, self.periodic = regular_jobs(
             engine, box, client, pricing, timezone, backup, now(), push, speed
         )

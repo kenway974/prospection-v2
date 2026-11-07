@@ -24,6 +24,7 @@ from prospection.storage.call_tracking import Action, Note, notes, open_action
 from prospection.storage.crm_exports import crm_link
 from prospection.storage.mail_domains import mail_servers
 from prospection.storage.prospect_list import ProspectRow
+from prospection.storage.reaudit_requests import requested
 
 
 class UnknownProspect(LookupError):
@@ -49,6 +50,7 @@ class Card:
     insights: Insights | None = None  # score, raison, drapeaux, confiance, emails
     crm_url: str | None = None  # fiche créée dans le CRM (C72)
     mail_sent_on: datetime | None = None  # mail d'audit déjà envoyé (C146)
+    reaudit_pending: bool = False  # nouvel audit du site demandé (C156)
 
 
 def tel_link(phone: object) -> str | None:
@@ -81,6 +83,7 @@ def card(
         servers = mail_servers(conn, domains)
         crm_url = web_link(crm_link(conn, prospect_id))
         mail_sent_on = sent_at(conn, prospect_id)
+        reaudit_pending = requested(conn, prospect_id)
     today = now.astimezone(ZoneInfo(timezone)).date()
     proposal = None if action else proposed_action(prospect.status, today)
     position, previous_id, next_id = _neighbours(queue, prospect_id)
@@ -95,5 +98,5 @@ def card(
         web_link(prospect.data.get("maps_url")), found_notes, action, proposal,
         registry_lines(prospect.company, prospect.registry_status), position,
         len(queue), previous_id, next_id, lines, site_links(site),
-        insights(prospect, servers, today), crm_url, mail_sent_on,
+        insights(prospect, servers, today), crm_url, mail_sent_on, reaudit_pending,
     )  # fmt: skip

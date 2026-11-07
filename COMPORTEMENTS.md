@@ -211,3 +211,5 @@ Ajouter ou retirer un comportement = modifier ce fichier (avec l'accord du propr
 - C153 L'audit distingue un formulaire basique (nom, email, message) d'un formulaire de devis détaillé (champs du métier : type de travaux, surface, photos, date…) *(demandé le 06/11/2026)*
 - C154 Une fiche Google qui renvoie vers un réseau social ou un annuaire (Instagram, Facebook, Linktree, PagesJaunes…) compte comme « sans site » *(demandé le 06/11/2026)*
 - C155 Les mails d'audit sont plus concis et finissent par « appelez-moi pour plus d'infos, c'est gratuit et sans engagement » *(demandé le 06/11/2026)*
+- C156 Sur la fiche, « Refaire l'audit » demande un nouvel audit du site à la tâche de fond (gratuit) ; la fiche dit qu'il est en cours, la vitesse déjà mesurée est gardée *(demandé le 06/11/2026)*
+- C157 Sur la fiche, « Mail refusé » note le refus, permet un nouvel envoi vers une autre adresse (jamais la même) et donne l'accroche d'appel ; un refus signalé par Gmail dans le fil du mail est repéré automatiquement *(demandé le 06/11/2026)*

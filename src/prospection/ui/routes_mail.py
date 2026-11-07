@@ -1,5 +1,6 @@
 """Mail d'audit d'un prospect : relecture puis envoi depuis Gmail (C145 à C147)."""
 
+from contextlib import suppress
 from datetime import datetime
 
 import httpx
@@ -8,7 +9,9 @@ from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlalchemy import Engine
 
 from prospection.application.audit_mail import MailBlocked, mail_screen, send_audit_mail
+from prospection.application.mail_bounce import mark_bounced
 from prospection.application.prospect_card import UnknownProspect
+from prospection.application.site_reaudit import request_reaudit
 from prospection.config import Settings
 from prospection.storage.secret_box import SecretBox
 from prospection.ui.deps import (
@@ -54,6 +57,26 @@ def mail_page(
     client: httpx.Client = CLIENT, settings: Settings = SETTINGS, now: datetime = NOW,
 ) -> Response:  # fmt: skip
     return _page(request, engine, box, client, settings, prospect_id, now)
+
+
+@router.post("/{prospect_id}/mail/refuse")
+def mail_refused(
+    prospect_id: int, engine: Engine = ENGINE, box: SecretBox = BOX, now: datetime = NOW
+) -> Response:
+    """C157 : le serveur du destinataire a refusé le mail."""
+    with suppress(MailBlocked):  # déjà marqué ou jamais envoyé : la fiche le montre
+        mark_bounced(engine, prospect_id, now, box.pepper)
+    return RedirectResponse(f"/prospects/{prospect_id}", status_code=303)
+
+
+@router.post("/{prospect_id}/audit")
+def reaudit(prospect_id: int, engine: Engine = ENGINE, now: datetime = NOW) -> Response:
+    """C156 : nouvel audit du site, fait par la tâche de fond."""
+    try:
+        request_reaudit(engine, prospect_id, now)
+    except UnknownProspect:
+        raise HTTPException(status_code=404) from None
+    return RedirectResponse(f"/prospects/{prospect_id}#titre-site", status_code=303)
 
 
 @router.post("/{prospect_id}/mail")

@@ -78,3 +78,22 @@ def _raw() -> dict[str, object]:
     raw = yaml.safe_load(text)
     assert isinstance(raw, dict)
     return raw
+
+
+def test_C160_hook_right_after_hello() -> None:
+    hook = "4,8 ★ sur 52 avis Google : vos clients sont ravis, votre site doit le montrer."
+    draft = draft_mail(choose_points(("no_https",), ()), "Martin", "martin.fr", SENDER, hook)
+    assert draft.body.startswith(f"Bonjour,\n\n{hook}\n\nJe suis Kenny Pignolet")
+
+
+def test_C161_no_site_intro_and_listing_points() -> None:
+    points = choose_points(("no_site", "gmb_few_reviews", "gmb_no_hours"), ("paysagiste",))
+    assert points[0].code == "no_site"
+    draft = draft_mail(points, "Martin Paysage", "", SENDER)
+    assert "la présence en ligne de Martin Paysage" in draft.body and "()" not in draft.body
+
+
+def test_C160_company_name_with_braces_is_safe() -> None:
+    hook = "Félicitations pour le lancement de {Martin} !"
+    draft = draft_mail(choose_points(("no_https",), ()), "{Martin}", "m.fr", SENDER, hook)
+    assert hook in draft.body

@@ -22,7 +22,7 @@
   {% if seen %}<a class="button-secondary" href="{{ seen.linkedin }}" target="_blank" rel="noopener noreferrer">Dirigeant sur LinkedIn</a>{% endif %}
 </div>
 {% if mail_sent %}<form method="post" action="/prospects/{{ p.id }}/mail/refuse" class="links"><p class="secondary">Mail d'audit envoyé le {{ mail_sent }}</p><button type="submit" class="button-secondary">Mail refusé ?</button></form>
-{% elif p.site and p.site.audit %}<div class="links"><a class="button-secondary" href="/prospects/{{ p.id }}/mail">Mail d'audit</a></div>{% endif %}
+{% elif (p.site and p.site.audit) or card.listing_lines %}<div class="links"><a class="button-secondary" href="/prospects/{{ p.id }}/mail">Mail d'audit</a></div>{% endif %}
 {% include "_suivi.html" %}
 {% include "_notes.html" %}
 {% include "_contact.html" %}
@@ -35,6 +35,10 @@
   {% set others = card.site_links | rejectattr(0, "equalto", "Site web") | list %}
   {% if others %}<div class="links">{% for label, url in others %}<a class="button-secondary" href="{{ url }}" target="_blank" rel="noopener noreferrer">{{ label }}</a>{% endfor %}</div>{% endif %}
 </section>
+{% if card.listing_lines %}<section class="group" aria-labelledby="titre-fiche-google">
+  <h2 class="row-title form" id="titre-fiche-google">La fiche Google</h2>
+  {% for line in card.listing_lines %}<p class="row">{{ line }}</p>{% endfor %}
+</section>{% endif %}
 <section class="group" aria-labelledby="titre-entreprise">
   <h2 class="row-title form" id="titre-entreprise">L'entreprise</h2>
   {% for label, value in card.company_lines %}<p class="row"><span class="secondary">{{ label }}</span><span>{{ value }}</span></p>{% endfor %}

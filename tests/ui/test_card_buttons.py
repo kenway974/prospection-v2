@@ -36,3 +36,14 @@ def test_C157_bounce_button_after_a_sent_mail(web: tuple[TestClient, Recorder], 
     client.post(f"/prospects/{pid}/mail/refuse", headers=ORIGIN)
     page = html.unescape(client.get(f"/prospects/{pid}").text)
     assert "Mail d'audit envoyé le" not in page and "refusé par le serveur" in page
+
+
+def test_C161_listing_block_and_mail_button_without_site(
+    web: tuple[TestClient, Recorder],  # noqa: F811
+    mail_db: Engine,
+) -> None:
+    client, _ = web
+    pid = add_audited(mail_db, None)
+    page = html.unescape(client.get(f"/prospects/{pid}").text)
+    assert "La fiche Google" in page and "Peu de photos sur la fiche Google" in page
+    assert f'href="/prospects/{pid}/mail"' in page

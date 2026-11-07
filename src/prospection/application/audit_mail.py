@@ -61,7 +61,7 @@ def mail_screen(
     base: str | None, prospect_id: int, now: datetime,
 ) -> MailScreen:  # fmt: skip
     ctx = load_context(engine, box, client, oauth, base, prospect_id, now)
-    draft = (draft_mail(ctx.points, ctx.company, ctx.site, ctx.sender)
+    draft = (draft_mail(ctx.points, ctx.company, ctx.site, ctx.sender, ctx.hook)
              if ctx.points and ctx.sender else None)  # fmt: skip
     footer = unsubscribe_footer(f"{base or ''}/desinscription/…")
     return MailScreen(prospect_id, ctx.company, ctx.blocked, ctx.sent_on, ctx.recipients, draft,

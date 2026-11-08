@@ -25,8 +25,13 @@ JS_ONLY: Finding = (
 
 
 def is_js_app(page: Page) -> bool:
-    """Coquille : script chargé, racine de l'application vide, presque aucun texte."""
+    """Coquille : script chargé, et racine de l'application vide (presque aucun texte) ou
+    remplie seulement d'un résumé caché pour Google (C166)."""
     scripted = any(src.lower().split("?")[0].endswith((".js", ".mjs")) for src in page.sources)
+    if not scripted:
+        return False
+    if any(mark in page.raw for mark in signals().js_app_snapshots):
+        return True
     ids = "|".join(re.escape(i) for i in signals().js_app_roots)
     empty_root = re.search(rf"""id=["']({ids})["'][^>]*>\s*</""", page.raw, re.IGNORECASE)
-    return scripted and empty_root is not None and len(page.text.split()) < MAX_WORDS
+    return empty_root is not None and len(page.text.split()) < MAX_WORDS

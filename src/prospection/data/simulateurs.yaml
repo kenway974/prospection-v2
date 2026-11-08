@@ -26,7 +26,7 @@ simulateurs:
     metiers: [chauffag, pompe a chaleur, climatisation, frigorist, isolation, combles, menuis, fenetre, couvreur, toiture, charpent, photovolta, panneaux solaires, panneau solaire, poele, chaudiere, renovation, electric, plomb, facade, ventilation, cheminee]
   - code: sap
     texte: "Pas de simulateur du prix après crédit d'impôt (services à la personne)"
-    site: [services a la personne, service a la personne, avance immediate, credit d impot de 50, reduction d impot de 50, 50 de credit d impot, 50 de reduction d impot, agrement sap, declaration sap, cesu]
+    site: [services a la personne, service a la personne, reduction fiscale, avantage fiscal, deduction fiscale, deductible des impots, avance immediate, credit d impot de 50, reduction d impot de 50, 50 de credit d impot, 50 de reduction d impot, agrement sap, declaration sap, cesu]
     metiers: [paysag, jardin, elagu, espaces verts, nettoyage, menage, repassage, soutien scolaire, cours particulier, garde d enfant, aide a domicile, bricolage, homme toutes mains, multiservice, assistance informatique, informatique a domicile]
   - code: creche
     texte: "Pas de simulateur du coût réel après aides (CAF, crédit d'impôt), dont parle le site"

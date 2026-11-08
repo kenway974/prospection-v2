@@ -88,6 +88,13 @@ points:
     probleme: "Votre formulaire n'est que sur la page Contact."
     impact: "Un visiteur pressé ne le voit pas depuis l'accueil."
     action: "Un bouton « Demander un devis » visible dès l'arrivée."
+  quote_incomplete:
+    titre: "Une demande de devis qui oublie l'essentiel"
+    poids: 6
+    groupe: formulaire
+    probleme: "Votre formulaire ne pose pas les questions utiles pour chiffrer une première estimation."
+    impact: "Vous rappelez le client pour avoir les infos : le temps de le joindre, un autre a déjà répondu."
+    action: "Les bonnes questions du métier : le client décrit son besoin, vous chiffrez tout de suite."
   form_basic:
     titre: "Un formulaire qui ne pose aucune question"
     poids: 6

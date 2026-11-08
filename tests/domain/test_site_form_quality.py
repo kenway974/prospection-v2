@@ -56,7 +56,7 @@ def test_C159_missing_questions_named_for_the_trade() -> None:
     report = audit(parse_page("<h1>P</h1>" + BASIC + TEXT), "https://p.fr", 1, 2026,
                    keywords=("paysagiste",))  # fmt: skip
     basic = next(p for p, c in zip(report.problems, report.codes, strict=True) if c == "form_basic")
-    assert "il manque" in basic and "surface" in basic and "photos" in basic
+    assert "il manque" in basic and "surface" in basic and "végétation" in basic  # C167
     resto = audit(parse_page("<h1>P</h1>" + BASIC + TEXT), "https://p.fr", 1, 2026,
                   keywords=("restaurant",))  # fmt: skip
     basic = next(p for p, c in zip(resto.problems, resto.codes, strict=True) if c == "form_basic")

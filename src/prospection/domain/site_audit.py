@@ -120,7 +120,7 @@ def audit(
     detail = form_detail(page, others)
     if detail == BASIC:
         found.append(("form_basic", _basic_text(page, others, keywords), MINOR))
-    found += form_findings(page, others, place)
+    found += form_findings(page, others, place, keywords)
     found += ageing_findings(page, url, powered_by)
     found += privacy_findings(page, collects=place in FOUND)
     found += reach_findings(page, find_contacts(page, country).phones, keywords)

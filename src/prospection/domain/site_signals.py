@@ -29,6 +29,7 @@ class Signals(BaseModel):
     form_widgets: list[str]
     form_apps: list[str]
     js_app_roots: list[str]
+    js_app_snapshots: list[str]
     not_sites: dict[str, str]
     cta_words: list[str]
     form_expectations: dict[str, Expectation]

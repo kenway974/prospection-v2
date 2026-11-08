@@ -42,6 +42,9 @@ form_apps: ["14ce1214-b278-a7e4-1373-00cebd1bef7c"]
 # Coquille d'application JavaScript : page presque vide, contenu dessiné dans le navigateur (C152).
 # Identifiants de la racine de l'application, vide dans la page reçue.
 js_app_roots: ["root", "app", "__next", "__nuxt", "svelte"]
+# Résumé caché pour Google, mis par le constructeur dans la racine de l'application (Base44,
+# novembre 2026) : la page reste une coquille, sans formulaire ni mentions légales (C166).
+js_app_snapshots: ['id="seo-snapshot"', "data-seo-source="]
 # Pas un vrai site : réseaux sociaux, pages de liens, annuaires (domaine → nom affiché) (C154).
 not_sites:
   instagram.com: Instagram

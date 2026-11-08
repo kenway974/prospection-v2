@@ -86,3 +86,9 @@ def test_C165_every_aid_is_tied_to_its_trades() -> None:
 
     for simulator in savings_rules().simulateurs:
         assert simulator.metiers, simulator.code
+
+
+def test_C165_tax_reduction_wording_of_a_gardener_site() -> None:
+    """Formule réelle d'un site de jardinier (vg-paysagiste.base44.app)."""
+    body = "<p>Demandez votre devis gratuit et bénéficiez de 50% de réduction fiscale.</p>"
+    assert _codes(body, ("paysagiste",)) == ["sim_sap"]

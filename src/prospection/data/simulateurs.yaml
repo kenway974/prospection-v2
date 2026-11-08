@@ -1,0 +1,62 @@
+# Simulateurs proposés par l'audit (C165), du plus précis au plus général : le premier qui
+# convient est le seul proposé. Mots sans accents ni ponctuation, comparés au début d'un mot.
+#
+# « site » : mots qui montrent que le site parle d'une aide. Une aide n'est jamais citée sans
+#   eux : l'entreprise n'y a peut-être pas droit (agrément, label RGE…).
+# « metiers » : métiers recherchés pour lesquels un outil de calcul sert toujours, sans aide
+#   à promettre (capacité d'emprunt, production solaire…).
+# « texte » : problème affiché sur la fiche. Le texte du mail est dans mail_rules.yaml
+#   (points.sim_<code>).
+# Un site qui contient déjà un des mots de « deja_present » n'a rien à se voir proposer.
+deja_present: [simulateur, simulez, simulation, calculez, calculateur, calculette, estimez, estimation en ligne]
+simulateurs:
+  - code: borne
+    texte: "Pas de simulateur d'aide pour la borne de recharge (crédit d'impôt, Advenir)"
+    site: [advenir, credit d impot borne, irve]
+    metiers: [borne de recharge, irve]
+  - code: adapt
+    texte: "Pas de simulateur MaPrimeAdapt' (adaptation du logement)"
+    site: [maprimeadapt, ma prime adapt, perte d autonomie, adaptation du logement, credit d impot autonomie]
+  - code: renov
+    texte: "Pas de simulateur d'aides à la rénovation (MaPrimeRénov', primes énergie)"
+    site: [maprimerenov, ma prime renov, prime energie, primes energie, certificats d economies d energie, cee, coup de pouce, eco ptz, eco pret, rge, tva a 5 5]
+  - code: sap
+    texte: "Pas de simulateur du prix après crédit d'impôt (services à la personne)"
+    site: [services a la personne, service a la personne, agrement sap, agree sap, avance immediate, cesu, 50 de credit d impot, 50 de reduction d impot, credit d impot de 50, reduction d impot de 50]
+  - code: creche
+    texte: "Pas de simulateur du coût réel après aides de la CAF et crédit d'impôt"
+    site: [cmg, complement de libre choix, paje]
+    metiers: [micro creche, creche]
+  - code: permis
+    texte: "Pas de simulateur de financement du permis (CPF, permis à 1 € par jour)"
+    site: [permis a 1, aide au permis]
+    metiers: [auto ecole]
+  - code: formation
+    texte: "Pas de simulateur de prise en charge (CPF, OPCO, France Travail)"
+    site: [cpf, compte personnel de formation, mon compte formation, opco, qualiopi]
+  - code: sante
+    texte: "Pas d'estimation du remboursement et du reste à charge"
+    site: [100 sante, reste a charge zero, tiers payant]
+    metiers: [opticien, audioprothes]
+  - code: solaire
+    texte: "Pas de simulateur de production et d'économies solaires"
+    site: [autoconsommation, obligation d achat, edf oa]
+    metiers: [photovolta, panneaux solaires, panneau solaire, solaire]
+  - code: emprunt
+    texte: "Pas de simulateur de capacité d'emprunt ni de mensualités"
+    metiers: [courtier en credit, courtier en pret, courtier immobilier, courtage]
+  - code: notaire
+    texte: "Pas de calcul en ligne des frais de notaire"
+    metiers: [notaire, office notarial]
+  - code: patrimoine
+    texte: "Pas de simulateur d'impôt ni d'épargne"
+    metiers: [gestion de patrimoine, conseiller en gestion de patrimoine, cgp, conseiller financier]
+  - code: charges
+    texte: "Pas de simulateur de charges ni de rémunération (statut, cotisations)"
+    metiers: [expert comptable, comptable, cabinet comptable]
+  - code: estimation
+    texte: "Pas d'estimation en ligne du bien (vente ou location)"
+    metiers: [agence immobili, mandataire immobili, gestion locative, administrateur de biens]
+  - code: chauffage
+    texte: "Pas de simulateur d'économies de chauffage"
+    metiers: [pompe a chaleur, chauffagiste, entreprise de chauffage, isolation, poele, chaudiere, menuiserie aluminium, poseur de fenetres]

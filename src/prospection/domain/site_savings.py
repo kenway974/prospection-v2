@@ -10,7 +10,7 @@ from functools import cache
 from importlib import resources
 
 import yaml
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from prospection.domain.html_page import Page
 from prospection.domain.site_findings import MINOR, Finding
@@ -22,8 +22,8 @@ PREFIX = "sim_"
 class Simulator(BaseModel):
     code: str
     texte: str
+    metiers: list[str] = Field(min_length=1)  # jamais une aide hors des métiers concernés
     site: list[str] = []
-    metiers: list[str] = []
 
 
 class SavingsRules(BaseModel):
@@ -42,13 +42,15 @@ def _says(text: str, words: Sequence[str]) -> bool:
 
 
 def savings_findings(page: Page, keywords: Sequence[str]) -> list[Finding]:
-    """Au plus un simulateur : une aide dont parle le site d'abord, sinon un outil du métier."""
+    """Au plus un simulateur : une aide du métier dont parle le texte visible du site (pas
+    les liens) d'abord, sinon un outil de calcul du métier."""
     rules = savings_rules()
-    text = normalize(" ".join((page.text, *(label for _, label in page.anchors), *page.links)))
+    text = normalize(" ".join((page.text, *(label for _, label in page.anchors))))
     if _says(text, rules.deja_present):
         return []
     trades = " ".join(normalize(k) for k in keywords)
-    chosen = next((s for s in rules.simulateurs if _says(text, s.site)), None) or next(
-        (s for s in rules.simulateurs if _says(trades, s.metiers)), None
+    fits = [s for s in rules.simulateurs if _says(trades, s.metiers)]
+    chosen = next((s for s in fits if s.site and _says(text, s.site)), None) or next(
+        (s for s in fits if not s.site), None
     )
     return [(PREFIX + chosen.code, chosen.texte, MINOR)] if chosen else []

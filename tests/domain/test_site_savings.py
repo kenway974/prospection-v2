@@ -61,3 +61,28 @@ def test_C165_every_simulator_has_its_mail_point() -> None:
     points = load_mail_rules().points
     for simulator in savings_rules().simulateurs:
         assert points[PREFIX + simulator.code].groupe == "simulateur"
+
+
+def test_C165_common_phrases_never_cite_an_aid() -> None:
+    """Relecture : expressions courantes, liens et métiers non concernés."""
+    assert (
+        _codes("<p>Un petit coup de pouce pour votre fête, TVA à 5,5 %.</p>", ("traiteur",)) == []
+    )
+    cesu = "<p>Paie et social.</p><a href='https://www.cesu.urssaf.fr'>Urssaf</a>"
+    assert _codes(cesu, ("expert-comptable",)) == ["sim_charges"]
+    assert _codes("<p>Perte d'autonomie : nous venons chez vous.</p>", ("aide à domicile",)) == []
+    assert _codes("<p>Prise en charge CPF possible.</p>", ("expert-comptable",)) == ["sim_charges"]
+
+
+def test_C165_trade_alone_never_names_an_aid() -> None:
+    assert _codes("<p>Installation de bornes.</p>", ("borne de recharge",)) == ["sim_borne_cout"]
+    assert _codes("<p>Permis B.</p>", ("auto-école",)) == ["sim_permis_cout"]
+    assert _codes("<p>Accueil des tout-petits.</p>", ("micro-crèche",)) == []
+    assert _codes("<p>Film solaire pour vitrage.</p>", ("film solaire",)) == []
+
+
+def test_C165_every_aid_is_tied_to_its_trades() -> None:
+    from prospection.domain.site_savings import savings_rules
+
+    for simulator in savings_rules().simulateurs:
+        assert simulator.metiers, simulator.code

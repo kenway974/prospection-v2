@@ -4,7 +4,8 @@ Chromium exécute le JavaScript, mais ne touche jamais le réseau lui-même : ch
 interceptée et servie par le client protégé des sites (`safe_network` : jamais d'adresse
 interne). Les adresses refusées par `allowed_url`, tout ce qui n'est pas une lecture (envoi de
 formulaire, mesure d'audience) et les images, vidéos et polices sont bloqués. Un proxy mort
-arrête ce qui échapperait à l'interception (WebSocket). Taille et durée bornées (règle 4).
+arrête ce qui échapperait à l'interception (WebSocket), WebRTC est coupé (UDP). Taille, nombre
+de requêtes et durée bornés (règle 4) ; `browser_process` tue le tout à l'échéance.
 """
 
 import time
@@ -29,22 +30,26 @@ MAX_SECONDS = 20.0
 RESOURCE_SECONDS = 8.0
 MAX_RESOURCE = 5_000_000  # gros fichier JavaScript des constructeurs
 MAX_TOTAL = 15_000_000
+MAX_REQUESTS = 100
 REFUSED = "Adresse du site refusée"
 _SKIPPED = frozenset({"image", "media", "font", "websocket", "eventsource", "manifest"})
 _KEPT_HEADERS = ("content-type", "location", "cache-control")
 _DEAD_PROXY = "http://127.0.0.1:9"
+_ARGS = ["--webrtc-ip-handling-policy=disable_non_proxied_udp", "--proxy-bypass-list=<-loopback>"]
+_NO_WEBRTC = "for (const n of ['RTCPeerConnection', 'webkitRTCPeerConnection']) delete window[n];"
 
 
 class _Server:
     """Sert les requêtes du navigateur par le client protégé, dans un budget d'octets."""
 
-    def __init__(self, client: httpx.Client) -> None:
-        self.client, self.left = client, MAX_TOTAL
+    def __init__(self, client: httpx.Client, until: float) -> None:
+        self.client, self.left, self.until, self.count = client, MAX_TOTAL, until, 0
 
     def __call__(self, route: Route) -> None:
         request = route.request
-        reply = None
-        if request.method == "GET" and request.resource_type not in _SKIPPED:
+        reply, open_ = None, time.monotonic() < self.until and self.count < MAX_REQUESTS
+        if open_ and request.method == "GET" and request.resource_type not in _SKIPPED:
+            self.count += 1
             reply = self._fetch(request.url) if allowed_url(request.url) else None
         with suppress(BrowserError):  # page déjà fermée
             if reply is None:
@@ -55,7 +60,8 @@ class _Server:
     def _fetch(self, url: str) -> tuple[int, dict[str, str], bytes] | None:
         body, limit = bytearray(), min(MAX_RESOURCE, self.left)
         try:
-            with deadline(RESOURCE_SECONDS), self.client.stream("GET", url) as response:
+            left = min(RESOURCE_SECONDS, self.until - time.monotonic())
+            with deadline(left), self.client.stream("GET", url) as response:
                 for chunk in response.iter_bytes():  # décompressé, mais borné en taille
                     body += chunk
                     if len(body) > limit:
@@ -78,11 +84,12 @@ def render_page(
     try:
         with sync_playwright() as playwright:
             browser = playwright.chromium.launch(
-                executable_path=executable, proxy={"server": _DEAD_PROXY}
+                executable_path=executable, proxy={"server": _DEAD_PROXY}, args=_ARGS
             )
             try:
                 context = browser.new_context(service_workers="block", accept_downloads=False)
-                context.route("**/*", _Server(client))
+                context.add_init_script(_NO_WEBRTC)
+                context.route("**/*", _Server(client, start + limit / 1000))
                 page = context.new_page()
                 response = page.goto(url, wait_until="load", timeout=limit)
                 if response is not None and response.status >= 400:

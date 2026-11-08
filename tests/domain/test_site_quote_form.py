@@ -3,7 +3,7 @@ d'une première estimation, plutôt qu'un simple formulaire de contact."""
 
 from prospection.domain.html_page import parse_page
 from prospection.domain.site_audit import audit
-from prospection.domain.site_form_quality import missing_questions
+from prospection.domain.site_form_quality import expectation_for, missing_questions
 from prospection.domain.site_signals import signals
 
 TARGETED = (
@@ -70,3 +70,32 @@ def _missing(form: str, trade: str) -> list[str]:
     summary = parse_page(form).best_form
     assert summary is not None
     return missing_questions(summary, (trade,), limit=10)
+
+
+def test_C167_trades_land_in_the_right_group() -> None:
+    """Relecture : un mot trop large rangeait le métier dans un groupe absurde."""
+    expected = {
+        "permis de construire": None, "transport sanitaire": None, "pressing": None,
+        "boulangerie artisanale": None, "cours de cuisine": None, "courtage en assurance": None,
+        "mandataire judiciaire": None, "résidence seniors": None, "film solaire": None,
+        "location de matériel btp": None, "conseil en organisation": None,
+        "artisan coiffeur": "beaute", "institut de formation": "formation",
+        "coach de vie": None, "dépannage auto": "auto", "auto-école": "auto_ecole",
+        "cuisiniste": "cuisine_bain", "courtier en crédit": "credit",
+        "mandataire immobilier": "immobilier", "plombier": "plomberie",
+    }  # fmt: skip
+    found = {trade: expectation_for((trade,)) for trade in expected}
+    assert found == expected
+
+
+def test_C167_email_address_and_privacy_text_do_not_hide_missing_questions() -> None:
+    """Relecture : « Adresse e-mail » et « données personnelles » passaient pour des réponses."""
+    form = parse_page(
+        "<form><label>Adresse e-mail <input type='email' name='email'></label>"
+        "<textarea name='message' placeholder='Bonjour, votre demande'></textarea>"
+        "<p>Vos données personnelles sont protégées.</p></form>"
+    ).best_form
+    assert form is not None
+    assert "adresse ou code postal" in missing_questions(form, ("paysagiste",), limit=10)
+    assert "nombre de personnes" in missing_questions(form, ("restaurant",), limit=10)
+    assert "date" in missing_questions(form, ("restaurant",), limit=10)

@@ -140,21 +140,22 @@ points:
     probleme: "Pas de réservation en ligne."
     impact: "Entre 40 et 60 % des réservations se font hors des heures d'ouverture."
     action: "Un module de réservation relié à votre agenda."
-  # Simulateurs (C165) : un seul par mail ; règles dans simulateurs.yaml.
+  # Simulateurs (C165) : un seul par mail ; règles dans simulateurs.yaml. Une aide n'est
+  # nommée que si le site du prospect en parle.
   sim_borne:
     titre: "Aucun calcul de l'aide pour la borne"
     poids: 9
     groupe: simulateur
-    probleme: "Votre site ne montre pas l'aide à laquelle le client a droit pour sa borne de recharge."
-    impact: "Le client voit le prix plein, pas le coût réel après aide : il compare ailleurs."
-    action: "Un simulateur : le client entre son cas, il voit l'aide et le prix final."
+    probleme: "Vous parlez de l'aide pour la borne de recharge, mais le client ne peut pas estimer la sienne."
+    impact: "Le client voit le prix plein, pas son coût réel : il compare ailleurs."
+    action: "Un simulateur : le client décrit son cas, il voit l'aide possible et le prix final."
   sim_adapt:
     titre: "Aucun calcul de MaPrimeAdapt'"
     poids: 9
     groupe: simulateur
-    probleme: "Vous parlez d'adaptation du logement, mais le client ne peut pas estimer son aide."
+    probleme: "Vous parlez de MaPrimeAdapt', mais le client ne peut pas estimer son aide."
     impact: "Une personne âgée ou ses enfants hésitent sans savoir ce qui restera à payer."
-    action: "Un simulateur MaPrimeAdapt' : quelques questions, l'aide estimée et le reste à charge."
+    action: "Un simulateur : quelques questions, l'aide estimée et le reste à charge."
   sim_renov:
     titre: "Aucun calcul des aides à la rénovation"
     poids: 9
@@ -166,23 +167,23 @@ points:
     titre: "Le crédit d'impôt n'est pas chiffré"
     poids: 9
     groupe: simulateur
-    probleme: "Vous êtes agréé services à la personne, mais votre site ne calcule pas le prix après crédit d'impôt."
-    impact: "Le client voit le prix plein et oublie qu'il n'en paiera que la moitié."
+    probleme: "Vous proposez des services à la personne, mais votre site ne calcule pas le prix après crédit d'impôt."
+    impact: "Le client voit le prix plein et oublie qu'il peut en récupérer jusqu'à la moitié."
     action: "Un simulateur : le client entre le montant, il voit tout de suite son prix réel."
   sim_creche:
     titre: "Le coût réel n'est pas chiffré"
     poids: 9
     groupe: simulateur
-    probleme: "Votre site ne montre pas le coût d'une place après aides de la CAF et crédit d'impôt."
+    probleme: "Vous parlez des aides (CAF, crédit d'impôt), mais les parents ne peuvent pas estimer leur coût réel."
     impact: "Les parents voient un tarif élevé et choisissent sans savoir ce qu'ils paieraient vraiment."
-    action: "Un simulateur : revenus et heures de garde, et le coût mensuel réel s'affiche."
+    action: "Un simulateur : revenus et heures de garde, et le coût mensuel estimé s'affiche."
   sim_permis:
     titre: "Le financement du permis n'est pas chiffré"
     poids: 9
     groupe: simulateur
-    probleme: "Votre site ne permet pas d'estimer le financement du permis."
+    probleme: "Vous parlez du financement du permis, mais l'élève ne peut pas estimer le sien."
     impact: "L'élève voit le prix total et repousse son inscription."
-    action: "Un simulateur : CPF, permis à 1 € par jour, aides locales, et la mensualité s'affiche."
+    action: "Un simulateur : les financements que vous acceptez, et la mensualité s'affiche."
   sim_formation:
     titre: "La prise en charge n'est pas chiffrée"
     poids: 9
@@ -194,9 +195,23 @@ points:
     titre: "Le reste à charge n'est pas estimé"
     poids: 9
     groupe: simulateur
-    probleme: "Votre site ne permet pas d'estimer le remboursement."
+    probleme: "Vous parlez du 100 % santé, mais le patient ne peut pas estimer ce qu'il paiera."
     impact: "Le patient craint le prix et repousse son rendez-vous."
     action: "Un simulateur : équipement, mutuelle, et le reste à charge estimé s'affiche."
+  sim_borne_cout:
+    titre: "Aucun calcul du coût de la borne"
+    poids: 9
+    groupe: simulateur
+    probleme: "Votre site ne permet pas d'estimer le coût d'une borne ni les économies de recharge."
+    impact: "Le client ne voit pas ce que la borne lui fait gagner face à l'essence ou aux bornes publiques."
+    action: "Un simulateur : véhicule, kilomètres par an, et l'économie s'affiche."
+  sim_permis_cout:
+    titre: "Le coût du permis n'est pas chiffré"
+    poids: 9
+    groupe: simulateur
+    probleme: "Votre site ne permet pas d'estimer le coût total du permis."
+    impact: "L'élève compare les écoles sur le prix affiché, sans les heures en plus."
+    action: "Un simulateur : formule, heures, et le coût total ou la mensualité s'affiche."
   sim_solaire:
     titre: "Aucun calcul des économies solaires"
     poids: 9

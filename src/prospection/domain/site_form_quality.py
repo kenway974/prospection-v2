@@ -12,6 +12,8 @@ from prospection.domain.site_form import CONTACT_PAGE, HOME, MIN_TRADE_FIELDS, T
 from prospection.domain.site_signals import signals
 from prospection.domain.trades import normalize
 
+_EMAIL_ADDRESS = re.compile(r"adresse (?:e-?mail|mail|électronique|electronique|courriel)")
+_PRIVACY = re.compile(r"données personnelles|donnees personnelles|politique de confidentialité")
 BURIED_SHARE = 0.5  # plus de la moitié du texte de la page Contact avant le formulaire
 MAX_REQUIRED, MAX_LISTED, MIN_MISSING = 6, 3, 2
 
@@ -21,16 +23,27 @@ def best_form(pages: Sequence[Page]) -> FormSummary | None:
     return max(found, key=lambda f: f.trade_fields) if found else None
 
 
+def expectation_for(keywords: Sequence[str]) -> str | None:
+    """Groupe de métier dont on attend les questions : le premier qui correspond (C167)."""
+    words = " ".join(normalize(k) for k in keywords)
+    return next(
+        (name for name, group in signals().form_expectations.items()
+         if any(re.search(rf"\b{re.escape(normalize(m))}", words) for m in group.mots)),
+        None,
+    )  # fmt: skip
+
+
 def missing_questions(
     form: FormSummary, keywords: Sequence[str], limit: int = MAX_LISTED
 ) -> list[str]:
-    """Questions attendues pour ce métier que le formulaire ne pose pas (C159, C167)."""
-    words = " ".join(normalize(k) for k in keywords)
-    for group in signals().form_expectations.values():
-        if any(re.search(rf"\b{re.escape(normalize(m))}", words) for m in group.mots):
-            return [q for q, hints in group.champs.items()
-                    if not any(h in form.words for h in hints)][:limit]  # fmt: skip
-    return []
+    """Questions attendues pour ce métier que le formulaire ne pose pas (C159, C167).
+    « Adresse e-mail » ne répond pas à « adresse » ; le texte d'accord est ignoré."""
+    name = expectation_for(keywords)
+    if name is None:
+        return []
+    words = _EMAIL_ADDRESS.sub(" ", _PRIVACY.sub(" ", form.words))
+    return [q for q, hints in signals().form_expectations[name].champs.items()
+            if not any(h in words for h in hints)][:limit]  # fmt: skip
 
 
 def _cta_on_top(home: Page) -> bool:

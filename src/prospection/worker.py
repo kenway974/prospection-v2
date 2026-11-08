@@ -102,7 +102,9 @@ def main() -> None:  # pragma: no cover (point d'entrée, testé en bout en bout
     from prospection.domain.site_report import SiteReport
     from prospection.http_client import make_client
     from prospection.monitoring import start_monitoring
+    from prospection.sources.browser_process import render_isolated
     from prospection.sources.safe_network import make_web_client
+    from prospection.sources.web_reader import ReadResult
     from prospection.storage.db import make_engine
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -115,8 +117,11 @@ def main() -> None:  # pragma: no cover (point d'entrée, testé en bout en bout
     box = SecretBox(settings.encryption_key.get_secret_value())
     web = make_web_client(settings.test_services_url)  # sites des prospects : garde SSRF
 
+    def browser(url: str, seconds: float) -> ReadResult:  # C166 : sites en JavaScript
+        return render_isolated(url, seconds, settings.test_services_url)
+
     def sites(place: Place, keywords: tuple[str, ...]) -> SiteReport:
-        return check_site(web, place, keywords, datetime.now(UTC).year)
+        return check_site(web, place, keywords, datetime.now(UTC).year, browser)
 
     with make_client(settings.test_services_url) as client, web:
         engine = make_engine(settings.database_url)

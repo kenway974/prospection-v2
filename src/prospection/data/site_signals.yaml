@@ -71,50 +71,240 @@ cta_words: ["devis", "estimation", "rendez-vous", "rdv", "reserv", "réserv", "a
 # Questions utiles d'un formulaire selon le métier (C159) : mots du métier (sans accents, début de
 # mot), puis chaque question attendue → mots qui la trouvent dans le formulaire (noms, textes, type).
 form_expectations:
-  batiment:
-    mots: [plombier, chauffagiste, chauffage, electricien, serrurier, couvreur, toiture, macon, menuisier, peintre, carreleur, plaquiste, renovation, isolation, climatisation, desembouage, charpent, facade, cuisiniste, terrass, vitrier, depann]
+  # C159, C167 : questions d'une première estimation, par métier. Le premier groupe dont un
+  # mot correspond au métier l'emporte : les métiers précis avant les groupes généraux.
+  # Indices cherchés dans les noms, indications et textes du formulaire (en minuscules) :
+  # jamais un indice trop court qui se cache dans un autre mot (« age » dans « message »).
+  traiteur:
+    mots: [traiteur]
     champs:
-      type de travaux: [travaux, prestation, intervention, service, besoin, projet, select]
-      adresse ou code postal: [adresse, postal, ville, commune, cp]
-      photos: [photo, file, image, piece jointe, pièce jointe]
-      délai souhaité: [delai, délai, urgence, quand, date]
-  paysage:
-    mots: [paysag, jardin, elagu, espaces verts, espace vert, arbor, taille de haie]
+      nombre de couverts: [couvert, convive, invité, invite, personnes, nombre, number]
+      choix des plats: [plats, menu, formule, buffet, cocktail]
+      date de l'événement: [date]
+      lieu: [lieu, adresse, ville, commune]
+      type d'événement: [événement, evenement, occasion, mariage, anniversaire]
+  evenementiel:
+    mots: [wedding planner, location de materiel evenementiel, location de materiel de reception, animateur, animation, dj, organisateur d evenement, organisation d evenement, organisation de mariage]
     champs:
-      surface: [surface, superficie, m2, m², metrage, métrage]
-      type d'entretien: [prestation, entretien, travaux, service, besoin, select]
+      date: [date]
+      nombre d'invités: [invité, invite, convive, personnes, nombre, number]
+      lieu: [lieu, adresse, ville, commune]
+      type d'événement: [événement, evenement, occasion, mariage, anniversaire, séminaire, seminaire]
+      budget: [budget]
+  photographe:
+    mots: [photograph, videast]
+    champs:
+      date: [date]
+      lieu: [lieu, adresse, ville, commune]
+      type de séance: [séance, seance, prestation, événement, evenement, mariage, formule, select]
+      durée: [durée, duree, heure]
+  reception:
+    mots: [salle de mariage, salle de reception, lieu de reception, domaine de reception, salle de seminaire, salle des fetes]
+    champs:
+      date: [date]
+      nombre d'invités: [invité, invite, convive, personnes, nombre, number]
+      type d'événement: [événement, evenement, occasion, mariage, anniversaire, séminaire, seminaire]
+      formule: [formule, traiteur, option, select]
+  hebergement:
+    mots: [hotel, gite, chambre d hote, chambres d hotes, maison d hote, camping, village vacances, glamping, hebergement touristique, location saisonniere]
+    champs:
+      date d'arrivée: [arrivée, arrivee, check-in, date]
+      date de départ: [départ, depart, check-out, nuit]
+      nombre de personnes: [personnes, adulte, enfant, voyageur, nombre, number]
+  restauration:
+    mots: [restaurant, brasserie, bistrot, pizzeria, creperie, auberge, table d hote]
+    champs:
+      date: [date]
+      heure: [heure, horaire, time]
+      nombre de personnes: [personnes, couvert, convive, nombre, number]
+  solaire:
+    mots: [photovolta, panneaux solaires, panneau solaire, installateur solaire, energie solaire]
+    champs:
+      facture d'électricité: [facture, consommation, kwh]
+      toit (surface, orientation): [toit, toiture, orientation, surface]
+      type de logement: [logement, maison, appartement, bâtiment, batiment]
+      adresse ou code postal: [adresse, postal, ville, commune]
+  cvc:
+    mots: [chauffagiste, chauffage, pompe a chaleur, climatisation, frigorist, chaudiere, desembouage, poele]
+    champs:
+      surface du logement: [surface, superficie, m2, m²]
+      chauffage actuel: [chauffage actuel, énergie, energie, chaudière, chaudiere, fioul, gaz, installation actuelle, installation existante, système actuel, systeme actuel]
+      état du logement: [année, annee, construction, isolation, état, etat, dpe]
+      type de projet: [projet, prestation, travaux, select]
+      adresse ou code postal: [adresse, postal, ville, commune]
+  isolation:
+    mots: [isolation, isolant, combles]
+    champs:
+      surface à isoler: [surface, superficie, m2, m²]
+      partie à isoler: [combles, mur, plancher, toiture, isoler, select]
+      type de logement: [logement, maison, appartement]
+      année de construction: [année, annee, construction]
+      adresse ou code postal: [adresse, postal, ville, commune]
+  piscine:
+    mots: [piscin, jacuzzi, abri de piscine]
+    champs:
+      dimensions: [dimension, taille, longueur, surface, m2, m²]
+      type de piscine: [béton, beton, coque, liner, hors-sol, enterrée, enterree, select]
+      terrain et accès: [terrain, accès, acces, pente, jardin]
       photos: [photo, file, image]
       adresse ou code postal: [adresse, postal, ville, commune]
-  restauration:
-    mots: [restaurant, brasserie, bistrot, pizzeria, creperie, traiteur]
+  cuisine_bain:
+    mots: [cuisiniste, cuisine equipee, cuisines equipees, cuisine sur mesure, magasin de cuisine, salle de bain, salles de bain, dressing, agencement]
     champs:
-      date: [date, jour]
-      heure: [heure, horaire, time]
-      nombre de personnes: [personne, couvert, convive, nombre, number]
-  beaute:
-    mots: [coiff, barbier, esthetic, beaute, onglerie, institut, spa, massage, tatou]
+      dimensions de la pièce: [dimension, surface, m2, m², longueur, plan]
+      budget: [budget]
+      style ou équipements: [style, équipement, equipement, gamme, select]
+      photos ou plan: [photo, file, image, plan]
+      adresse ou code postal: [adresse, postal, ville, commune]
+  menuiserie:
+    mots: [menuis, fenetre, veranda, pergola, store et volet, stores, volet, portail, cloture, porte de garage, vitrier, ebenist]
     champs:
-      prestation: [prestation, soin, service, select]
-      date souhaitée: [date, jour, creneau, créneau]
-  sante:
-    mots: [kine, osteopath, dentist, medecin, podolog, orthophon, psycholog, sophrolog, naturopath, dieteticien, infirmi]
+      nombre d'ouvertures: [nombre, quantité, quantite, number]
+      dimensions: [dimension, largeur, hauteur, taille]
+      matériau: [matériau, materiau, aluminium, pvc, bois, select]
+      pose ou fourniture: [avec pose, pose seule, fourniture, remplacement, rénovation, renovation]
+      adresse ou code postal: [adresse, postal, ville, commune]
+  toiture:
+    mots: [couvreur, couverture, toiture, charpent, zingu]
     champs:
-      motif: [motif, raison, besoin, symptome, symptôme, select]
-      date souhaitée: [date, jour, creneau, créneau]
+      type de travaux: [travaux, prestation, réparation, reparation, rénovation, renovation, select]
+      surface de toit: [surface, superficie, m2, m²]
+      type de couverture: [tuile, ardoise, couverture, matériau, materiau, zinc, bac acier]
+      photos: [photo, file, image]
+      adresse ou code postal: [adresse, postal, ville, commune]
+  electricite:
+    mots: [electric, borne de recharge, domotique]
+    champs:
+      type de travaux: [travaux, prestation, intervention, dépannage, depannage, installation, select]
+      logement ou local: [logement, maison, appartement, local, surface]
+      délai souhaité: [delai, délai, urgence, quand, date]
+      photos: [photo, file, image]
+      adresse ou code postal: [adresse, postal, ville, commune]
+  plomberie:
+    mots: [plomb, debouchage, assainissement]
+    champs:
+      type d'intervention: [intervention, travaux, prestation, fuite, dépannage, depannage, installation, select]
+      délai souhaité: [delai, délai, urgence, quand, date]
+      photos: [photo, file, image]
+      adresse ou code postal: [adresse, postal, ville, commune]
   auto:
-    mots: [garage, carrosserie, mecani, controle technique, pneu, depannage auto]
+    mots: [garage, carrosserie, mecani, controle technique, pneu, depannage auto, reparation automobile]
     champs:
       véhicule: [vehicule, véhicule, modele, modèle, marque, immatriculation]
       prestation: [prestation, service, entretien, reparation, réparation, select]
-  demenagement:
-    mots: [demenag]
+  batiment:
+    mots: [serrurier, macon, peintre, carreleur, carrelage, plaquiste, platrier, renovation, facade, terrass, depann, parquet, cheminee, entreprise du batiment, artisan du batiment]
     champs:
-      date: [date, jour]
-      volume: [volume, m3, m³, piece, pièce]
+      type de travaux: [travaux, prestation, intervention, service, besoin, projet, select]
+      adresse ou code postal: [adresse, postal, ville, commune]
+      photos: [photo, file, image, piece jointe, pièce jointe]
+      délai souhaité: [delai, délai, urgence, quand, date]
+  paysage:
+    mots: [paysag, jardin, elagu, espaces verts, espace vert, arbor, taille de haie, arrosage]
+    champs:
+      surface: [surface, superficie, m2, m², metrage, métrage]
+      travaux à faire: [prestation, entretien, travaux, service, besoin, création, creation, tonte, select]
+      végétation présente: [végétation, vegetation, arbre, haie, pelouse, gazon, massif, plante]
+      photos: [photo, file, image]
+      adresse ou code postal: [adresse, postal, ville, commune]
+  demenagement:
+    mots: [demenag, debarras]
+    champs:
+      date: [date]
+      volume: [volume, m3, m³, nombre de pièces, nombre de pieces]
       adresses de départ et d'arrivée: [depart, départ, arrivee, arrivée, adresse]
+      étage et accès: [étage, etage, ascenseur, accès, acces]
   nettoyage:
     mots: [nettoyage, menage, proprete]
     champs:
       surface: [surface, superficie, m2, m²]
+      type de locaux: [bureau, local, logement, maison, appartement, locaux]
       fréquence: [frequence, fréquence, regulier, régulier]
       adresse ou code postal: [adresse, postal, ville]
+  nuisibles:
+    mots: [deratis, desinsect, nuisible, punaise, frelon]
+    champs:
+      nuisible: [nuisible, souris, rongeur, cafard, punaise, guêpe, guepe, frelon, insecte, select]
+      lieu: [lieu, logement, local, maison, appartement]
+      urgence: [délai, delai, urgence, date]
+      adresse ou code postal: [adresse, postal, ville, commune]
+  ramonage:
+    mots: [ramon]
+    champs:
+      appareil: [appareil, cheminée, cheminee, poêle, poele, chaudière, chaudiere, insert, select]
+      combustible: [bois, granulé, granule, fioul, gaz, combustible]
+      date souhaitée: [date, disponibilit]
+      adresse ou code postal: [adresse, postal, ville, commune]
+  diagnostic:
+    mots: [diagnost, geometre]
+    champs:
+      type de bien: [type de bien, maison, appartement, local, terrain]
+      surface: [surface, superficie, m2, m²]
+      année de construction: [année, annee, construction]
+      motif (vente, location): [vente, location, motif, select]
+      adresse ou code postal: [adresse, postal, ville, commune]
+  auto_ecole:
+    mots: [auto ecole, ecole de conduite, permis de conduire, permis b]
+    champs:
+      formule: [formule, forfait, heures, select]
+      boîte manuelle ou automatique: [manuelle, automatique, boîte, boite]
+      code déjà obtenu: [code de la route, code obtenu, code déjà, code deja]
+      financement: [cpf, financement]
+  formation:
+    mots: [formation, ecole de langues, ecole de musique, ecole de danse]
+    champs:
+      formation visée: [formation, programme, cursus, select]
+      financement: [cpf, opco, financement, prise en charge, france travail]
+      statut: [statut, salarié, salarie, demandeur, indépendant, independant, étudiant, etudiant]
+      date souhaitée: [date, session, rentrée, rentree]
+  credit:
+    mots: [courtier en credit, courtier en pret, courtier immobilier, courtage en credit, courtage en pret, courtage immobilier]
+    champs:
+      montant du projet: [montant, prix, projet]
+      apport: [apport]
+      revenus: [revenu, salaire]
+      situation: [situation, statut, cdi, emprunteur]
+  immobilier:
+    mots: [agence immobili, mandataire immobili, gestion locative, syndic, administrateur de biens, chasseur immobilier, promoteur immobili]
+    champs:
+      type de demande: [achat, vente, location, estimation, projet, select]
+      type de bien: [type de bien, maison, appartement, terrain]
+      surface: [surface, superficie, m2, m²]
+      budget: [budget, prix]
+      adresse ou ville: [adresse, postal, ville, commune, secteur]
+  comptable:
+    mots: [comptab, gestion de patrimoine, conseil en gestion]
+    champs:
+      activité: [activité, activite, secteur]
+      statut juridique: [statut, forme juridique, sarl, sas, micro]
+      chiffre d'affaires: [chiffre]
+      besoin: [mission, besoin, prestation, select]
+  juridique:
+    mots: [avocat, notaire, huissier, commissaire de justice, juridique]
+    champs:
+      domaine: [domaine, matière, matiere, select]
+      objet de la demande: [objet, motif, situation, besoin]
+      urgence: [urgence, délai, delai, date]
+  beaute:
+    mots: [coiff, barbier, esthetic, beaute, onglerie, ongulaire, maquill, epilation, cils, institut, massage, tatou]
+    champs:
+      prestation: [prestation, soin, service, select]
+      date souhaitée: [date, creneau, créneau]
+  sante:
+    mots: [kine, osteopath, dentist, medecin, cabinet medical, ophtalmo, dermato, orthodont, podolog, orthophon, psycholog, sophrolog, naturopath, dieteticien, infirmi, chiropract, sage femme, ergotherap, psychomot, therapeut, hypno, veterinaire, opticien, audioprothes]
+    champs:
+      motif: [motif, raison, besoin, symptome, symptôme, select]
+      date souhaitée: [date, creneau, créneau]
+  sport:
+    mots: [coach sportif, coaching sportif, salle de sport, fitness, yoga, pilates, crossfit, musculation, boxe, escalade, club de sport]
+    champs:
+      objectif: [objectif, besoin]
+      niveau: [niveau, débutant, debutant]
+      disponibilités: [disponibilit, créneau, creneau, horaire]
+      formule: [formule, abonnement, séance, seance, select]
+  creche:
+    mots: [creche, soutien scolaire]
+    champs:
+      âge de l'enfant: [âge de, date de naissance, naissance, classe, niveau]
+      date d'entrée: [entrée, entree, date, début, debut]
+      jours souhaités: [jours de garde, jours souhaités, jours souhaites, horaire, temps plein, temps partiel]

@@ -4,6 +4,7 @@ Lecture gratuite mais lente : appelée seulement pour les établissements qui pa
 critères gratuits (C39). Les domaines devinés sont lus en parallèle (4 au plus).
 """
 
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from time import monotonic
 
@@ -16,26 +17,29 @@ from prospection.domain.site_audit import audit, is_placeholder
 from prospection.domain.site_contacts import find_contacts, merge_contacts
 from prospection.domain.site_form import contact_links, has_form
 from prospection.domain.site_guess import STRONG, address_city, candidate_domains, confirmation
+from prospection.domain.site_js import is_js_app
 from prospection.domain.site_report import Origin, SiteReport
 from prospection.domain.site_seo import local_seo
 from prospection.sources.web_reader import UNREACHABLE, ReadResult, read_page
 
 CONTACT_SECONDS = 8.0  # budget commun des pages Contact d'un site (C138)
+BROWSER_SECONDS = 20.0  # un vrai navigateur exécute le JavaScript : plus lent (C166)
 MIN_READ_SECONDS = 1.0
 PLACEHOLDER = "Page « en construction » de l'hébergeur : aucun vrai site en ligne"
+Reader = Callable[[str, float], ReadResult]  # adresse, secondes au plus → page lue (C166)
 
 
-def _contact_pages(client: httpx.Client, home: Page, url: str) -> tuple[Page, ...]:
+def _contact_pages(read: Reader, home: Page, url: str, budget: float) -> tuple[Page, ...]:
     """Pages Contact du même site, lues seulement si l'accueil n'a pas de formulaire (C138)."""
     if has_form(home):
         return ()
     pages: list[Page] = []
     start = monotonic()
     for link in contact_links(home, url):
-        left = CONTACT_SECONDS - (monotonic() - start)
+        left = budget - (monotonic() - start)
         if left < MIN_READ_SECONDS:  # un seul budget pour toutes les pages Contact
             break
-        result = read_page(client, link, seconds=left)
+        result = read(link, left)
         if result.page is None:
             continue
         pages.append(parse_page(result.page.html, result.page.truncated))
@@ -44,9 +48,21 @@ def _contact_pages(client: httpx.Client, home: Page, url: str) -> tuple[Page, ..
     return tuple(pages)
 
 
+def _plain(client: httpx.Client) -> Reader:
+    return lambda url, seconds: read_page(client, url, seconds=seconds)
+
+
+def _rendered(page: Page, url: str, browser: Reader | None) -> Page | None:
+    """C166 : coquille JavaScript relue par un vrai navigateur ; None si rien de mieux."""
+    if browser is None or not is_js_app(page):
+        return None
+    result = browser(url, BROWSER_SECONDS)
+    return parse_page(result.page.html, result.page.truncated) if result.page else None
+
+
 def _report(
     client: httpx.Client, read_url: tuple[ReadResult, bool], origin: Origin, place: Place,
-    keywords: tuple[str, ...], year: int,
+    keywords: tuple[str, ...], year: int, browser: Reader | None = None,
 ) -> SiteReport:  # fmt: skip
     result, https_failed = read_url
     if result.page is None:
@@ -55,7 +71,11 @@ def _report(
     page = parse_page(read.html, read.truncated)
     if is_placeholder(page):  # domaine acheté, aucun site en ligne : un prospect sans site
         return SiteReport(origin, problem=PLACEHOLDER, parked=True)
-    others = _contact_pages(client, page, read.url)
+    rendered = _rendered(page, read.url, browser)
+    if rendered is not None and browser is not None:
+        page, others = rendered, _contact_pages(browser, rendered, read.url, BROWSER_SECONDS)
+    else:
+        others = _contact_pages(_plain(client), page, read.url, CONTACT_SECONDS)
     country = place.country or "FR"
     return SiteReport(
         origin, read.url,
@@ -80,7 +100,10 @@ def _read_domain(client: httpx.Client, domain: str) -> tuple[ReadResult, bool]:
     return _read_url(client, f"https://{domain}")
 
 
-def _guess(client: httpx.Client, place: Place, keywords: tuple[str, ...], year: int) -> SiteReport:
+def _guess(
+    client: httpx.Client, place: Place, keywords: tuple[str, ...], year: int,
+    browser: Reader | None,
+) -> SiteReport:  # fmt: skip
     domains = candidate_domains(place.name, place.country, keywords, address_city(place.address))
     if not domains:
         return SiteReport("aucun")
@@ -95,20 +118,23 @@ def _guess(client: httpx.Client, place: Place, keywords: tuple[str, ...], year: 
         phones = find_contacts(page, place.country or "FR").phones
         level = confirmation(page.text, place.name, place.phone, place.address, phones)
         if level == STRONG:
-            return _report(client, read_url, "retrouvé", place, keywords, year)
+            return _report(client, read_url, "retrouvé", place, keywords, year, browser)
         probable = probable or (result.page.url if level else None)
     return SiteReport("aucun", probable=probable)
 
 
 def check_site(
-    client: httpx.Client, place: Place, keywords: tuple[str, ...], year: int
-) -> SiteReport:
-    """Rapport du site ; jamais d'exception pour un site absent ou en panne."""
+    client: httpx.Client, place: Place, keywords: tuple[str, ...], year: int,
+    browser: Reader | None = None,
+) -> SiteReport:  # fmt: skip
+    """Rapport du site ; jamais d'exception pour un site absent ou en panne. `browser` : lecture
+    par un vrai navigateur, pour les sites affichés seulement par JavaScript (C166)."""
     url = web_link(place.website)
     network = not_a_site(url) if url else None
     if url and network is None:
-        return _report(client, _read_url(client, url), "fiche Google", place, keywords, year)
-    found = _guess(client, place, keywords, year)
+        read_url = _read_url(client, url)
+        return _report(client, read_url, "fiche Google", place, keywords, year, browser)
+    found = _guess(client, place, keywords, year, browser)
     if network is None or found.url:
         return found
     problem = f"La fiche Google renvoie vers {network} : pas de vrai site"  # C154

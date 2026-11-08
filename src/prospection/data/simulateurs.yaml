@@ -1,0 +1,74 @@
+# Simulateurs proposés par l'audit (C165), du plus précis au plus général : le premier qui
+# convient est le seul proposé. Mots sans accents ni ponctuation, comparés au début d'un mot.
+#
+# « metiers » : métiers recherchés concernés (obligatoire).
+# « site » : mots du texte visible (pas les liens) qui montrent que le site parle d'une aide.
+#   Une entrée avec « site » n'est retenue que si le métier ET le site correspondent : une aide
+#   n'est jamais citée sans eux (l'entreprise n'y a peut-être pas droit, et des mots courants
+#   comme « coup de pouce » ne suffisent pas).
+# Une entrée sans « site » est un outil de calcul : son texte ne nomme aucune aide.
+# « texte » : problème affiché sur la fiche ; texte du mail : mail_rules.yaml (sim_<code>).
+# Un site qui contient déjà un des mots de « deja_present » n'a rien à se voir proposer.
+deja_present: [simulateur, simulez, simulation, calculez, calculateur, calculette, estimez, estimation en ligne]
+simulateurs:
+  # Aides : le site en parle, le métier est concerné.
+  - code: borne
+    texte: "Pas de simulateur de l'aide pour la borne de recharge, dont parle le site"
+    site: [advenir, credit d impot borne, credit d impot pour l installation, credit d impot pour la borne]
+    metiers: [borne de recharge, irve, electric]
+  - code: adapt
+    texte: "Pas de simulateur MaPrimeAdapt', dont parle le site"
+    site: [maprimeadapt, ma prime adapt, credit d impot autonomie]
+    metiers: [salle de bain, salles de bain, plomb, menuis, renovation, monte escalier, douche, ergotherap, amenagement]
+  - code: renov
+    texte: "Pas de simulateur des aides à la rénovation (MaPrimeRénov', primes énergie)"
+    site: [maprimerenov, ma prime renov, prime energie, primes energie, certificats d economies d energie, coup de pouce chauffage, coup de pouce isolation, coup de pouce renovation, eco ptz, eco pret a taux zero, rge]
+    metiers: [chauffag, pompe a chaleur, climatisation, frigorist, isolation, combles, menuis, fenetre, couvreur, toiture, charpent, photovolta, panneaux solaires, panneau solaire, poele, chaudiere, renovation, electric, plomb, facade, ventilation, cheminee]
+  - code: sap
+    texte: "Pas de simulateur du prix après crédit d'impôt (services à la personne)"
+    site: [services a la personne, service a la personne, avance immediate, credit d impot de 50, reduction d impot de 50, 50 de credit d impot, 50 de reduction d impot, agrement sap, declaration sap, cesu]
+    metiers: [paysag, jardin, elagu, espaces verts, nettoyage, menage, repassage, soutien scolaire, cours particulier, garde d enfant, aide a domicile, bricolage, homme toutes mains, multiservice, assistance informatique, informatique a domicile]
+  - code: creche
+    texte: "Pas de simulateur du coût réel après aides (CAF, crédit d'impôt), dont parle le site"
+    site: [cmg, complement de libre choix, paje, credit d impot]
+    metiers: [creche]
+  - code: permis
+    texte: "Pas de simulateur du financement du permis (CPF, permis à 1 €), dont parle le site"
+    site: [permis a 1, cpf, compte personnel de formation, mon compte formation, aide au permis]
+    metiers: [auto ecole, ecole de conduite, permis de conduire]
+  - code: formation
+    texte: "Pas de simulateur de prise en charge (CPF, OPCO), dont parle le site"
+    site: [cpf, compte personnel de formation, mon compte formation, opco, france travail]
+    metiers: [formation, ecole de langues, organisme de formation]
+  - code: sante
+    texte: "Pas d'estimation du reste à charge (100 % santé), dont parle le site"
+    site: [100 sante, reste a charge zero]
+    metiers: [opticien, audioprothes, dentist, orthodont]
+  # Outils de calcul : le métier suffit, aucune aide nommée.
+  - code: borne_cout
+    texte: "Pas de simulateur du coût de la borne et des économies de recharge"
+    metiers: [borne de recharge, irve]
+  - code: permis_cout
+    texte: "Pas de simulateur du coût total du permis (forfait, heures, mensualités)"
+    metiers: [auto ecole, ecole de conduite]
+  - code: solaire
+    texte: "Pas de simulateur de production et d'économies solaires"
+    metiers: [photovolta, panneaux solaires, panneau solaire, installateur solaire, energie solaire]
+  - code: emprunt
+    texte: "Pas de simulateur de capacité d'emprunt ni de mensualités"
+    metiers: [courtier en credit, courtier en pret, courtier immobilier, courtage en credit, courtage en pret, courtage immobilier]
+  - code: notaire
+    texte: "Pas de calcul en ligne des frais de notaire"
+    metiers: [notaire, office notarial]
+  - code: patrimoine
+    texte: "Pas de simulateur d'impôt ni d'épargne"
+    metiers: [gestion de patrimoine, conseiller en gestion de patrimoine, cgp, conseiller financier]
+  - code: charges
+    texte: "Pas de simulateur de charges ni de rémunération (statut, cotisations)"
+    metiers: [expert comptable, comptable, cabinet comptable]
+  - code: estimation
+    texte: "Pas d'estimation en ligne du bien (vente ou location)"
+    metiers: [agence immobili, mandataire immobili, gestion locative, administrateur de biens]
+  - code: chauffage
+    texte: "Pas de simulateur d'économies de chauffage"
+    metiers: [pompe a chaleur, chauffagiste, entreprise de chauffage, isolation, poele, chaudiere, menuiserie aluminium, poseur de fenetres]

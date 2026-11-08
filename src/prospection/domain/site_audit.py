@@ -33,6 +33,7 @@ from prospection.domain.site_form_quality import best_form, form_findings, missi
 from prospection.domain.site_js import BLIND, JS_ONLY, is_js_app
 from prospection.domain.site_privacy import privacy_findings
 from prospection.domain.site_reach import reach_findings
+from prospection.domain.site_savings import PREFIX, savings_findings
 from prospection.domain.site_signals import signals
 
 __all__ = ["LEGACY_GA", "Audit", "audit", "is_placeholder", "technology"]
@@ -119,12 +120,14 @@ def audit(
     detail = form_detail(page, others)
     if detail == BASIC:
         found.append(("form_basic", _basic_text(page, others, keywords), MINOR))
-    found += form_findings(page, others, place)
+    found += form_findings(page, others, place, keywords)
     found += ageing_findings(page, url, powered_by)
     found += privacy_findings(page, collects=place in FOUND)
     found += reach_findings(page, find_contacts(page, country).phones, keywords)
+    found += savings_findings(page, keywords)  # C165
     if js_app:  # C152 : on ne juge pas ce qu'on ne voit pas
-        found = [f for f in found if f[0] not in BLIND] + [JS_ONLY]
+        found = [f for f in found if f[0] not in BLIND and not f[0].startswith(PREFIX)]
+        found.append(JS_ONLY)
     score = max(0, 100 - sum(weight for _, _, weight in found))
     problems, codes = tuple(t for _, t, _ in found), tuple(c for c, _, _ in found)
     return Audit(score, problems, tech, https, mobile, place != NONE, place, codes, detail)

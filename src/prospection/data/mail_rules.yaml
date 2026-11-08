@@ -88,6 +88,13 @@ points:
     probleme: "Votre formulaire n'est que sur la page Contact."
     impact: "Un visiteur pressé ne le voit pas depuis l'accueil."
     action: "Un bouton « Demander un devis » visible dès l'arrivée."
+  quote_incomplete:
+    titre: "Une demande de devis qui oublie l'essentiel"
+    poids: 6
+    groupe: formulaire
+    probleme: "Votre formulaire ne pose pas les questions utiles pour chiffrer une première estimation."
+    impact: "Vous rappelez le client pour avoir les infos : le temps de le joindre, un autre a déjà répondu."
+    action: "Les bonnes questions du métier : le client décrit son besoin, vous chiffrez tout de suite."
   form_basic:
     titre: "Un formulaire qui ne pose aucune question"
     poids: 6
@@ -133,6 +140,127 @@ points:
     probleme: "Pas de réservation en ligne."
     impact: "Entre 40 et 60 % des réservations se font hors des heures d'ouverture."
     action: "Un module de réservation relié à votre agenda."
+  # Simulateurs (C165) : un seul par mail ; règles dans simulateurs.yaml. Une aide n'est
+  # nommée que si le site du prospect en parle.
+  sim_borne:
+    titre: "Aucun calcul de l'aide pour la borne"
+    poids: 9
+    groupe: simulateur
+    probleme: "Vous parlez de l'aide pour la borne de recharge, mais le client ne peut pas estimer la sienne."
+    impact: "Le client voit le prix plein, pas son coût réel : il compare ailleurs."
+    action: "Un simulateur : le client décrit son cas, il voit l'aide possible et le prix final."
+  sim_adapt:
+    titre: "Aucun calcul de MaPrimeAdapt'"
+    poids: 9
+    groupe: simulateur
+    probleme: "Vous parlez de MaPrimeAdapt', mais le client ne peut pas estimer son aide."
+    impact: "Une personne âgée ou ses enfants hésitent sans savoir ce qui restera à payer."
+    action: "Un simulateur : quelques questions, l'aide estimée et le reste à charge."
+  sim_renov:
+    titre: "Aucun calcul des aides à la rénovation"
+    poids: 9
+    groupe: simulateur
+    probleme: "Vous citez les aides (MaPrimeRénov', primes énergie), mais le client ne peut pas estimer les siennes."
+    impact: "Sans montant, le projet semble trop cher : le client attend ou va chez celui qui chiffre."
+    action: "Un simulateur d'aides : revenus, logement, travaux, et le reste à charge s'affiche."
+  sim_sap:
+    titre: "Le crédit d'impôt n'est pas chiffré"
+    poids: 9
+    groupe: simulateur
+    probleme: "Vous proposez des services à la personne, mais votre site ne calcule pas le prix après crédit d'impôt."
+    impact: "Le client voit le prix plein et oublie qu'il peut en récupérer jusqu'à la moitié."
+    action: "Un simulateur : le client entre le montant, il voit tout de suite son prix réel."
+  sim_creche:
+    titre: "Le coût réel n'est pas chiffré"
+    poids: 9
+    groupe: simulateur
+    probleme: "Vous parlez des aides (CAF, crédit d'impôt), mais les parents ne peuvent pas estimer leur coût réel."
+    impact: "Les parents voient un tarif élevé et choisissent sans savoir ce qu'ils paieraient vraiment."
+    action: "Un simulateur : revenus et heures de garde, et le coût mensuel estimé s'affiche."
+  sim_permis:
+    titre: "Le financement du permis n'est pas chiffré"
+    poids: 9
+    groupe: simulateur
+    probleme: "Vous parlez du financement du permis, mais l'élève ne peut pas estimer le sien."
+    impact: "L'élève voit le prix total et repousse son inscription."
+    action: "Un simulateur : les financements que vous acceptez, et la mensualité s'affiche."
+  sim_formation:
+    titre: "La prise en charge n'est pas chiffrée"
+    poids: 9
+    groupe: simulateur
+    probleme: "Vous parlez de financement (CPF, OPCO…), mais le stagiaire ne peut pas estimer le sien."
+    impact: "Sans reste à charge connu, beaucoup ne vont pas plus loin."
+    action: "Un simulateur de prise en charge : statut, formation, et le reste à charge s'affiche."
+  sim_sante:
+    titre: "Le reste à charge n'est pas estimé"
+    poids: 9
+    groupe: simulateur
+    probleme: "Vous parlez du 100 % santé, mais le patient ne peut pas estimer ce qu'il paiera."
+    impact: "Le patient craint le prix et repousse son rendez-vous."
+    action: "Un simulateur : équipement, mutuelle, et le reste à charge estimé s'affiche."
+  sim_borne_cout:
+    titre: "Aucun calcul du coût de la borne"
+    poids: 9
+    groupe: simulateur
+    probleme: "Votre site ne permet pas d'estimer le coût d'une borne ni les économies de recharge."
+    impact: "Le client ne voit pas ce que la borne lui fait gagner face à l'essence ou aux bornes publiques."
+    action: "Un simulateur : véhicule, kilomètres par an, et l'économie s'affiche."
+  sim_permis_cout:
+    titre: "Le coût du permis n'est pas chiffré"
+    poids: 9
+    groupe: simulateur
+    probleme: "Votre site ne permet pas d'estimer le coût total du permis."
+    impact: "L'élève compare les écoles sur le prix affiché, sans les heures en plus."
+    action: "Un simulateur : formule, heures, et le coût total ou la mensualité s'affiche."
+  sim_solaire:
+    titre: "Aucun calcul des économies solaires"
+    poids: 9
+    groupe: simulateur
+    probleme: "Votre site ne permet pas d'estimer la production ni les économies."
+    impact: "Le client ne voit pas en combien d'années l'installation est rentable."
+    action: "Un simulateur : adresse, toit, facture, et les économies par an s'affichent."
+  sim_emprunt:
+    titre: "Aucun calcul de capacité d'emprunt"
+    poids: 9
+    groupe: simulateur
+    probleme: "Votre site ne permet pas de calculer sa capacité d'emprunt."
+    impact: "Les acheteurs font ce calcul ailleurs, et laissent leurs coordonnées là-bas."
+    action: "Un simulateur de capacité d'emprunt et de mensualités, avec une demande de rappel."
+  sim_notaire:
+    titre: "Aucun calcul des frais de notaire"
+    poids: 9
+    groupe: simulateur
+    probleme: "Votre site ne permet pas de calculer les frais de notaire."
+    impact: "C'est la première question des acheteurs : ils la posent à un autre site."
+    action: "Un calcul en ligne des frais de notaire, avec vos coordonnées à côté du résultat."
+  sim_patrimoine:
+    titre: "Aucun simulateur d'impôt ni d'épargne"
+    poids: 9
+    groupe: simulateur
+    probleme: "Votre site ne permet pas d'estimer impôts ou épargne."
+    impact: "Le visiteur ne voit pas ce qu'il gagnerait à vous consulter."
+    action: "Un simulateur d'impôt ou d'épargne, avec une prise de rendez-vous à la fin."
+  sim_charges:
+    titre: "Aucun simulateur de charges"
+    poids: 9
+    groupe: simulateur
+    probleme: "Votre site ne permet pas d'estimer charges ou rémunération."
+    impact: "Les créateurs d'entreprise font ce calcul ailleurs, puis y choisissent leur comptable."
+    action: "Un simulateur de charges selon le statut, avec une demande de devis à la fin."
+  sim_estimation:
+    titre: "Aucune estimation en ligne"
+    poids: 9
+    groupe: simulateur
+    probleme: "Votre site ne propose pas d'estimer un bien."
+    impact: "Les vendeurs estiment sur un portail et signent avec l'agence qui les rappelle."
+    action: "Une estimation en ligne qui vous envoie le contact du vendeur."
+  sim_chauffage:
+    titre: "Aucun calcul des économies de chauffage"
+    poids: 9
+    groupe: simulateur
+    probleme: "Votre site ne permet pas d'estimer les économies sur la facture."
+    impact: "Le client voit le prix des travaux, pas ce qu'ils lui font gagner chaque année."
+    action: "Un simulateur : logement, chauffage actuel, et les économies par an s'affichent."
   noindex:
     titre: "Un site invisible sur Google"
     poids: 15

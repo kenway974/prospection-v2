@@ -7,18 +7,15 @@ import httpx
 from sqlalchemy import Engine
 
 from prospection.application.mail_material import MailMaterial, mail_material
+from prospection.application.mail_recipients import usable_recipients
 from prospection.application.prospect_card import UnknownProspect
-from prospection.application.prospect_view import emails_of
 from prospection.domain.audit_mail import STRUCTURES, Draft, MailPoint, MailSender, draft_mail
 from prospection.domain.audit_mail_rules import load_mail_rules
-from prospection.domain.email_check import UNCHECKED, VALID, check_email, email_domain
-from prospection.domain.mail_message import email_fingerprint
 from prospection.domain.mail_settings import sender_of
 from prospection.domain.mail_stats import least_used
 from prospection.domain.mail_versions import MailVersions
 from prospection.sources.gmail import GmailOAuth
-from prospection.storage.audit_mails import already_written, opted_out, sent_at
-from prospection.storage.mail_domains import mail_servers
+from prospection.storage.audit_mails import sent_at
 from prospection.storage.mail_send_log import version_counts
 from prospection.storage.mail_settings import load_gmail, load_mail_settings
 from prospection.storage.prospect_list import load_prospect
@@ -71,19 +68,13 @@ def load_context(
         prospect = load_prospect(conn, prospect_id)
         if prospect is None:
             raise UnknownProspect(prospect_id)
-        emails = emails_of(prospect)
-        servers = mail_servers(conn, [d for e in emails if (d := email_domain(e))])
-        hashes = [email_fingerprint(e, box.pepper) for e in emails]
-        blocked_out = opted_out(conn, hashes) | already_written(conn, hashes)
+        recipients, _ = usable_recipients(conn, prospect, box.pepper)
         settings, account, sent_on = (
             load_mail_settings(conn),
             load_gmail(conn),
             sent_at(conn, prospect_id),
         )
         counts = version_counts(conn)
-    checks = [check_email(e, servers.get(email_domain(e) or "")) for e in emails]
-    recipients = [c.email for c in checks if c.status in (VALID, UNCHECKED)
-                  and email_fingerprint(c.email, box.pepper) not in blocked_out]  # fmt: skip
     material = mail_material(engine, box, client, prospect, now)
     points = material.points
     try:

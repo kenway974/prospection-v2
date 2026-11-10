@@ -28,7 +28,7 @@ def _choices(statut: str, tri: str) -> tuple[str | None, str]:
 @router.get("", response_class=HTMLResponse)
 def prospects_page(
     request: Request, statut: str = "", q: str = "", tri: str = "", origine: str = "",
-    campagne: str = "", supprime: int = 0,
+    campagne: str = "", supprime: int = 0, en_file: int = 0,
     engine: Engine = Depends(get_engine), now: datetime = Depends(get_now),  # noqa: B008
     settings: Settings = Depends(get_settings),  # noqa: B008
 ) -> Response:  # fmt: skip
@@ -41,7 +41,7 @@ def prospects_page(
         "sources": listing.sources, "source_labels": SOURCES, "campaigns": listing.campaigns,
         "scope": listing.scope, "here": scope_params(listing.scope),
         "deleted": max(supprime, 0), "any_prospect": listing.any_prospect,
-        "groups": listing.groups,
+        "groups": listing.groups, "queued": max(en_file, 0),
     }  # fmt: skip
     return templates.TemplateResponse(request, "prospects.html", context)
 

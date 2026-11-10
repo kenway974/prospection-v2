@@ -5,7 +5,9 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import Engine
 
 from prospection.config import Settings
+from prospection.domain.audit_mail_rules import load_mail_rules
 from prospection.domain.call_sheet import load_rules
+from prospection.domain.sms_text import load_sms_rules
 from prospection.storage.secret_box import SecretBox
 from prospection.ui import (
     routes_auth,
@@ -45,6 +47,8 @@ from prospection.ui.security import (
 
 def create_app(settings: Settings, engine: Engine) -> FastAPI:
     load_rules()  # C110 : une règle « Pour l'appel » invalide empêche le démarrage
+    load_mail_rules()  # C145, C171 : règles du mail d'audit
+    load_sms_rules()  # C179 : un texte de SMS trop long empêche le démarrage
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
     app.state.settings = settings
     app.state.engine = engine

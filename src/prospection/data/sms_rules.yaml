@@ -1,0 +1,20 @@
+# Textes des SMS envoyés avec le mail d'audit (C177 à C179). Fichier modifiable.
+#
+# Un SMS tient en 160 caractères de l'alphabet SMS de base : pas de ê, â, ô, î, û, ç ni de
+# guillemets typographiques (é, è, à, ù, É sont permis). 20 caractères sont gardés pour la
+# mention « STOP au 36… » ajoutée par Brevo : chaque texte rempli fait 140 caractères au
+# plus. Un texte trop long ou une variable inconnue empêche l'app de démarrer, avec un
+# message qui dit quoi raccourcir. Un nom d'entreprise trop long est coupé à l'envoi.
+#
+# Variables : {entreprise}, {probleme} (titre du premier point de l'audit), {telephone}
+# (votre numéro, réglé dans Réglages → Mail). L'expéditeur s'affiche sous votre nom (« Kenny »)
+# et ne peut pas recevoir de réponse : les textes invitent à écrire à votre numéro.
+textes:
+  # Le mail est parti : le SMS annonce les détails dans le mail.
+  mail: "Bonjour {entreprise}, en regardant votre site : {probleme}. Je vous ai envoyé le détail par mail. Kenny, développeur web"
+  # Le mail a été refusé : le dirigeant doit le savoir.
+  bloque: "Bonjour {entreprise} : {probleme} sur votre site. Mon mail ne vous parvient pas : écrivez-moi au {telephone}. Kenny"
+  # Aucune adresse trouvée.
+  sans_mail: "Bonjour {entreprise} : {probleme} sur votre site. Des points simples à corriger : écrivez-moi au {telephone}. Kenny"
+  # Refus repéré après un SMS « mail » (C178) : un second SMS, une seule fois.
+  relance_bloque: "Bonjour {entreprise}, mon mail a été refusé par votre messagerie : vos clients aussi sont bloqués. Écrivez-moi au {telephone}. Kenny"

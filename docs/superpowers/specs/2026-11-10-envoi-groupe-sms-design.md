@@ -1,6 +1,6 @@
 # Envoi groupé du mail d'audit, accroche tirée de l'audit, ordre des points, site vérifié, SMS · spec
 
-Demandé le 10/11/2026 par le propriétaire. Comportements C168 à C180 de `COMPORTEMENTS.md`
+Demandé le 10/11/2026 par le propriétaire. Comportements C168 à C181 de `COMPORTEMENTS.md`
 (ajoutés après validation de cette spec).
 
 ## Pourquoi
@@ -24,11 +24,13 @@ le site d'une plateforme ou d'un réseau à la place de celui de l'entreprise.
 - **Ordre des points** : 1. légal, 2. clients perdus (référencement compris), 3. suivi des
   performances, 4. le reste.
 - **Site d'un tiers** : à corriger si possible, sans exemple fourni (sinon, laisser tomber).
+- **Nom d'expéditeur des SMS** : « Kenny ».
 - **SMS** : un compte **Brevo**, qui facture les SMS. Envoyé **avec le mail**, structure courte
   de type AIDA (attention, intérêt, désir, action), trois versions :
   1. mail envoyé → « plus de détails dans le mail que je viens de vous envoyer » ;
   2. mail refusé → « répondez pour plus de détails », et dire que son adresse ne reçoit pas
-     les mails ;
+     les mails. *(10/11/2026)* Le dirigeant doit **toujours** savoir que son mail est bloqué,
+     même si le refus arrive après coup ;
   3. pas d'adresse trouvée → « répondez pour plus de détails ».
 
 ## Ce qui est décidé par moi (Claude), à vérifier
@@ -106,15 +108,23 @@ le site d'une plateforme ou d'un réseau à la place de celui de l'entreprise.
 14. **Brevo** : compte créé par le propriétaire, **SMS prépayés facturés par Brevo** (quelques
     centimes par SMS en France, tarif à vérifier sur leur site au moment de l'achat). La clé
     API va dans Réglages → Clés, chiffrée en base comme les autres. Réglages → SMS : nom
-    d'expéditeur (11 caractères au plus, par exemple « KPignolet »), plafond par jour (30 par
+    d'expéditeur (11 caractères au plus, « Kenny » par défaut), plafond par jour (30 par
     défaut), activé ou non.
 15. **Mobiles français seulement** (06, 07 et +33 6, +33 7), reconnus avec `phonenumbers`, déjà
     dans le projet. Jamais vers un entrepreneur non diffusible (Sirène), jamais après un STOP,
     une seule fois par prospect.
-16. **Moment** : juste après la tentative d'envoi du mail de ce prospect, dans la même file. La
-    version dépend du résultat : mail parti (1), mail refusé par Gmail ou adresse déjà marquée
-    « mail refusé » C157 (2), pas d'adresse (3). Un refus arrivé plus tard (mail revenu) n'est
-    pas pris en compte : limite connue.
+16. **Moment** : la plupart des serveurs renvoient un refus en quelques minutes. Le SMS part donc
+    **20 minutes après le mail** (dans les heures d'envoi). Juste avant, l'app relit la
+    conversation Gmail de ce mail (en-têtes seulement, comme C163) pour y chercher un refus.
+    La version dépend du résultat : mail parti et non refusé (1), mail refusé, par Gmail tout de
+    suite ou par le serveur du destinataire ensuite, ou adresse déjà marquée « mail refusé »
+    C157 (2), pas d'adresse (3). Sans mail (pas d'adresse), le SMS part dans la file sans
+    attendre.
+16 bis. **Refus tardif** : si un refus est repéré **après** un SMS de version 1 (la relecture
+    des réponses C163 tourne toutes les 30 minutes), un **second SMS**, une seule fois, prévient
+    le dirigeant : « Mon mail n'a pas pu vous être remis : votre adresse ne reçoit pas les
+    mails, vos clients ont sans doute le même problème. Écrivez-moi au {telephone}. Kenny ».
+    Il respecte les heures d'envoi et compte dans le plafond du jour.
 17. **Textes** dans un fichier modifiable (`sms_rules.yaml`), avec les variables {entreprise},
     {probleme} (titre court du premier point), {telephone}. Chaque texte, une fois rempli, tient
     en **un seul SMS** (160 caractères, alphabet SMS de base, mention STOP comprise) : l'app
@@ -125,7 +135,7 @@ le site d'une plateforme ou d'un réseau à la place de celui de l'entreprise.
        écrivez-moi au {telephone} pour les détails. Kenny »
     3. « Bonjour, {entreprise} : {probleme} sur votre site. 3 points simples à corriger :
        écrivez-moi au {telephone} pour les détails. Kenny, dév web »
-18. **Réponses** : un SMS envoyé sous un nom (« KPignolet ») **ne peut pas recevoir de réponse**.
+18. **Réponses** : un SMS envoyé sous un nom (« Kenny ») **ne peut pas recevoir de réponse**.
     Les textes invitent donc à **écrire au numéro réglé dans Réglages → Mail** (ton mobile).
 19. **STOP** : Brevo ajoute la mention « STOP au 36111 » aux SMS marketing et bloque lui-même
     les numéros qui ont répondu STOP. L'app relit chaque jour la liste des numéros bloqués chez
@@ -142,5 +152,4 @@ le site d'une plateforme ou d'un réseau à la place de celui de l'entreprise.
 ## Hors champ
 
 - Page d'audit publique liée depuis le SMS.
-- Repérer un mail revenu après coup pour adapter le SMS.
 - SMS hors de France.

@@ -1,6 +1,6 @@
 """Page « Envois » (C169, C170) : la file du mail d'audit, son plafond, son arrêt."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 
 from sqlalchemy import Engine
@@ -8,11 +8,14 @@ from sqlalchemy import Engine
 from prospection.domain.send_pace import local_day_start
 from prospection.storage import mail_queue as queue
 from prospection.storage import mail_queue_settings as settings
+from prospection.storage.sms_queue_store import cancel_sms_after_mail, recent_sms
 
 SHOWN = 200
 MAX_LIMIT = 200
 LABELS = {queue.WAITING: "En attente", queue.SENT: "Envoyé", queue.FAILED: "Échec",
           queue.SKIPPED: "Écarté", queue.CANCELLED: "Annulé"}  # fmt: skip
+KINDS = {"mail": "détails dans le mail", "bloque": "mail refusé", "sans_mail": "sans adresse mail",
+         "relance_bloque": "refus repéré après coup"}  # fmt: skip
 WRONG_LIMIT = f"Indiquez un nombre de mails par jour entre 1 et {MAX_LIMIT}."
 
 
@@ -36,6 +39,7 @@ class QueueScreen:
     paused: str | None
     limit: int
     sent_today: int
+    sms: list[tuple[str, str, str | None, str | None]] = field(default_factory=list)  # C177
 
 
 def queue_screen(engine: Engine, now: datetime, timezone: str) -> QueueScreen:
@@ -43,13 +47,19 @@ def queue_screen(engine: Engine, now: datetime, timezone: str) -> QueueScreen:
         rows = queue.recent(conn, SHOWN)
         stop, limit = settings.paused(conn), settings.daily_limit(conn)
         today = queue.sent_since(conn, local_day_start(now, timezone))
+        texts = recent_sms(conn, SHOWN)
     lines = [QueueLine(i, name, s, LABELS.get(s, s), reason, at) for i, name, s, reason, at in rows]
-    return QueueScreen(lines, stop, limit, today)
+    sms = [(name, LABELS.get(s, s), KINDS.get(kind or "", kind), reason)
+           for name, s, kind, reason in texts]  # fmt: skip
+    return QueueScreen(lines, stop, limit, today, sms)
 
 
 def cancel_line(engine: Engine, queue_id: int, now: datetime) -> None:
+    """Le SMS qui attendait ce mail est annulé avec lui (C177)."""
     with engine.begin() as conn:
-        queue.cancel(conn, queue_id, now)
+        prospect_id = queue.cancel(conn, queue_id, now)
+        if prospect_id is not None:
+            cancel_sms_after_mail(conn, prospect_id, now)
 
 
 def resume(engine: Engine) -> None:

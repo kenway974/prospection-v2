@@ -86,3 +86,12 @@ def mark_checked(conn: Connection, send_id: int, now: datetime, replied: bool) -
     if replied:
         values["replied_at"] = now
     conn.execute(update(mail_sends).where(_S.id == send_id).values(**values))
+
+
+def thread_of(conn: Connection, prospect_id: int) -> tuple[int, str] | None:
+    """(envoi, conversation) du mail actif de ce prospect, pour y chercher un refus (C177)."""
+    row = conn.execute(
+        select(_S.id, _S.thread_id).where(_S.prospect_id == prospect_id,
+                                          _S.bounced_at.is_(None), _S.thread_id.is_not(None))
+    ).first()  # fmt: skip
+    return (int(row.id), str(row.thread_id)) if row else None

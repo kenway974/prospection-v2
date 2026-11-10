@@ -112,6 +112,10 @@ def recent(conn: Connection, limit: int) -> list[tuple[int, str, str, str | None
     return [(int(r.id), str(r.name or ""), r.status, r.reason, r.at) for r in conn.execute(found)]
 
 
-def cancel(conn: Connection, queue_id: int, now: datetime) -> None:
-    conn.execute(update(mail_queue).where(_Q.id == queue_id, _Q.status == WAITING)
-                 .values(status=CANCELLED, done_at=now))  # fmt: skip
+def cancel(conn: Connection, queue_id: int, now: datetime) -> int | None:
+    """Annule une ligne en attente ; rend son prospect, None si rien n'était en attente."""
+    waiting = update(mail_queue).where(_Q.id == queue_id, _Q.status == WAITING)
+    found = conn.execute(
+        waiting.values(status=CANCELLED, done_at=now).returning(_Q.prospect_id)
+    ).scalar()
+    return int(found) if found is not None else None

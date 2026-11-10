@@ -2,20 +2,23 @@
 {% block title %}Mail d'audit · Prospection{% endblock %}
 {% block content %}
 <a href="{{ back }}" class="back">Prospects</a>
-{% set leaving = preview.rows | selectattr("reason", "none") | list %}
-{% set n = leaving | length %}
+{% set mails = preview.rows | selectattr("reason", "none") | list %}
+{% set texts = preview.rows | selectattr("sms_reason", "none") | list %}
+{% set leaving = preview.rows | selectattr("leaves") | list %}
+{% set n = mails | length %}
 <h1 class="large-title">Mail d'audit : {{ n }} mail{{ "s" if n > 1 }} partira{{ "ont" if n > 1 }}</h1>
+<p class="secondary">{{ texts | length }} SMS{% if texts %} : 20 minutes après le mail (ou seul, sans adresse mail){% endif %}.</p>
 {% if preview.blocked %}<p class="notice" role="alert">{{ preview.blocked }}</p>{% endif %}
 <p>Envoi sans relecture, par la tâche de fond : un mail toutes les 1 à 2 minutes, du lundi au vendredi de 9 h à 19 h, {{ limit }} par jour au plus. Chaque envoi ajoute une note et un rappel, comme depuis la fiche.</p>
 {% if leaving %}<h2 class="group-title">Partent</h2>
-<ul class="group">{% for r in leaving %}<li class="row"><span>{{ r.name }}<br><span class="secondary">{{ r.email }}</span></span></li>{% endfor %}</ul>{% endif %}
-{% set skipped = preview.rows | rejectattr("reason", "none") | list %}
+<ul class="group">{% for r in leaving %}<li class="row"><span>{{ r.name }}<br><span class="secondary">Mail : {{ r.email if r.reason is none else r.reason }}</span><br><span class="secondary">SMS : {{ "part" if r.sms_reason is none else r.sms_reason }}</span></span></li>{% endfor %}</ul>{% endif %}
+{% set skipped = preview.rows | rejectattr("leaves") | list %}
 {% if skipped %}<h2 class="group-title">Écartés · {{ skipped | length }}</h2>
 <ul class="group">{% for r in skipped %}<li class="row"><span>{{ r.name }}<br><span class="secondary">{{ r.reason }}</span></span></li>{% endfor %}</ul>{% endif %}
 {% if leaving and not preview.blocked %}
 <form method="post" action="/prospects/selection/mail/envoyer" class="group form">
   {% for r in leaving %}<input type="hidden" name="id" value="{{ r.prospect_id }}">{% endfor %}
   <input type="hidden" name="origine" value="{{ origine }}"><input type="hidden" name="campagne" value="{{ campagne }}">
-  <button type="submit" data-attente="Mise en file…">Envoyer {{ n }} mail{{ "s" if n > 1 }}</button>
+  <button type="submit" data-attente="Mise en file…">Envoyer {{ n }} mail{{ "s" if n > 1 }}{% if texts %} et {{ texts | length }} SMS{% endif %}</button>
 </form>{% endif %}
 {% endblock %}

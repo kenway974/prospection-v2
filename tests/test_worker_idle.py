@@ -88,3 +88,17 @@ def test_C169_idle_worker_sends_the_mail_queue(campaign_db: Engine) -> None:
     assert worker.work_once() is True
     worker.work_once()
     assert len(calls) == 2
+
+
+def test_C177_idle_worker_sends_the_sms_queue(campaign_db: Engine) -> None:
+    calls: list[int] = []
+
+    def sms_queue() -> bool:
+        calls.append(1)
+        return len(calls) == 1
+
+    worker = Worker(campaign_db, BOX, fake_client(pages())[0], PRICING, now=lambda: NOW,
+                    sms_queue=sms_queue)  # fmt: skip
+    assert worker.work_once() is True
+    worker.work_once()
+    assert len(calls) == 2

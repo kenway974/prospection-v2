@@ -25,7 +25,7 @@ def test_C168_button_next_to_delete_then_confirmation_then_queue(
         client.post("/prospects/selection/mail", data={"id": [ok, none]}, headers=ORIGIN).text
     )
     assert "1 mail partira" in page and "ok@martin.fr" in page and "30 par jour" in page
-    assert "pas encore d'audit" in page
+    assert "pas encore d'audit" in page and "SMS : SMS désactivés" in page
     done = client.post("/prospects/selection/mail/envoyer", data={"id": [ok, none]},
                        headers=ORIGIN, follow_redirects=False)  # fmt: skip
     assert done.status_code == 303

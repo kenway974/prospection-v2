@@ -41,12 +41,13 @@ class Worker:
         backup: Callable[[datetime], object] | None = None,
         push: Callable[[datetime], object] | None = None, speed: SpeedJob | None = None,
         gmail: GmailOAuth | None = None, mail_queue: Callable[[], bool] | None = None,
+        sms_queue: Callable[[], bool] | None = None,
     ) -> None:  # fmt: skip
         self.engine, self.box, self.client, self.pricing = engine, box, client, pricing
         self.now, self.sites, self.mail_lookup = now, sites, mail_lookup
         self.timezone = timezone
         self.idle = IdleWork(engine, box, client, pricing, now, mail_lookup, sites, gmail,
-                             mail_queue)  # fmt: skip
+                             mail_queue, sms_queue)  # fmt: skip
         self.reminders, self.periodic = regular_jobs(
             engine, box, client, pricing, timezone, backup, now(), push, speed
         )
@@ -102,7 +103,7 @@ def main() -> None:  # pragma: no cover (point d'entrée, testé en bout en bout
     from prospection.monitoring import start_monitoring
     from prospection.sources.safe_network import make_web_client
     from prospection.storage.db import make_engine
-    from prospection.worker_jobs import mail_queue_job, site_checker
+    from prospection.worker_jobs import mail_queue_job, site_checker, sms_job
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     logging.getLogger("httpx").setLevel(logging.WARNING)  # pas d'adresses d'appels au journal
@@ -123,7 +124,8 @@ def main() -> None:  # pragma: no cover (point d'entrée, testé en bout en bout
         worker = Worker(engine, box, client, load_pricing(), sites=sites, mail_lookup=lookup,
                         timezone=settings.timezone, backup=backup, push=push,
                         speed=SpeedJob(engine, box, client), gmail=settings.gmail_oauth(),
-                        mail_queue=mail_queue_job(settings, engine, box, client))  # fmt: skip
+                        mail_queue=mail_queue_job(settings, engine, box, client),
+                        sms_queue=sms_job(settings, engine, box, client))  # fmt: skip
         logger.info("Tâche de fond démarrée")
         worker.run_forever(stop)
         if worker.speed:  # arrêt propre : la mesure en cours finit avant la fermeture

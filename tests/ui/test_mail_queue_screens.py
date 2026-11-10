@@ -46,3 +46,14 @@ def test_C170_queue_page_cancel_and_resume(web: Web, mail_db: Engine) -> None:  
     assert "File arrêtée" in page and "Reprendre" in page
     client.post("/prospects/envois/reprendre", headers=ORIGIN)
     assert "File arrêtée" not in html.unescape(client.get("/prospects/envois").text)
+
+
+def test_C177_queue_page_shows_the_sms_too(web: Web, mail_db: Engine) -> None:  # noqa: F811
+    from tests.application.test_sms_batch import sms_ready
+
+    client, _ = web
+    sms_ready(mail_db)
+    pid = add_audited(mail_db, contacts_email="a@martin.fr")
+    queue_batch(mail_db, BOX, [pid], NOW)
+    page = html.unescape(client.get("/prospects/envois").text)
+    assert "SMS" in page and "après le mail" in page

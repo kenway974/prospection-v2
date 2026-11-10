@@ -1,5 +1,7 @@
 """Numéro qui peut recevoir le SMS (C176) : un mobile français (06, 07, +33 6, +33 7)."""
 
+import hashlib
+import hmac
 from collections.abc import Iterable
 
 import phonenumbers
@@ -16,3 +18,8 @@ def french_mobile(numbers: Iterable[str]) -> str | None:
         if mobile and phonenumbers.region_code_for_number(parsed) == "FR":
             return phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164)
     return None
+
+
+def phone_fingerprint(mobile: str, pepper: bytes) -> str:
+    """Empreinte salée du numéro : le STOP et « une seule fois » sans garder le numéro (RGPD)."""
+    return hmac.new(pepper, f"tel:{mobile}".encode(), hashlib.sha256).hexdigest()

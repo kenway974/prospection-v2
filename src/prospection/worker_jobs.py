@@ -1,5 +1,5 @@
 """Travaux de la tâche de fond branchés sur les vrais services (point d'entrée seulement) :
-lecture des sites (C166, C174) et envoi groupé du mail d'audit (C169)."""
+lecture des sites (C166, C174), envoi groupé du mail d'audit (C169) et des SMS (C177, C180)."""
 
 import random
 from collections.abc import Callable
@@ -11,6 +11,7 @@ from sqlalchemy import Engine
 from prospection.application.mail_queue_run import send_next
 from prospection.application.site_check import check_site
 from prospection.application.site_verdict import SiteChecker
+from prospection.application.sms_queue_run import send_next_sms, sync_stops
 from prospection.config import Settings
 from prospection.domain.place import Place
 from prospection.domain.site_report import SiteReport
@@ -44,3 +45,15 @@ def mail_queue_job(
                          datetime.now(UTC), settings.timezone, rng)  # fmt: skip
 
     return mail_queue
+
+
+def sms_job(
+    settings: Settings, engine: Engine, box: SecretBox, client: httpx.Client
+) -> Callable[[], bool]:
+    def sms_queue() -> bool:  # STOP de Brevo une fois par jour, puis le prochain SMS
+        now = datetime.now(UTC)
+        synced = sync_stops(engine, box, client, now)
+        return synced or send_next_sms(engine, box, client, settings.gmail_oauth(), now,
+                                       settings.timezone)  # fmt: skip
+
+    return sms_queue

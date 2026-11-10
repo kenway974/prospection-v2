@@ -56,7 +56,7 @@ def test_C171_versions_keep_old_hook_codes_and_count_new_ones() -> None:
 
 def test_C171_main_problems_all_have_a_hook() -> None:
     hooks = load_mail_rules().accroches_audit
-    main = ("no_legal_notice", "no_privacy_policy", "no_form", "form_basic", "no_https")
-    main += ("slow_mobile", "no_tracking", "no_mobile", "thin_content", "quote_incomplete")
+    main = ["no_legal_notice", "no_privacy_policy", "no_form", "form_basic", "no_https"]
+    main += ["slow_mobile", "no_tracking", "no_mobile", "thin_content", "quote_incomplete"]
     for code in main:
         assert hooks.get(code), code

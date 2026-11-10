@@ -61,18 +61,21 @@ le site d'une plateforme ou d'un réseau à la place de celui de l'entreprise.
    Pour chaque code de problème, une ou plusieurs phrases dans `mail_rules.yaml`
    (`accroches_audit`), qui tournent comme les autres versions et sont comptées dans la page
    Stats. Faute de phrase pour ce point, l'accroche actuelle (note Google, ancienneté…) reste.
-8. Style imposé : une phrase, 20 mots au plus, le constat **et** ce qu'il coûte, jamais « votre
-   site est mauvais ». Exemples :
-   - `no_legal_notice` : « En parcourant votre site, j'ai repéré une mention obligatoire qui
-     manque : c'est vite corrigé, mais l'amende peut être lourde. »
-   - `form_basic` : « Votre formulaire de contact fonctionne, mais il ne vous dit pas ce que le
-     client veut : vous perdez du temps à rappeler. »
-   - `no_form` : « Un client qui veut vous écrire le soir depuis votre site ne trouve aucun
-     moyen de le faire. »
-   - `slow_mobile` : « Sur téléphone, votre site met plus de temps à s'afficher que la plupart
-     des visiteurs n'en accordent. »
-   - `no_tracking` : « Vous ne savez pas aujourd'hui combien de clients votre site vous amène :
-     c'est mesurable en dix minutes. »
+8. Style imposé *(10/11/2026)* : **phrase choc, 10 mots au plus, en MAJUSCULES** (accents
+   gardés), le constat et ce qu'il coûte, jamais « votre site est mauvais ». Les textes sont
+   écrits normalement dans le fichier ; l'app les met en majuscules (réglage
+   `accroche_majuscules`, activé) et refuse de démarrer si une accroche dépasse 10 mots.
+   Exemples :
+   - `no_legal_notice` : « MENTIONS LÉGALES ABSENTES : JUSQU'À 75 000 € D'AMENDE. »
+   - `no_privacy_policy` : « VOUS COLLECTEZ DES DONNÉES SANS POLITIQUE DE CONFIDENTIALITÉ. »
+   - `no_form` : « LE SOIR, VOS CLIENTS NE PEUVENT PAS VOUS ÉCRIRE. »
+   - `form_basic` : « VOTRE FORMULAIRE NE DIT PAS CE QUE VEUT LE CLIENT. »
+   - `no_https` : « VOS VISITEURS VOIENT « NON SÉCURISÉ » EN ARRIVANT. »
+   - `slow_mobile` : « SUR MOBILE, VOS VISITEURS PARTENT AVANT L'AFFICHAGE. »
+   - `no_tracking` : « COMBIEN DE CLIENTS VOUS AMÈNE VOTRE SITE ? MYSTÈRE. »
+   Risque connu : un texte en majuscules fait partie des signaux que regardent les filtres
+   anti-spam. Une seule ligne courte limite ce risque ; la page Stats dira si le taux de
+   réponse baisse, et le réglage permet de revenir en arrière en un clic.
 
 ### Ordre des points (C172)
 

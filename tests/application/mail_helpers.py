@@ -40,7 +40,10 @@ def add_audited(
     with engine.begin() as conn:
         campaign_id = create_campaign(conn, request(), STEPS, NOW)
         insert_prospect(conn, campaign_id, PLACE, "plombier", Verdict(True, (), ()), NOW, site)
-        return int(conn.exec_driver_sql("SELECT max(id) FROM prospects").scalar_one())
+        pid = int(conn.exec_driver_sql("SELECT max(id) FROM prospects").scalar_one())
+        conn.exec_driver_sql("UPDATE prospects SET registry_status = 'sûr' WHERE id = %(p)s",
+                             {"p": pid})  # fmt: skip
+        return pid
 
 
 def ready(engine: Engine) -> None:

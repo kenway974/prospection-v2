@@ -57,3 +57,8 @@ def test_C177_queue_page_shows_the_sms_too(web: Web, mail_db: Engine) -> None:  
     queue_batch(mail_db, BOX, [pid], NOW)
     page = html.unescape(client.get("/prospects/envois").text)
     assert "SMS" in page and "après le mail" in page
+
+
+def test_C170_page_title_is_plain_text(web: Web, mail_db: Engine) -> None:  # noqa: F811
+    page = web[0].get("/prospects/envois").text
+    assert "<title>Envois · Prospection</title>" in page

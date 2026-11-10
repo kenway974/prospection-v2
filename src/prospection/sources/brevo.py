@@ -25,6 +25,10 @@ class BrevoRefused(Exception):
     """Brevo refuse (clé, expéditeur ou numéro) : ce SMS ne partira pas tel quel."""
 
 
+class BrevoUncertain(Exception):
+    """Réponse de Brevo perdue après l'envoi : le SMS est peut-être parti, jamais renvoyé."""
+
+
 class BrevoNoCredits(Exception):
     """Plus de crédits SMS chez Brevo : à racheter sur app.brevo.com."""
 
@@ -58,18 +62,23 @@ def send_sms(client: httpx.Client, key: str, sender: str, mobile: str, text: str
     body = {"type": "marketing", "sender": sender, "recipient": mobile.removeprefix("+"),
             "content": text, "tag": TAG, "unicodeEnabled": False}  # fmt: skip
     url = f"{API}/transactionalSMS/sms"
-    response = send(client, "POST", url, LABEL, headers=_headers(key), json=body)
-    if isinstance(response, KeyCheck) or response.status_code == 429:
+    try:
+        response = client.post(url, headers=_headers(key), json=body)
+    except (httpx.ConnectError, httpx.ConnectTimeout):
+        raise BrevoUnavailable from None  # rien n'est parti : on peut retenter
+    except httpx.HTTPError:
+        raise BrevoUncertain from None  # demande peut-être reçue : jamais deux fois
+    if response.status_code == 429:
         raise BrevoUnavailable
     if response.status_code == 402:
         raise BrevoNoCredits
     if response.status_code in (400, 401, 403, 404):
         raise BrevoRefused
     if response.status_code not in (200, 201) or json_object(response) is None:
-        raise BrevoUnavailable
+        raise BrevoUncertain
 
 
-def stop_numbers(client: httpx.Client, key: str, days: int = 2) -> list[str]:
+def stop_numbers(client: httpx.Client, key: str, days: int) -> list[str]:
     """Numéros (+33…) qui ont répondu STOP ces derniers jours."""
     params = {"event": "unsubscription", "days": days, "limit": 2500}
     url = f"{API}/transactionalSMS/statistics/events"

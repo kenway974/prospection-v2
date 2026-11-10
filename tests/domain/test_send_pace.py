@@ -33,3 +33,13 @@ def test_C169_gap_between_one_and_two_minutes() -> None:
     rng = random.Random(1)  # noqa: S311 (tirage rejouable du test)
     gaps = {next_gap(rng) for _ in range(200)}
     assert min(gaps) >= GAP_MIN == 60 and max(gaps) <= GAP_MAX == 120 and len(gaps) > 20
+
+
+def test_C169_never_on_french_public_holidays() -> None:
+    """Relecture : pas d'envoi commercial un jour férié (11 novembre, lundi de Pâques…)."""
+    armistice = datetime(2026, 11, 11, 9, 0, tzinfo=UTC)  # mercredi
+    easter_monday = datetime(2027, 3, 29, 9, 0, tzinfo=UTC)
+    ascension = datetime(2026, 5, 14, 9, 0, tzinfo=UTC)
+    for day in (armistice, easter_monday, ascension):
+        assert not may_send(day, None, 0, 30, TZ), day
+    assert may_send(datetime(2026, 11, 12, 9, 0, tzinfo=UTC), None, 0, 30, TZ)

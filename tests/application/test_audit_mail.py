@@ -1,5 +1,6 @@
 """C145 à C147 : écran du mail d'audit, envoi depuis Gmail, note et rappel après l'envoi."""
 
+import re
 from datetime import date
 
 import pytest
@@ -130,4 +131,4 @@ def test_C171_draft_opens_with_the_hook_of_its_first_point(mail_db: Engine) -> N
     shown = screen(mail_db, pid)
     assert shown.draft is not None
     first = shown.draft.body.split("\n\n")[1]
-    assert first == first.upper() and len(first.split()) <= 10, first
+    assert first == first.upper() and len(re.findall(r"\w+(?:'\w+)*", first)) <= 10, first

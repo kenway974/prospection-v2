@@ -42,7 +42,7 @@
 <form method="post" action="/reglages/mail/plafond" class="group form">
   <label for="plafond">Mails d'audit envoyés par jour, au plus (envoi groupé)</label>
   <input id="plafond" name="plafond" inputmode="numeric" value="{{ limit }}">
-  <p class="secondary">Un mail toutes les 1 à 2 minutes, du lundi au vendredi de 9 h à 19 h. Au-delà du plafond, la suite part les jours suivants. <a href="/prospects/envois">Voir les envois</a></p>
+  <p class="secondary">Un mail toutes les 1 à 2 minutes, du lundi au vendredi (hors jours fériés) de 9 h à 19 h. Au-delà du plafond, la suite part les jours suivants. <a href="/prospects/envois">Voir les envois</a></p>
   <button type="submit">Enregistrer le plafond</button>
 </form>
 {% endblock %}

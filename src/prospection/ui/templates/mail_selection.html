@@ -9,7 +9,7 @@
 <h1 class="large-title">Mail d'audit : {{ n }} mail{{ "s" if n > 1 }} partira{{ "ont" if n > 1 }}</h1>
 <p class="secondary">{{ texts | length }} SMS{% if texts %} : 20 minutes après le mail (ou seul, sans adresse mail){% endif %}.</p>
 {% if preview.blocked %}<p class="notice" role="alert">{{ preview.blocked }}</p>{% endif %}
-<p>Envoi sans relecture, par la tâche de fond : un mail toutes les 1 à 2 minutes, du lundi au vendredi de 9 h à 19 h, {{ limit }} par jour au plus. Chaque envoi ajoute une note et un rappel, comme depuis la fiche.</p>
+<p>Envoi sans relecture, par la tâche de fond : un mail toutes les 1 à 2 minutes, du lundi au vendredi (hors jours fériés) de 9 h à 19 h, {{ limit }} par jour au plus. Chaque envoi ajoute une note et un rappel, comme depuis la fiche.</p>
 {% if leaving %}<h2 class="group-title">Partent</h2>
 <ul class="group">{% for r in leaving %}<li class="row"><span>{{ r.name }}<br><span class="secondary">Mail : {{ r.email if r.reason is none else r.reason }}</span><br><span class="secondary">SMS : {{ "part" if r.sms_reason is none else r.sms_reason }}</span></span></li>{% endfor %}</ul>{% endif %}
 {% set skipped = preview.rows | rejectattr("leaves") | list %}

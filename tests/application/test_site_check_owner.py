@@ -29,14 +29,14 @@ def test_C173_company_name_phone_or_domain_confirm_the_site() -> None:
     assert not check(pages({"/": PLATFORM}), own_domain).unconfirmed
 
 
-def test_C173_old_reports_are_not_flagged() -> None:
+def test_C173_old_reports_are_to_be_checked() -> None:
     from prospection.storage.site_codec import decode_site, encode_site
 
     report = check(pages({"/": PLATFORM}), PLACE)
     data = encode_site(report)
     del data["unconfirmed"]
     old = decode_site(data)
-    assert old is not None and not old.unconfirmed
+    assert old is not None and old.unconfirmed  # relecture : jamais vérifié, donc à vérifier
 
 
 def test_C174_domain_shared_by_three_companies_is_a_platform() -> None:

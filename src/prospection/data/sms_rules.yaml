@@ -3,18 +3,53 @@
 # Un SMS tient en 160 caractères de l'alphabet SMS de base : pas de ê, â, ô, î, û, ç ni de
 # guillemets typographiques (é, è, à, ù, É sont permis). 20 caractères sont gardés pour la
 # mention « STOP au 36… » ajoutée par Brevo : chaque texte rempli fait 140 caractères au
-# plus. Un texte trop long ou une variable inconnue empêche l'app de démarrer, avec un
-# message qui dit quoi raccourcir. Un nom d'entreprise trop long est coupé à l'envoi.
+# plus. Un texte trop long, une phrase trop longue ou une variable inconnue empêche l'app de
+# démarrer, avec un message qui dit quoi raccourcir.
 #
-# Variables : {entreprise}, {probleme} (titre du premier point de l'audit), {telephone}
-# (votre numéro, réglé dans Réglages → Mail). L'expéditeur s'affiche sous votre nom (« Kenny »)
-# et ne peut pas recevoir de réponse : les textes invitent à écrire à votre numéro.
+# Variables : {salutation} (« Bonjour Martin Paysage », ou « Bonjour » si le nom ne tient
+# pas en entier : jamais un nom coupé), {probleme} (phrase courte du premier point de l'audit,
+# ci-dessous), {telephone} (votre numéro, Réglages → Mail d'audit). L'expéditeur s'affiche
+# sous votre nom (« Kenny ») et ne peut pas recevoir de réponse : les textes invitent à écrire
+# à votre numéro.
 textes:
   # Le mail est parti : le SMS annonce les détails dans le mail.
-  mail: "Bonjour {entreprise}, en regardant votre site : {probleme}. Je vous ai envoyé le détail par mail. Kenny, développeur web"
+  mail: "{salutation}, j'ai repéré : {probleme}. Détails dans le mail envoyé à l'instant. Kenny, développeur web"
   # Le mail a été refusé : le dirigeant doit le savoir.
-  bloque: "Bonjour {entreprise} : {probleme} sur votre site. Mon mail ne vous parvient pas : écrivez-moi au {telephone}. Kenny"
+  bloque: "{salutation}, j'ai repéré : {probleme}. Mon mail ne vous parvient pas : écrivez-moi au {telephone}. Kenny"
   # Aucune adresse trouvée.
-  sans_mail: "Bonjour {entreprise} : {probleme} sur votre site. Des points simples à corriger : écrivez-moi au {telephone}. Kenny"
+  sans_mail: "{salutation}, j'ai repéré : {probleme}. Je vous explique en 5 min : écrivez-moi au {telephone}. Kenny"
   # Refus repéré après un SMS « mail » (C178) : un second SMS, une seule fois.
-  relance_bloque: "Bonjour {entreprise}, mon mail a été refusé par votre messagerie : vos clients aussi sont bloqués. Écrivez-moi au {telephone}. Kenny"
+  relance_bloque: "{salutation}, mon mail vous a été retourné : votre adresse bloque sans doute aussi vos clients. Écrivez-moi au {telephone}. Kenny"
+# Phrase courte par point de l'audit (45 caractères au plus) ; sinon « defaut ».
+defaut: "quelques points simples à corriger"
+problemes:
+  no_legal_notice: "mentions légales introuvables"
+  no_privacy_policy: "pas de politique de confidentialité"
+  no_cookie_consent: "cookies déposés sans accord"
+  form_no_consent: "formulaire sans accord RGPD"
+  no_form: "aucun formulaire de contact"
+  form_contact_only: "formulaire difficile à trouver"
+  form_basic: "formulaire sans les questions du métier"
+  quote_incomplete: "demande de devis incomplète"
+  form_buried: "formulaire tout en bas de page"
+  no_cta_top: "pas de bouton Devis en haut du site"
+  no_https: "site marqué Non sécurisé"
+  https_broken: "alerte de sécurité sur votre site"
+  no_mobile: "site difficile à lire sur mobile"
+  slow_mobile: "site lent sur mobile"
+  slow: "site lent à s'afficher"
+  no_booking: "pas de réservation en ligne"
+  phone_not_clickable: "numéro non cliquable sur mobile"
+  thin_content: "site peu visible sur Google"
+  noindex: "site invisible sur Google"
+  no_title: "site mal présenté sur Google"
+  no_description: "site mal présenté sur Google"
+  low_authority: "site peu visible sur Google"
+  js_only: "site mal lu par Google"
+  no_tracking: "aucune mesure des visites"
+  legacy_ga: "statistiques hors service"
+  no_site: "pas encore de site internet"
+  gmb_few_reviews: "peu d'avis Google"
+  gmb_low_rating: "note Google à améliorer"
+  gmb_no_hours: "horaires absents de Google"
+  gmb_few_photos: "peu de photos sur Google"

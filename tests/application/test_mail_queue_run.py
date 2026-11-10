@@ -57,7 +57,7 @@ def test_C169_rhythm_hours_and_daily_limit(mail_db: Engine) -> None:
     with mail_db.begin() as conn:
         save_daily_limit(conn, 2)
     assert _run(mail_db, TUESDAY + timedelta(seconds=300)) == (False, 0)  # plafond atteint
-    assert _run(mail_db, TUESDAY + timedelta(days=1))[0]  # le lendemain
+    assert _run(mail_db, TUESDAY + timedelta(days=2))[0]  # jeudi (mercredi 11/11 férié)
 
 
 def test_C170_rechecked_at_send_time(mail_db: Engine) -> None:

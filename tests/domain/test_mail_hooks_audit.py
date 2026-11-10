@@ -1,6 +1,7 @@
 """C171 : accroche choc tirée du premier point de l'audit, 10 mots au plus, en majuscules ;
 sans phrase pour ce point, l'accroche tirée des faits (C160) reste."""
 
+import re
 from datetime import date
 
 import pytest
@@ -23,7 +24,7 @@ def test_C171_hook_points_the_first_problem_in_capitals() -> None:
     assert hooks, "une accroche pour les mentions légales"
     for _, text in hooks:
         assert text == text.upper() and "MENTIONS LÉGALES" in text
-        assert len(text.split()) <= 10
+        assert len(re.findall(r"\w+(?:'\w+)*", text)) <= 10  # « : », « € » ne sont pas des mots
 
 
 def test_C171_facts_hook_stays_without_audit_sentence() -> None:

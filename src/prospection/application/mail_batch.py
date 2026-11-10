@@ -11,6 +11,7 @@ from prospection.application.api_keys import read_key
 from prospection.application.audit_mail_context import GMAIL, SETTINGS
 from prospection.application.mail_recipients import NO_VALID, usable_recipients
 from prospection.application.prospect_selection import MAX_SELECTION
+from prospection.application.site_network import network_of
 from prospection.application.sms_eligibility import sms_target
 from prospection.domain.mail_settings import sender_of
 from prospection.domain.services import Service
@@ -20,11 +21,13 @@ from prospection.storage.mail_queue import enqueue, waiting_among
 from prospection.storage.mail_settings import load_gmail, load_mail_settings
 from prospection.storage.prospect_list import load_prospect
 from prospection.storage.secret_box import SecretBox
+from prospection.storage.shared_sites import companies_on_host
 from prospection.storage.sms_queue_store import enqueue_sms, sms_waiting
 from prospection.storage.sms_settings_store import load_sms_settings
 
 SENT, QUEUED = "mail d'audit déjà envoyé", "déjà en file d'envoi"
 NOT_AUDITED, TO_CHECK = "pas encore d'audit", "site à vérifier (plateforme ?)"
+PLATFORM = "site d'une plateforme (partagé)"
 
 
 @dataclass(frozen=True)
@@ -47,6 +50,12 @@ class BatchPreview:
     rows: list[BatchRow]
 
 
+def _platform(conn: Connection, url: str | None, name: str) -> bool:
+    """C174 revu au moment d'envoyer : d'autres entreprises ont pu arriver sur ce domaine."""
+    shared = lambda host, company: companies_on_host(conn, host, company)  # noqa: E731
+    return url is not None and network_of(url, name, shared) is not None
+
+
 def batch_row(
     conn: Connection, prospect_id: int, pepper: bytes, waiting: set[int]
 ) -> BatchRow | None:
@@ -59,6 +68,7 @@ def batch_row(
     reasons = [
         (sent_at(conn, prospect_id) is not None, SENT), (prospect_id in waiting, QUEUED),
         (site is None, NOT_AUDITED), (site is not None and site.unconfirmed, TO_CHECK),
+        (_platform(conn, site.url if site else None, name), PLATFORM),
         (why is not None, why),
     ]  # fmt: skip
     reason = next((r for failed, r in reasons if failed), None)

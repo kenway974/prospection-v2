@@ -2,7 +2,7 @@
 
 Chaque texte rempli tient en un seul SMS : alphabet SMS de base (GSM 03.38), 160 caractères
 dont 20 gardés pour la mention STOP. Les noms d'entreprise hors de cet alphabet sont
-simplifiés (« Crêperie » → « Creperie »), un nom trop long est coupé.
+simplifiés (« Crêperie » → « Creperie ») ; un nom trop long est retiré, jamais coupé.
 """
 
 import unicodedata
@@ -16,8 +16,9 @@ from pydantic import BaseModel, ValidationError
 SMS_LENGTH, STOP_RESERVE = 160, 20
 BUDGET = SMS_LENGTH - STOP_RESERVE
 KINDS = ("mail", "bloque", "sans_mail", "relance_bloque")
-VARIABLES = frozenset({"entreprise", "probleme", "telephone"})
-MIN_PART = 3  # un nom ou un problème n'est jamais coupé en dessous
+VARIABLES = frozenset({"salutation", "probleme", "telephone"})
+MAX_PROBLEM = 45
+HELLO = "Bonjour"
 SAMPLE_PHONE = "+33 6 12 34 56 78"
 _GSM = set(
     "@£$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞÆæßÉ !\"#¤%&'()*+,-./0123456789:;<=>?¡ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -46,6 +47,8 @@ class InvalidSmsRules(ValueError):
 
 class SmsRules(BaseModel):
     textes: dict[str, str]
+    defaut: str = "quelques points simples à corriger"
+    problemes: dict[str, str] = {}
 
 
 def gsm_safe(text: str) -> bool:
@@ -63,8 +66,8 @@ def simplify(text: str) -> str:
     return " ".join("".join(out).split())
 
 
-def _render(template: str, company: str, problem: str, phone: str) -> str:
-    return template.format(entreprise=company, probleme=problem, telephone=phone)
+def _render(template: str, hello: str, problem: str, phone: str) -> str:
+    return template.format(salutation=hello, probleme=problem, telephone=phone)
 
 
 def parse_sms_rules(raw: object) -> SmsRules:
@@ -74,14 +77,20 @@ def parse_sms_rules(raw: object) -> SmsRules:
         raise InvalidSmsRules(f"Textes des SMS mal formés : {error}") from None
     if set(rules.textes) != set(KINDS):
         raise InvalidSmsRules(f"Textes des SMS attendus : {', '.join(KINDS)}.")
+    phrases = [rules.defaut, *rules.problemes.values()]
+    for phrase in phrases:
+        if len(phrase) > MAX_PROBLEM or not gsm_safe(phrase):
+            raise InvalidSmsRules(f"Phrase de SMS « {phrase} » : à raccourcir ({MAX_PROBLEM} "
+                                  "caractères au plus, alphabet SMS de base).")  # fmt: skip
+    longest = max(phrases, key=len)
     for kind, template in rules.textes.items():
         names = {n for _, n, _, _ in Formatter().parse(template) if n is not None}
         if unknown := names - VARIABLES:
             raise InvalidSmsRules(f"SMS « {kind} » : variable inconnue {sorted(unknown)}.")
-        shortest = _render(template, "x" * MIN_PART, "x" * MIN_PART, SAMPLE_PHONE)
-        if not gsm_safe(shortest):
+        filled = _render(template, HELLO, longest, SAMPLE_PHONE)
+        if not gsm_safe(filled):
             raise InvalidSmsRules(f"SMS « {kind} » : caractère hors de l'alphabet SMS.")
-        if len(shortest) > BUDGET:
+        if len(filled) > BUDGET:
             raise InvalidSmsRules(f"SMS « {kind} » trop long : à raccourcir ({BUDGET} au plus).")
     return rules
 
@@ -92,14 +101,11 @@ def load_sms_rules() -> SmsRules:
     return parse_sms_rules(yaml.safe_load(text))
 
 
-def fill_sms(kind: str, company: str, problem: str, phone: str) -> str:
-    """Texte prêt à partir ; nom puis problème coupés si besoin (jamais sous 3 caractères)."""
-    template = load_sms_rules().textes[kind]
-    company, problem, phone = simplify(company), simplify(problem), simplify(phone)
-    over = len(_render(template, company, problem, phone)) - BUDGET
-    if over > 0:
-        company = company[: max(MIN_PART, len(company) - over)].rstrip()
-        over = len(_render(template, company, problem, phone)) - BUDGET
-    if over > 0:
-        problem = problem[: max(MIN_PART, len(problem) - over)].rstrip()
-    return _render(template, company, problem, phone)
+def fill_sms(kind: str, company: str, point: str | None, phone: str) -> str:
+    """Texte prêt à partir. `point` : code du premier point de l'audit. Le nom n'apparaît que
+    s'il tient en entier : « Bonjour » seul vaut mieux qu'un nom coupé."""
+    rules = load_sms_rules()
+    template, problem = rules.textes[kind], rules.problemes.get(point or "", rules.defaut)
+    named, phone = f"{HELLO} {simplify(company)}".strip(), simplify(phone)
+    text = _render(template, named, problem, phone)
+    return text if len(text) <= BUDGET else _render(template, HELLO, problem, phone)

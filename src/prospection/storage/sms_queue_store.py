@@ -52,8 +52,9 @@ def finish_sms(conn: Connection, queue_id: int, status: str, reason: str | None,
         status=status, reason=reason, kind=kind, done_at=now))  # fmt: skip
 
 
-def retry_later(conn: Connection, queue_id: int, kind: str, when: datetime) -> None:
-    """Brevo muet ou sans crédits : même version, plus tard, sans attendre de mail."""
+def retry_later(conn: Connection, queue_id: int, kind: str | None, when: datetime) -> None:
+    """Brevo muet ou sans crédits : plus tard, sans attendre de mail ; la version est choisie
+    à nouveau (un refus arrivé entre-temps compte), sauf une relance imposée (C178)."""
     conn.execute(update(sms_queue).where(_Q.id == queue_id).values(
         kind=kind, after_mail=False, due_at=when))  # fmt: skip
 
@@ -66,9 +67,21 @@ def cancel_sms_after_mail(conn: Connection, prospect_id: int, now: datetime) -> 
 
 
 def record_sms(conn: Connection, prospect_id: int, phone_hash: str, kind: str,
-               now: datetime) -> None:  # fmt: skip
-    conn.execute(sms_sends.insert().values(prospect_id=prospect_id, phone_hash=phone_hash,
-                                           kind=kind, sent_at=now))  # fmt: skip
+               now: datetime) -> int:  # fmt: skip
+    """Réservé avant l'appel à Brevo : un arrêt brutal n'envoie jamais deux fois."""
+    added = conn.execute(sms_sends.insert().values(
+        prospect_id=prospect_id, phone_hash=phone_hash, kind=kind, sent_at=now
+    ).returning(_S.id))  # fmt: skip
+    return int(added.scalar_one())
+
+
+def unrecord_sms(conn: Connection, send_id: int) -> None:
+    """Brevo a refusé ou n'a rien reçu : la réservation est retirée."""
+    conn.execute(sms_sends.delete().where(_S.id == send_id))
+
+
+def last_sms_at(conn: Connection) -> datetime | None:
+    return conn.execute(select(func.max(_S.sent_at))).scalar()
 
 
 def sms_kinds_sent(conn: Connection, prospect_id: int, phone_hash: str) -> set[str]:

@@ -9,6 +9,7 @@ from prospection.sources.brevo import (
     BrevoNoCredits,
     BrevoRefused,
     BrevoUnavailable,
+    BrevoUncertain,
     check_brevo_key,
     send_sms,
     stop_numbers,
@@ -35,7 +36,13 @@ def test_C177_marketing_sms_sent_with_sender_and_number() -> None:
 
 @pytest.mark.parametrize(
     ("status", "error"),
-    [(402, BrevoNoCredits), (400, BrevoRefused), (401, BrevoRefused), (503, BrevoUnavailable)],
+    [
+        (402, BrevoNoCredits),
+        (400, BrevoRefused),
+        (401, BrevoRefused),
+        (429, BrevoUnavailable),
+        (503, BrevoUncertain),
+    ],
 )
 def test_C177_failures_are_told_apart(status: int, error: type[Exception]) -> None:
     client, _ = fake_client(lambda r: httpx.Response(status, json={"code": "x"}))
@@ -47,8 +54,8 @@ def test_C180_numbers_that_answered_stop() -> None:
     events = {"events": [{"phoneNumber": "33681787325", "event": "unsubscription"},
                          {"phoneNumber": "", "event": "unsubscription"}, {"x": 1}]}  # fmt: skip
     client, recorder = fake_client(lambda r: httpx.Response(200, json=events))
-    assert stop_numbers(client, "cle") == ["+33681787325"]
+    assert stop_numbers(client, "cle", 2) == ["+33681787325"]
     assert recorder.requests[0].url.params["event"] == "unsubscription"
     broken, _ = fake_client(lambda r: httpx.Response(200, text="<html>"))
     with pytest.raises(BrevoUnavailable):
-        stop_numbers(broken, "cle")
+        stop_numbers(broken, "cle", 2)

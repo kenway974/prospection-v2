@@ -156,3 +156,19 @@ le site d'une plateforme ou d'un réseau à la place de celui de l'entreprise.
 
 - Page d'audit publique liée depuis le SMS.
 - SMS hors de France.
+
+## Relecture (10/11/2026) : décisions prises par Claude, à vérifier
+
+- **Jours fériés** français exclus des heures d'envoi (mails et SMS), comme le recommandent
+  les opérateurs pour les SMS commerciaux.
+- **SMS seulement si le registre dit « diffusible »** (statut Sirène « sûr ») : un prospect
+  pas encore vérifié n'en reçoit pas (règle 7).
+- **Désinscrit des mails** : plus de SMS non plus.
+- **Rapports de site d'avant C173** : « à vérifier » tant que l'audit n'est pas refait, donc
+  hors de l'envoi groupé.
+- **Réponse de Brevo perdue** : le SMS compte comme envoyé (incertain), jamais renvoyé.
+- **Un seul envoyeur à la fois** (verrou PostgreSQL) ; une minute au moins entre deux SMS.
+- **Textes des SMS** : une phrase courte par point de l'audit (sms_rules.yaml), « Bonjour »
+  sans le nom quand il ne tient pas en entier ; relance plus prudente (« sans doute »).
+- **Accroches** : « Mentions légales introuvables sur votre site » (un faux positif de
+  détection ne doit pas affirmer une absence) ; JavaScript : « Google lit mal votre site ».

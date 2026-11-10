@@ -59,7 +59,7 @@ def test_C177_sms_20_minutes_after_the_mail_points_to_it(mail_db: Engine) -> Non
     sms_ready(mail_db)
     queue_batch(mail_db, BOX, [add_audited(mail_db, contacts_email="a@martin.fr")], TUESDAY)
     texts, recorder = _mail_then_sms(mail_db)
-    assert len(texts) == 1 and "détail par mail" in texts[0] and len(texts[0]) <= 140
+    assert len(texts) == 1 and "Détails dans le mail" in texts[0] and len(texts[0]) <= 140
     sent = next(r for r in recorder.requests if r.url.host == "api.brevo.com")
     assert json.loads(sent.content)["recipient"] == MOBILE.lstrip("+")
 
@@ -92,7 +92,7 @@ def test_C177_brevo_down_retries_later_without_losing_the_sms(mail_db: Engine) -
         conn.exec_driver_sql("UPDATE prospects SET site_json = jsonb_set(site_json, "
                              "'{contacts,emails}', '[]') WHERE id = %(p)s", {"p": pid})  # fmt: skip
     queue_batch(mail_db, BOX, [pid], TUESDAY)
-    down, _ = services(brevo=503)
+    down, _ = services(brevo=429)  # trop de demandes : rien n'est parti
     assert not send_next_sms(mail_db, BOX, down, OAUTH, TUESDAY, TZ)
     up, recorder = services()
     assert not send_next_sms(mail_db, BOX, up, OAUTH, TUESDAY + timedelta(minutes=10), TZ)
@@ -109,7 +109,7 @@ def test_C178_late_bounce_sends_one_more_sms_once(mail_db: Engine) -> None:
     mark_bounced(mail_db, pid, later, BOX.pepper)
     client, recorder = services()
     assert send_next_sms(mail_db, BOX, client, OAUTH, later, TZ)
-    assert "refusé par votre messagerie" in sms_texts(recorder)[0]
+    assert "mon mail vous a été retourné" in sms_texts(recorder)[0]
     assert not send_next_sms(mail_db, BOX, client, OAUTH, later + timedelta(hours=1), TZ)
 
 

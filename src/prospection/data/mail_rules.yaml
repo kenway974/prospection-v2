@@ -500,8 +500,8 @@ accroches:
 accroche_majuscules: true
 accroches_audit:
   no_legal_notice:
-    - "Mentions légales absentes : jusqu'à 75 000 € d'amende."
-    - "Sans mentions légales, votre site risque une lourde amende."
+    - "Mentions légales introuvables sur votre site : jusqu'à 75 000 € d'amende."
+    - "Sans mentions légales visibles, votre site risque une lourde amende."
   no_privacy_policy:
     - "Vous collectez des données sans politique de confidentialité."
   no_cookie_consent:
@@ -545,7 +545,7 @@ accroches_audit:
   low_authority:
     - "Google fait peu confiance à votre site."
   js_only:
-    - "Google voit une page vide au lieu de votre site."
+    - "Google lit mal votre site affiché par JavaScript."
   no_tracking:
     - "Combien de clients vous amène votre site ? Mystère."
   legacy_ga:

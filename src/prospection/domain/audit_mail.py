@@ -8,7 +8,7 @@ Le texte reste modifiable avant l'envoi ; la désinscription est ajoutée à l'e
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-from prospection.domain.audit_mail_rules import load_mail_rules, sectors_for
+from prospection.domain.audit_mail_rules import RANKS, load_mail_rules, sectors_for
 
 MAX_POINTS = 3
 STRUCTURES = ("détaillée", "courte")  # constat, impact, solution ; ou une phrase par point
@@ -38,7 +38,8 @@ class Draft:
 
 
 def choose_points(codes: Sequence[str], keywords: Sequence[str]) -> list[MailPoint]:
-    """Problèmes de l'audit (codes) → au plus 3 points, du plus lourd au plus léger."""
+    """Problèmes de l'audit (codes) → au plus 3 points : légal, clients perdus, suivi, le reste
+    (C172), puis du plus lourd au plus léger dans un même rang."""
     rules = load_mail_rules()
     sectors = [rules.secteurs[name] for name in sectors_for(rules, keywords)]
 
@@ -48,7 +49,11 @@ def choose_points(codes: Sequence[str], keywords: Sequence[str]) -> list[MailPoi
     known = [c for c in dict.fromkeys(codes) if c in rules.points]
     chosen: list[MailPoint] = []
     groups: set[str] = set()
-    for code in sorted(known, key=lambda c: -weight(c)):  # tri stable : ordre de l'audit
+
+    def order(code: str) -> tuple[int, int]:
+        return RANKS.index(rules.points[code].rang), -weight(code)
+
+    for code in sorted(known, key=order):  # tri stable : ordre de l'audit
         point = rules.points[code]
         if point.groupe and point.groupe in groups:
             continue

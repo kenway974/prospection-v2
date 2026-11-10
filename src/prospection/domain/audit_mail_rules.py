@@ -9,12 +9,14 @@ from collections.abc import Sequence
 from functools import cache
 from importlib import resources
 from string import Formatter
+from typing import Literal
 
 import yaml
 from pydantic import BaseModel, Field, ValidationError
 
 from prospection.domain.trades import normalize
 
+RANKS = ("legal", "clients", "suivi", "autre")  # légal, clients perdus, suivi, le reste
 VARIABLES = frozenset({"entreprise", "site", "expediteur", "telephone", "portfolio",
                        "calendly", "nombre", "lien", "note", "avis", "ans"})  # fmt: skip
 
@@ -26,6 +28,7 @@ class InvalidMailRules(ValueError):
 class Point(BaseModel):
     titre: str = Field(min_length=1, max_length=80)
     poids: int = Field(ge=0, le=100)
+    rang: Literal["legal", "clients", "suivi", "autre"]  # ordre des points du mail (C172)
     groupe: str | None = None
     probleme: str
     impact: str

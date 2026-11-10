@@ -22,3 +22,4 @@ class SiteReport:
     contacts: Contacts | None = None
     parked: bool = False  # page « en construction » de l'hébergeur : pas de vrai site
     speed: PageSpeed | None = None  # vitesse mobile mesurée par Google (tâche de fond, C126)
+    unconfirmed: bool = False  # le site ne parle pas de l'entreprise : à vérifier (C173)

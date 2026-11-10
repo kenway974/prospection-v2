@@ -37,6 +37,7 @@ def _decode(data: dict[str, Any]) -> SiteReport:
         if contacts else None,
         bool(data.get("parked", False)),
         decode_speed(data["speed"]) if data.get("speed") else None,
+        bool(data.get("unconfirmed", False)),  # rapports d'avant C173 : pas signalés
     )  # fmt: skip
 
 

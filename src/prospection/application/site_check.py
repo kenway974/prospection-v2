@@ -18,6 +18,7 @@ from prospection.domain.site_contacts import find_contacts, merge_contacts
 from prospection.domain.site_form import contact_links, has_form
 from prospection.domain.site_guess import STRONG, address_city, candidate_domains, confirmation
 from prospection.domain.site_js import is_js_app
+from prospection.domain.site_owner import speaks_of
 from prospection.domain.site_report import Origin, SiteReport
 from prospection.domain.site_seo import local_seo
 from prospection.sources.web_reader import UNREACHABLE, ReadResult, read_page
@@ -77,12 +78,15 @@ def _report(
     else:
         others = _contact_pages(_plain(client), page, read.url, CONTACT_SECONDS)
     country = place.country or "FR"
+    contacts = merge_contacts([find_contacts(p, country) for p in (page, *others)])
+    blind = rendered is None and is_js_app(page)  # coquille non lue : on ne juge pas (C152)
+    unsure = origin == "fiche Google" and not blind  # un site retrouvé est déjà confirmé
     return SiteReport(
         origin, read.url,
         audit=audit(page, read.url, read.seconds, year, read.powered_by, others, keywords,
                     https_failed, country),
-        seo=local_seo(page, keywords, address_city(place.address)),
-        contacts=merge_contacts([find_contacts(p, country) for p in (page, *others)]),
+        seo=local_seo(page, keywords, address_city(place.address)), contacts=contacts,
+        unconfirmed=unsure and not speaks_of(place, read.url, [page, *others], contacts.phones),
     )  # fmt: skip
 
 

@@ -490,3 +490,67 @@ accroches:
     texte: "Plus de {avis} avis Google : vous avez une vraie réputation à faire valoir en ligne."
   - quand: {age_min_ans: 20, avec_site: true}
     texte: "{ans} ans d'activité : une expérience que votre site doit montrer."
+
+# Accroches tirées de l'audit (C171) : première phrase du mail, liée au premier point cité.
+# Phrase choc, 10 mots au plus (l'app refuse de démarrer sinon), sans dénigrer le travail
+# déjà fait. Plusieurs phrases par point : elles tournent (la moins utilisée d'abord) et la
+# page Stats dit laquelle fait répondre. Écrites normalement : l'app les met en majuscules
+# tant que « accroche_majuscules » est vrai. Sans phrase pour le premier point, les
+# accroches ci-dessus (avis, ancienneté, labels) restent.
+accroche_majuscules: true
+accroches_audit:
+  no_legal_notice:
+    - "Mentions légales absentes : jusqu'à 75 000 € d'amende."
+    - "Sans mentions légales, votre site risque une lourde amende."
+  no_privacy_policy:
+    - "Vous collectez des données sans politique de confidentialité."
+  no_cookie_consent:
+    - "Vos cookies se déposent sans accord : la CNIL sanctionne."
+  form_no_consent:
+    - "Votre formulaire collecte des données sans accord RGPD."
+  no_form:
+    - "Le soir, vos clients ne peuvent pas vous écrire."
+  form_contact_only:
+    - "Formulaire caché : vos clients pressés ne le trouvent pas."
+  form_basic:
+    - "Votre formulaire ne dit pas ce que veut le client."
+  quote_incomplete:
+    - "Votre demande de devis oublie les questions qui font chiffrer."
+  form_buried:
+    - "Votre formulaire est tout en bas : peu le voient."
+  no_cta_top:
+    - "Aucun bouton « Devis » visible en arrivant sur votre site."
+  no_https:
+    - "Vos visiteurs voient « Non sécurisé » en arrivant."
+  https_broken:
+    - "Une alerte de sécurité accueille vos visiteurs : ils repartent."
+  no_mobile:
+    - "Sur téléphone, votre site est difficile à lire."
+  slow_mobile:
+    - "Sur mobile, vos visiteurs partent avant l'affichage."
+  slow:
+    - "Votre site est lent : chaque seconde coûte des clients."
+  no_booking:
+    - "Vos clients ne peuvent pas réserver le soir, en ligne."
+  phone_not_clickable:
+    - "Sur mobile, votre numéro ne s'appelle pas d'un geste."
+  thin_content:
+    - "Google comprend mal votre métier : vous sortez peu."
+  noindex:
+    - "Votre site est invisible sur Google : réglage à corriger."
+  no_title:
+    - "Votre site n'a pas de titre pour Google."
+  no_description:
+    - "Google n'affiche aucune description de votre activité."
+  low_authority:
+    - "Google fait peu confiance à votre site."
+  js_only:
+    - "Google voit une page vide au lieu de votre site."
+  no_tracking:
+    - "Combien de clients vous amène votre site ? Mystère."
+  legacy_ga:
+    - "Votre outil de statistiques ne mesure plus rien depuis 2023."
+  sim_sap:
+    - "Vos clients ne voient pas leur prix après crédit d'impôt."
+  no_site:
+    - "Sans site, vos clients trouvent d'abord vos concurrents."

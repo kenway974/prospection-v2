@@ -1,12 +1,13 @@
-"""Accroche personnalisée du mail d'audit (C160) : la première phrase, tirée des faits connus
-sur l'entreprise (avis Google, ancienneté, labels), selon le métier. Règles dans
-`mail_rules.yaml` (accroches), dans l'ordre de préférence."""
+"""Accroche personnalisée du mail d'audit : la première phrase. D'abord une phrase choc tirée
+du premier point de l'audit (C171), sinon les faits connus sur l'entreprise (avis Google,
+ancienneté, labels), selon le métier (C160). Règles dans `mail_rules.yaml`."""
 
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date
 
-from prospection.domain.audit_mail_rules import Condition, load_mail_rules, sectors_for
+from prospection.domain.audit_mail_models import Condition
+from prospection.domain.audit_mail_rules import load_mail_rules, sectors_for
 
 
 @dataclass(frozen=True)
@@ -50,13 +51,20 @@ def _fits(c: Condition, f: LeadFacts, sectors: list[str]) -> bool:
     return all(checks)
 
 
-def matching_hooks(facts: LeadFacts, keywords: Sequence[str]) -> list[tuple[str, str]]:
-    """Accroches qui s'appliquent (modèle, texte rempli), la préférée d'abord."""
+def matching_hooks(
+    facts: LeadFacts, keywords: Sequence[str], first_point: str | None = None
+) -> list[tuple[str, str]]:
+    """Accroches qui s'appliquent (modèle, texte rempli), la préférée d'abord. `first_point` :
+    code du premier point du mail ; ses phrases choc passent seules quand il y en a (C171)."""
     rules = load_mail_rules()
     sectors = sectors_for(rules, keywords)
     values = {
         "entreprise": facts.company, "avis": str(facts.reviews), "ans": str(_years(facts) or ""),
         "note": f"{facts.rating:.1f}".replace(".", ",") if facts.rating is not None else "",
     }  # fmt: skip
+    shock = rules.accroches_audit.get(first_point or "", [])
+    if shock:
+        upper = rules.accroche_majuscules
+        return [(t, t.format_map(values).upper() if upper else t.format_map(values)) for t in shock]
     return [(h.texte, h.texte.format_map(values)) for h in rules.accroches
             if _fits(h.quand, facts, sectors)]  # fmt: skip

@@ -1,6 +1,6 @@
 """Travail de la tâche de fond entre deux campagnes : envois CRM, registre, compléments des
 entreprises, nouveaux audits demandés, mises à jour, serveurs mail (C44, C53, C72, C76, C149,
-C150, C156, C163).
+C150, C156, C163, C169).
 
 Les compléments et les serveurs mail, quand il n'y a rien à faire (ou un service muet), ne
 sont redemandés que 10 minutes plus tard : jamais d'appels en boucle.
@@ -33,8 +33,11 @@ class IdleWork:
         self, engine: Engine, box: SecretBox, client: httpx.Client, pricing: Pricing,
         now: Callable[[], datetime], mail_lookup: Callable[[str], str | None] | None,
         sites: SiteChecker = skip_sites, gmail: GmailOAuth | None = None,
+        mail_queue: Callable[[], bool] | None = None,
     ) -> None:  # fmt: skip
+        """`mail_queue` : envoie le prochain mail de la file s'il est temps (C169)."""
         self.engine, self.box, self.client, self.pricing = engine, box, client, pricing
+        self.mail_queue = mail_queue
         self.now, self.mail_lookup, self.sites, self.gmail = now, mail_lookup, sites, gmail
         self.next_mail_check = self.next_details = datetime.min.replace(tzinfo=UTC)
         self.next_replies = self.next_details
@@ -46,6 +49,8 @@ class IdleWork:
         if enrich_new_prospects(self.engine, self.client, self.now()) > 0:
             return True
         if run_reaudits(self.engine, self.sites, self.now()) > 0:  # C156 : à la demande
+            return True
+        if self.mail_queue and self.mail_queue():  # C169 : envoi groupé du mail d'audit
             return True
         if self.now() >= self.next_details:
             if detail_companies(self.engine, self.box, self.client, self.now()) > 0:

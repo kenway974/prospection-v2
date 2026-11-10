@@ -10,6 +10,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlalchemy import Engine
 
 from prospection.application.mail_batch import batch_preview, queue_batch
+from prospection.application.mail_queue_view import current_limit
 from prospection.application.prospect_selection import MAX_SELECTION, delete_selection, selected
 from prospection.storage.secret_box import SecretBox
 from prospection.ui.call_views import list_scope, scope_params
@@ -18,7 +19,6 @@ from prospection.ui.session import require_session
 
 router = APIRouter(prefix="/prospects/selection", dependencies=[Depends(require_session)])
 ENGINE, BOX, NOW = Depends(get_engine), Depends(get_box), Depends(get_now)
-DAILY_LIMIT = 30  # C169 : réglable dans Réglages → Mail
 IDS = Form([])
 ORIGIN, CAMPAIGN = Form("", max_length=20), Form("", max_length=20)
 
@@ -67,7 +67,7 @@ def mail_confirm(
     if not preview.rows:
         return RedirectResponse(_back(origine, campagne), status_code=303)
     context = {"tab": "prospects", "preview": preview, "origine": origine, "campagne": campagne,
-               "back": _back(origine, campagne), "limit": DAILY_LIMIT}  # fmt: skip
+               "back": _back(origine, campagne), "limit": current_limit(engine)}  # fmt: skip
     return templates.TemplateResponse(request, "mail_selection.html", context)
 
 

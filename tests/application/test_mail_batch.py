@@ -45,10 +45,8 @@ def test_C168_each_prospect_says_if_the_mail_leaves_and_why_not(mail_db: Engine)
 def test_C168_whole_batch_blocked_without_gmail(mail_db: Engine) -> None:
     pid = add_audited(mail_db)
     preview = batch_preview(mail_db, BOX, [pid])
-    assert (
-        (preview.blocked is not None
-        and "Gmail" in preview.blocked)
-        or "Réglages" in str(preview.blocked)
+    assert (preview.blocked is not None and "Gmail" in preview.blocked) or "Réglages" in str(
+        preview.blocked
     )
 
 

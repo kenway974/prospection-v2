@@ -40,12 +40,13 @@ class Worker:
         mail_lookup: Callable[[str], str | None] | None = None, timezone: str = "Europe/Paris",
         backup: Callable[[datetime], object] | None = None,
         push: Callable[[datetime], object] | None = None, speed: SpeedJob | None = None,
-        gmail: GmailOAuth | None = None,
+        gmail: GmailOAuth | None = None, mail_queue: Callable[[], bool] | None = None,
     ) -> None:  # fmt: skip
         self.engine, self.box, self.client, self.pricing = engine, box, client, pricing
         self.now, self.sites, self.mail_lookup = now, sites, mail_lookup
         self.timezone = timezone
-        self.idle = IdleWork(engine, box, client, pricing, now, mail_lookup, sites, gmail)
+        self.idle = IdleWork(engine, box, client, pricing, now, mail_lookup, sites, gmail,
+                             mail_queue)  # fmt: skip
         self.reminders, self.periodic = regular_jobs(
             engine, box, client, pricing, timezone, backup, now(), push, speed
         )
@@ -96,17 +97,12 @@ def mail_lookup_for(test_services_url: str | None) -> Callable[[str], str | None
 
 
 def main() -> None:  # pragma: no cover (point d'entrée, testé en bout en bout)
-    from prospection.application.site_check import check_site
     from prospection.config import load_settings
-    from prospection.domain.place import Place
-    from prospection.domain.site_report import SiteReport
     from prospection.http_client import make_client
     from prospection.monitoring import start_monitoring
-    from prospection.sources.browser_process import render_isolated
     from prospection.sources.safe_network import make_web_client
-    from prospection.sources.web_reader import ReadResult
     from prospection.storage.db import make_engine
-    from prospection.storage.shared_sites import companies_on_host
+    from prospection.worker_jobs import mail_queue_job, site_checker
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     logging.getLogger("httpx").setLevel(logging.WARNING)  # pas d'adresses d'appels au journal
@@ -117,28 +113,17 @@ def main() -> None:  # pragma: no cover (point d'entrée, testé en bout en bout
     signal.signal(signal.SIGTERM, lambda *_: stop.set())
     box = SecretBox(settings.encryption_key.get_secret_value())
     web = make_web_client(settings.test_services_url)  # sites des prospects : garde SSRF
-
-    def browser(url: str, seconds: float) -> ReadResult:  # C166 : sites en JavaScript
-        return render_isolated(url, seconds, settings.test_services_url)
-
     engine = make_engine(settings.database_url)
-
-    def shared(host: str, name: str) -> int:  # C174 : autres entreprises sur ce domaine
-        with engine.connect() as conn:
-            return companies_on_host(conn, host, name)
-
-    def sites(place: Place, keywords: tuple[str, ...]) -> SiteReport:
-        return check_site(web, place, keywords, datetime.now(UTC).year, browser, shared)
-
     with make_client(settings.test_services_url) as client, web:
         lookup = mail_lookup_for(settings.test_services_url)
         key = settings.encryption_key.get_secret_value()
         backup = backup_job(settings.backup_target(), key, settings.database_url, engine, client)
         push = push_job(settings.vapid_keys(), engine, client, settings.timezone)
+        sites = site_checker(settings, engine, web)
         worker = Worker(engine, box, client, load_pricing(), sites=sites, mail_lookup=lookup,
                         timezone=settings.timezone, backup=backup, push=push,
-                        speed=SpeedJob(engine, box, client),
-                        gmail=settings.gmail_oauth())  # fmt: skip
+                        speed=SpeedJob(engine, box, client), gmail=settings.gmail_oauth(),
+                        mail_queue=mail_queue_job(settings, engine, box, client))  # fmt: skip
         logger.info("Tâche de fond démarrée")
         worker.run_forever(stop)
         if worker.speed:  # arrêt propre : la mesure en cours finit avant la fermeture

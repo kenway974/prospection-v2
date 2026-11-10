@@ -35,7 +35,9 @@ class BatchPreview:
     rows: list[BatchRow]
 
 
-def _row(conn: Connection, prospect_id: int, pepper: bytes, waiting: set[int]) -> BatchRow | None:
+def batch_row(
+    conn: Connection, prospect_id: int, pepper: bytes, waiting: set[int]
+) -> BatchRow | None:
     prospect = load_prospect(conn, prospect_id)
     if prospect is None:
         return None
@@ -56,7 +58,7 @@ def batch_preview(engine: Engine, box: SecretBox, prospect_ids: Sequence[int]) -
     with engine.connect() as conn:
         settings, account = load_mail_settings(conn), load_gmail(conn)
         waiting = waiting_among(conn, ids)
-        rows = [r for i in ids if (r := _row(conn, i, box.pepper, waiting))]
+        rows = [r for i in ids if (r := batch_row(conn, i, box.pepper, waiting))]
     blocked = SETTINGS if sender_of(settings) is None else GMAIL if account is None else None
     return BatchPreview(blocked, rows)
 

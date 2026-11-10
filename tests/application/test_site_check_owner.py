@@ -37,3 +37,30 @@ def test_C173_old_reports_are_not_flagged() -> None:
     del data["unconfirmed"]
     old = decode_site(data)
     assert old is not None and not old.unconfirmed
+
+
+def test_C174_domain_shared_by_three_companies_is_a_platform() -> None:
+    from prospection.application.site_check import check_site
+
+    seen: list[tuple[str, str]] = []
+
+    def shared(host: str, name: str) -> int:
+        seen.append((host, name))
+        return 2
+
+    report = check_site(pages({"/": PLATFORM}), PLACE, ("electricien",), 2026, shared=shared)
+    assert report.url is None and report.parked and report.audit is None
+    assert report.problem is not None and "plusieurs entreprises" in report.problem
+    assert seen == [("reseau-artisans.fr", "AZ Énergie")]
+    alone = check_site(pages({"/": PLATFORM}), PLACE, ("electricien",), 2026,
+                       shared=lambda host, name: 1)  # fmt: skip
+    assert alone.url == "https://reseau-artisans.fr/"
+
+
+def test_C174_known_directories_are_not_sites() -> None:
+    from prospection.domain.not_site import not_a_site
+
+    for url in ("https://www.yelp.fr/biz/az", "https://www.tripadvisor.fr/x",
+                "https://www.societe.com/societe/az.html", "https://www.leboncoin.fr/x",
+                "https://www.travaux.com/pro/az"):  # fmt: skip
+        assert not_a_site(url), url

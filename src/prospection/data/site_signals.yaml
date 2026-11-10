@@ -69,6 +69,38 @@ not_sites:
   planity.com: Planity
   treatwell.fr: Treatwell
   doctolib.fr: Doctolib
+  # Annuaires et places de marché des artisans et commerçants (C174, à relire)
+  travaux.com: Travaux.com
+  hellopro.fr: Hellopro
+  mappy.com: Mappy
+  118712.fr: "118712"
+  kompass.com: Kompass
+  societe.com: Societe.com
+  pappers.fr: Pappers
+  justacote.com: Justacoté
+  yelp.fr: Yelp
+  yelp.com: Yelp
+  tripadvisor.fr: TripAdvisor
+  tripadvisor.com: TripAdvisor
+  thefork.fr: TheFork
+  lafourchette.com: TheFork
+  booksy.com: Booksy
+  kiute.com: Kiute
+  allovoisins.com: AlloVoisins
+  leboncoin.fr: Leboncoin
+  ooreka.fr: Ooreka
+  bark.com: Bark
+  quotatis.fr: Quotatis
+  mesdepanneurs.fr: MesDépanneurs
+  cylex-france.fr: Cylex
+  annuaire-entreprises.data.gouv.fr: Annuaire des entreprises
+  uber.com: Uber Eats
+  deliveroo.fr: Deliveroo
+  ubereats.com: Uber Eats
+  linkfly.to: Linkfly
+  beacons.ai: Beacons
+  calendly.com: Calendly
+  maps.app.goo.gl: Google Maps
 # Boutons d'action en haut de l'accueil (devis, rendez-vous…) : « Contact » du menu ne compte pas (C158).
 cta_words: ["devis", "estimation", "rendez-vous", "rdv", "reserv", "réserv", "appel gratuit", "rappel", "contactez"]
 # Questions utiles d'un formulaire selon le métier (C159) : mots du métier (sans accents, début de

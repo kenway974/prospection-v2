@@ -106,6 +106,7 @@ def main() -> None:  # pragma: no cover (point d'entrée, testé en bout en bout
     from prospection.sources.safe_network import make_web_client
     from prospection.sources.web_reader import ReadResult
     from prospection.storage.db import make_engine
+    from prospection.storage.shared_sites import companies_on_host
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     logging.getLogger("httpx").setLevel(logging.WARNING)  # pas d'adresses d'appels au journal
@@ -120,11 +121,16 @@ def main() -> None:  # pragma: no cover (point d'entrée, testé en bout en bout
     def browser(url: str, seconds: float) -> ReadResult:  # C166 : sites en JavaScript
         return render_isolated(url, seconds, settings.test_services_url)
 
+    engine = make_engine(settings.database_url)
+
+    def shared(host: str, name: str) -> int:  # C174 : autres entreprises sur ce domaine
+        with engine.connect() as conn:
+            return companies_on_host(conn, host, name)
+
     def sites(place: Place, keywords: tuple[str, ...]) -> SiteReport:
-        return check_site(web, place, keywords, datetime.now(UTC).year, browser)
+        return check_site(web, place, keywords, datetime.now(UTC).year, browser, shared)
 
     with make_client(settings.test_services_url) as client, web:
-        engine = make_engine(settings.database_url)
         lookup = mail_lookup_for(settings.test_services_url)
         key = settings.encryption_key.get_secret_value()
         backup = backup_job(settings.backup_target(), key, settings.database_url, engine, client)

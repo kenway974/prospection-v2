@@ -10,8 +10,8 @@ from time import monotonic
 
 import httpx
 
+from prospection.application.site_network import Shared, network_of
 from prospection.domain.html_page import Page, parse_page
-from prospection.domain.not_site import not_a_site
 from prospection.domain.place import Place, web_link
 from prospection.domain.site_audit import audit, is_placeholder
 from prospection.domain.site_contacts import find_contacts, merge_contacts
@@ -129,12 +129,13 @@ def _guess(
 
 def check_site(
     client: httpx.Client, place: Place, keywords: tuple[str, ...], year: int,
-    browser: Reader | None = None,
+    browser: Reader | None = None, shared: Shared | None = None,
 ) -> SiteReport:  # fmt: skip
     """Rapport du site ; jamais d'exception pour un site absent ou en panne. `browser` : lecture
-    par un vrai navigateur, pour les sites affichés seulement par JavaScript (C166)."""
+    par un vrai navigateur, pour les sites affichés seulement par JavaScript (C166) ; `shared` :
+    autres entreprises sur le même domaine (C174)."""
     url = web_link(place.website)
-    network = not_a_site(url) if url else None
+    network = network_of(url, place.name, shared) if url else None
     if url and network is None:
         read_url = _read_url(client, url)
         return _report(client, read_url, "fiche Google", place, keywords, year, browser)

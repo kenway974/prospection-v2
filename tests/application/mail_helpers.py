@@ -74,5 +74,8 @@ def mail_db(campaign_db: Engine) -> Iterator[Engine]:
             "DELETE FROM mail_optouts; DELETE FROM mail_sends; UPDATE mail_settings SET "
             "sender_name = NULL, phone = NULL, portfolio = NULL, calendly = NULL, "
             "reminder_days = 2, gmail_address = NULL, gmail_token = NULL, "
-            "gmail_connected_at = NULL, replies_blocked = false"
+            "gmail_connected_at = NULL, replies_blocked = false, daily_limit = 30, "
+            "queue_paused = NULL; DELETE FROM sms_optouts; DELETE FROM sms_sends; "
+            "UPDATE sms_settings SET enabled = false, sender = 'Kenny', daily_limit = 30, "
+            "optouts_synced_at = NULL"
         )

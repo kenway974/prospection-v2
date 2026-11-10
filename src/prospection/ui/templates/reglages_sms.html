@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}SMS · Réglages{% endblock %}
+{% block content %}
+<a href="/reglages" class="back">Réglages</a>
+<h1 class="large-title">SMS</h1>
+<p>Un SMS court accompagne le mail d'audit envoyé en groupe : 20 minutes après le mail, vers un mobile français seulement, une seule fois par prospect, du lundi au vendredi de 9 h à 19 h. Les SMS sont envoyés et facturés par Brevo, qui ajoute la mention STOP.</p>
+{% if not has_key %}<p class="notice" role="status">Ajoutez d'abord votre clé Brevo dans <a href="/reglages/cles">Clés API</a>.</p>{% endif %}
+<form method="post" action="/reglages/sms" class="group form">
+  <label class="choice"><input type="checkbox" name="actifs"{% if values.actifs == "on" %} checked{% endif %}> Envoyer un SMS avec le mail d'audit</label>
+  <label for="expediteur">Nom affiché comme expéditeur</label>
+  <input id="expediteur" name="expediteur" value="{{ values.expediteur }}"{% if errors.sender %} aria-invalid="true" aria-describedby="erreur-expediteur"{% endif %}>
+  {% if errors.sender %}<p class="error" id="erreur-expediteur" role="alert">{{ errors.sender }}</p>{% endif %}
+  <p class="secondary">Un SMS envoyé sous un nom ne peut pas recevoir de réponse : les textes invitent à écrire à votre numéro (Réglages → Mail d'audit).</p>
+  <label for="plafond">SMS envoyés par jour, au plus</label>
+  <input id="plafond" name="plafond" inputmode="numeric" value="{{ values.plafond }}"{% if errors.limit %} aria-invalid="true" aria-describedby="erreur-plafond"{% endif %}>
+  {% if errors.limit %}<p class="error" id="erreur-plafond" role="alert">{{ errors.limit }}</p>{% endif %}
+  <button type="submit" class="button-primary">Enregistrer</button>
+</form>
+{% endblock %}

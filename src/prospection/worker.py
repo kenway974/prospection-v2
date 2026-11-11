@@ -16,6 +16,7 @@ from sqlalchemy import Engine
 
 from prospection.application.backup import backup_job
 from prospection.application.campaign_end import after_campaign
+from prospection.application.campaign_mail import catch_up_campaign_mails, queue_campaign_mails
 from prospection.application.campaign_queue import claim_next, release_until
 from prospection.application.campaign_step import run_step
 from prospection.application.periodic import regular_jobs
@@ -30,6 +31,7 @@ from prospection.sources.mail_domain import mail_server
 from prospection.storage.secret_box import SecretBox
 
 logger = logging.getLogger("prospection.worker")
+SCHEMA_WAIT = 5.0  # secondes entre deux vérifications de la base au démarrage
 
 
 class Worker:
@@ -73,12 +75,16 @@ class Worker:
         if outcome.done:
             logger.info("Campagne %s terminée", campaign_id)
             after_campaign(self.engine, campaign_id, self.now())  # C78, C98
+            queue_campaign_mails(self.engine, self.box, campaign_id, self.now())  # C182
         else:
             release_until(self.engine, campaign_id, outcome.retry_at or self.now(), self.worker_id)
         return True
 
     def _between_campaigns(self) -> bool:
-        """Rien à chercher : envois CRM, registre, compléments, mises à jour, serveurs mail."""
+        """Rien à chercher : mails d'une campagne finie pendant un arrêt (C182), envois CRM,
+        registre, compléments, mises à jour, serveurs mail."""
+        if catch_up_campaign_mails(self.engine, self.box, self.now()):
+            return True
         return self.idle.run()
 
     def run_forever(self, stop: threading.Event, idle_seconds: float = 2.0) -> None:
@@ -103,6 +109,7 @@ def main() -> None:  # pragma: no cover (point d'entrée, testé en bout en bout
     from prospection.monitoring import start_monitoring
     from prospection.sources.safe_network import make_web_client
     from prospection.storage.db import make_engine
+    from prospection.storage.migrate import schema_ready
     from prospection.worker_jobs import mail_queue_job, site_checker, sms_job
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -115,6 +122,8 @@ def main() -> None:  # pragma: no cover (point d'entrée, testé en bout en bout
     box = SecretBox(settings.encryption_key.get_secret_value())
     web = make_web_client(settings.test_services_url)  # sites des prospects : garde SSRF
     engine = make_engine(settings.database_url)
+    while not schema_ready(engine) and not stop.wait(SCHEMA_WAIT):
+        logger.info("Base pas encore à jour (migrations du service web) : attente")
     with make_client(settings.test_services_url) as client, web:
         lookup = mail_lookup_for(settings.test_services_url)
         key = settings.encryption_key.get_secret_value()

@@ -136,3 +136,20 @@ button[aria-busy="true"]::before { content: ""; width: 16px; height: 16px; margi
 #communes-attente.htmx-request { display: block; }
 .chip[aria-busy="true"]::before { content: none; }  /* les puces ne bougent pas sous le doigt */
 [hidden] { display: none !important; }  /* « hidden » gagne toujours sur display: flex */
+
+/* Page Prospects : campagnes repliables (C183), état du mail d'audit (C184) */
+details.campaign > summary { min-height: 44px; display: flex; align-items: center; gap: 12px;
+  cursor: pointer; margin: 8px 4px 0; }
+.campaign-group { position: relative; }
+.cocher-campagne-ligne { position: absolute; right: 4px; top: 8px; z-index: 1; display: flex;
+  align-items: center; gap: 8px; min-height: 44px; font-weight: 400; }
+.cocher-campagne-ligne[hidden] { display: none; }
+.badge { display: inline-block; margin-top: 4px; padding: 2px 10px; border-radius: 999px;
+  font-size: 13px; font-weight: 600; }
+.badge-envoye { background: #E3F4EA; color: var(--ok); }
+.badge-refuse { background: #FBE7E5; color: var(--danger); }
+.badge-file, .badge-sms { background: var(--ocean-soft); color: var(--ocean); }
+@media (prefers-color-scheme: dark) {
+  .badge-envoye { background: #16361F; color: #8FD6A8; }
+  .badge-refuse { background: #3B1714; color: #F2A79F; }
+}

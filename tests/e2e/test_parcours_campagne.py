@@ -77,7 +77,9 @@ def test_C46_C52_found_site_shown_on_the_card(page: Page, base_url: str) -> None
     """Suite du parcours : le site de Cuisines Martin, absent de sa fiche, est retrouvé."""
     _login(page, base_url)
     page.goto(f"{base_url}/prospects")
-    page.get_by_role("link", name="Cuisines Martin").first.click()
+    group = page.locator("details.campaign", has=page.get_by_text("Cuisines Martin")).first
+    group.locator("summary").click()  # C183 : campagnes repliées par défaut
+    group.get_by_role("link", name="Cuisines Martin").first.click()
     site = page.locator("section", has=page.get_by_role("heading", name="Le site"))
     expect(site).to_contain_text("Retrouvé à partir du nom")
     expect(site).to_contain_text("/100")

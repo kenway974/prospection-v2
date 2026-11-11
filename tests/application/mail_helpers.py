@@ -1,6 +1,7 @@
 """Prospect audité, réglages du mail et faux Google pour les tests du mail d'audit."""
 
 import dataclasses
+import itertools
 import json
 from collections.abc import Iterator
 
@@ -30,6 +31,9 @@ CONTACTS = Contacts(("contact@martin.fr", "noreply@martin.fr"), (), ())
 SITE = SiteReport("fiche Google", "http://martin.fr/", audit=AUDIT, contacts=CONTACTS)
 
 
+_PLACES = itertools.count(1)
+
+
 def add_audited(
     engine: Engine, site: SiteReport | None = SITE, contacts_email: str | None = None
 ) -> int:
@@ -39,7 +43,8 @@ def add_audited(
         site = dataclasses.replace(site, contacts=Contacts((contacts_email,), (), ()))
     with engine.begin() as conn:
         campaign_id = create_campaign(conn, request(), STEPS, NOW)
-        insert_prospect(conn, campaign_id, PLACE, "plombier", Verdict(True, (), ()), NOW, site)
+        place = dataclasses.replace(PLACE, place_id=f"fiche-{next(_PLACES)}")  # une entreprise
+        insert_prospect(conn, campaign_id, place, "plombier", Verdict(True, (), ()), NOW, site)
         pid = int(conn.exec_driver_sql("SELECT max(id) FROM prospects").scalar_one())
         conn.exec_driver_sql("UPDATE prospects SET registry_status = 'sûr' WHERE id = %(p)s",
                              {"p": pid})  # fmt: skip

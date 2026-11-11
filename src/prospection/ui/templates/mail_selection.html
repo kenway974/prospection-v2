@@ -19,6 +19,6 @@
 <form method="post" action="/prospects/selection/mail/envoyer" class="group form">
   {% for r in leaving %}<input type="hidden" name="id" value="{{ r.prospect_id }}">{% endfor %}
   <input type="hidden" name="origine" value="{{ origine }}"><input type="hidden" name="campagne" value="{{ campagne }}">
-  <button type="submit" data-attente="Mise en file…">Envoyer {{ n }} mail{{ "s" if n > 1 }}{% if texts %} et {{ texts | length }} SMS{% endif %}</button>
+  <button type="submit" class="button-primary" data-attente="Mise en file…">Envoyer {{ n }} mail{{ "s" if n > 1 }}{% if texts %} et {{ texts | length }} SMS{% endif %}</button>
 </form>{% endif %}
 {% endblock %}

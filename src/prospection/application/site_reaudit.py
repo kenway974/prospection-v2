@@ -3,11 +3,13 @@ site (gratuit), quelques sites à la fois ; la vitesse déjà mesurée par Googl
 
 import dataclasses
 import logging
+from collections.abc import Sequence
 from datetime import datetime
 
 from sqlalchemy import Engine
 
 from prospection.application.prospect_card import UnknownProspect
+from prospection.application.prospect_selection import MAX_SELECTION as MAX
 from prospection.application.site_verdict import SiteChecker
 from prospection.storage import reaudit_requests as store
 
@@ -19,6 +21,12 @@ def request_reaudit(engine: Engine, prospect_id: int, now: datetime) -> None:
     with engine.begin() as conn:
         if not store.request(conn, prospect_id, now):
             raise UnknownProspect(prospect_id)
+
+
+def request_reaudits(engine: Engine, prospect_ids: Sequence[int], now: datetime) -> int:
+    """C185 : nouvel audit pour chaque prospect coché qui existe encore ; rend leur nombre."""
+    with engine.begin() as conn:
+        return sum(store.request(conn, i, now) for i in dict.fromkeys(prospect_ids[:MAX]))
 
 
 def run_reaudits(engine: Engine, checker: SiteChecker, now: datetime) -> int:

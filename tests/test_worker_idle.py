@@ -102,3 +102,20 @@ def test_C177_idle_worker_sends_the_sms_queue(campaign_db: Engine) -> None:
     assert worker.work_once() is True
     worker.work_once()
     assert len(calls) == 2
+
+
+def test_C182_worker_queues_the_mails_when_a_campaign_ends(
+    campaign_db: Engine, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import prospection.worker as worker_module
+    from prospection.application.step_flow import StepOutcome
+
+    seen: list[int] = []
+    monkeypatch.setattr(worker_module, "claim_next", lambda *a: 7)
+    monkeypatch.setattr(worker_module, "run_step", lambda *a: StepOutcome(done=True))
+    monkeypatch.setattr(worker_module, "after_campaign", lambda *a: None)
+    monkeypatch.setattr(
+        worker_module, "queue_campaign_mails", lambda e, b, cid, now: seen.append(cid)
+    )
+    Worker(campaign_db, BOX, fake_client(pages())[0], PRICING, now=lambda: NOW).work_once()
+    assert seen == [7]

@@ -4,7 +4,7 @@
 <a href="/prospects" class="back">Prospects</a>
 <h1 class="large-title">Envois du mail d'audit</h1>
 {% if s.paused %}<div class="group form"><p class="notice" role="alert">{{ s.paused }}</p>
-<form method="post" action="/prospects/envois/reprendre"><button type="submit">Reprendre la file</button></form></div>{% endif %}
+<form method="post" action="/prospects/envois/reprendre"><button type="submit" class="button-primary">Reprendre la file</button></form></div>{% endif %}
 <p class="secondary">{{ s.sent_today }} envoyé{{ "s" if s.sent_today > 1 }} aujourd'hui sur {{ s.limit }} au plus (<a href="/reglages/mail">régler</a>). Un mail toutes les 1 à 2 minutes, du lundi au vendredi (hors jours fériés) de 9 h à 19 h.</p>
 {% if not s.lines %}<p>Aucun envoi pour l'instant : cochez des prospects dans la liste, puis « Envoyer le mail d'audit ».</p>{% endif %}
 <ul class="group">{% for l in s.lines %}<li class="row"><span>{{ l.name }}<br><span class="secondary">{{ l.label }}{% if l.reason %} · {{ l.reason }}{% endif %} · {{ l.at.strftime("%d/%m %H:%M") }}</span></span>

@@ -74,3 +74,10 @@ def new_qualified(conn: Connection, campaign_id: int) -> int:
         p.campaign_id == campaign_id, p.qualified.is_(True), ~seen.exists()
     )
     return int(conn.execute(query).scalar_one())
+
+
+def retained_ids(conn: Connection, campaign_id: int) -> list[int]:
+    """Prospects retenus par les critères de la campagne (C182)."""
+    p = prospects.c
+    found = select(p.id).where(p.campaign_id == campaign_id, p.qualified.is_(True))
+    return list(conn.execute(found.order_by(p.id)).scalars())

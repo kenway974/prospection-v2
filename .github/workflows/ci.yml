@@ -43,7 +43,10 @@ jobs:
         env:
           TZ: America/Los_Angeles
         run: |
-          uv run playwright install --with-deps chromium  # lecture des sites en JavaScript (C166)
+          # Chromium (C166), téléchargé chez Playwright. Ses bibliothèques système sont déjà sur
+          # les machines de GitHub (Google Chrome y est installé) : pas de passage par les
+          # miroirs Ubuntu, injoignables depuis GitHub le 11/11.
+          uv run playwright install chromium
           uv run pytest --cov --cov-report=term --cov-fail-under=80
           uv run coverage report --include='src/prospection/domain/*' --fail-under=90
       - name: 6. Image de production
@@ -69,7 +72,7 @@ jobs:
           FAKE_GOOGLE=$!
           docker run -d --name worker --network host --env-file e2e.env \
             -e TEST_SERVICES_URL=http://127.0.0.1:8099 prospection:ci python -m prospection.worker
-          uv run playwright install --with-deps chromium
+          uv run playwright install chromium
           E2E_BASE_URL=http://localhost:8077 E2E_PASSWORD='mot de passe e2e' uv run pytest -m e2e
           kill $FAKE_GOOGLE
       - name: Journaux de l'app en cas d'échec

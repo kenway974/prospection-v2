@@ -31,6 +31,7 @@ campaigns = Table(
     Column("scheduled", Boolean, nullable=False, server_default="false"),
     Column("refresh_running", Boolean, nullable=False, server_default="false"),  # C76
     Column("kind", Text, nullable=False, server_default="appel"),  # appel ou terrain (C127)
+    Column("mails_queued_at", TS),  # mail d'audit de fin de campagne mis en file (C182)
 )  # fmt: skip
 
 campaign_steps = Table(

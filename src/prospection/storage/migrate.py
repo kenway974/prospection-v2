@@ -19,14 +19,16 @@ def run_migrations(database_url: str) -> None:
 
 
 def schema_ready(engine: Engine) -> bool:
-    """Vrai si la base est à la dernière migration (la tâche de fond attend sinon : au
-    déploiement, c'est le service web qui applique les migrations)."""
+    """Faux seulement si la base est en retard sur ce code (la tâche de fond attend : au
+    déploiement, c'est le service web qui applique les migrations). Une base plus récente que
+    ce code (web redéployé avant) n'est jamais une raison d'attendre sans fin."""
     config = Config()
     config.set_main_option("script_location", str(MIGRATIONS_DIR))
-    head = ScriptDirectory.from_config(config).get_current_head()
+    script = ScriptDirectory.from_config(config)
     try:
         with engine.connect() as conn:
             current = conn.execute(text("SELECT version_num FROM alembic_version")).scalar()
     except ProgrammingError:  # base vide : table des versions pas encore créée
         return False
-    return current == head
+    known = {r.revision for r in script.walk_revisions()}
+    return current not in known or current in script.get_heads()

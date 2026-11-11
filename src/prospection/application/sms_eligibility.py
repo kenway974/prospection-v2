@@ -46,12 +46,12 @@ def sms_target(
     checks = [
         (not settings.enabled, OFF), (not has_key, NO_KEY), (not my_phone, NO_PHONE),
         (prospect.registry_status == NON_DIFFUSIBLE, PRIVATE),
-        (prospect.registry_status != SURE, UNCHECKED_REGISTRY),  # règle 7 : diffusible sûr
         (bool(opted_out(conn, [email_fingerprint(e, pepper) for e in emails_of(prospect)])),
          MAIL_OPT_OUT),
         (print_ is None, NO_MOBILE),
         (print_ is not None and is_stopped(conn, print_), STOPPED),
         (bool(sent) and not allowed_again, ALREADY),
+        (prospect.registry_status != SURE, UNCHECKED_REGISTRY),  # en dernier : peut changer
     ]  # fmt: skip
     reason = next((why for failed, why in checks if failed), None)
     return SmsTarget(mobile, print_, reason)

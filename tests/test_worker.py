@@ -92,7 +92,7 @@ def test_C53_idle_worker_checks_mail_servers(campaign_db: Engine) -> None:
     with_emails(campaign_db)
     with campaign_db.begin() as conn:
         conn.exec_driver_sql("UPDATE prospects SET registry_status = 'sûr'")
-        conn.exec_driver_sql("UPDATE campaigns SET status = 'done'")
+        conn.exec_driver_sql("UPDATE campaigns SET status = 'done', mails_queued_at = now()")
     asked: list[str] = []
 
     def lookup(domain: str) -> str:

@@ -16,7 +16,7 @@ from sqlalchemy import Engine
 
 from prospection.application.backup import backup_job
 from prospection.application.campaign_end import after_campaign
-from prospection.application.campaign_mail import queue_campaign_mails
+from prospection.application.campaign_mail import catch_up_campaign_mails, queue_campaign_mails
 from prospection.application.campaign_queue import claim_next, release_until
 from prospection.application.campaign_step import run_step
 from prospection.application.periodic import regular_jobs
@@ -81,7 +81,10 @@ class Worker:
         return True
 
     def _between_campaigns(self) -> bool:
-        """Rien à chercher : envois CRM, registre, compléments, mises à jour, serveurs mail."""
+        """Rien à chercher : mails d'une campagne finie pendant un arrêt (C182), envois CRM,
+        registre, compléments, mises à jour, serveurs mail."""
+        if catch_up_campaign_mails(self.engine, self.box, self.now()):
+            return True
         return self.idle.run()
 
     def run_forever(self, stop: threading.Event, idle_seconds: float = 2.0) -> None:

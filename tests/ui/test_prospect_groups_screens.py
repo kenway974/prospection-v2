@@ -20,7 +20,8 @@ def test_C183_campaigns_collapsed_with_their_own_check_all(web: Web, mail_db: En
     page = web[0].get("/prospects").text
     assert '<details class="campaign">' in page and "<summary" in page  # replié par défaut
     assert 'class="cocher-campagne"' in page and "les 1 prospects" not in page
-    assert "cocher le prospect de cette campagne" in html.unescape(page)
+    assert "cocher le prospect de la campagne" in html.unescape(page)
+    assert page.index('class="cocher-campagne"') < page.index("<summary")  # hors du titre
 
 
 def test_C184_badge_and_filter_for_mailed_prospects(web: Web, mail_db: Engine) -> None:  # noqa: F811
@@ -31,7 +32,7 @@ def test_C184_badge_and_filter_for_mailed_prospects(web: Web, mail_db: Engine) -
     add_audited(mail_db, contacts_email="b@martin.fr")
     page = html.unescape(client.get("/prospects").text)
     assert 'class="badge badge-envoye"' in page and "Mail envoyé le 25/10" in page
-    assert "Mail envoyé · 1" in page and "Pas encore contacté · 1" in page
+    assert "Déjà contacté · 1" in page and "Pas encore contacté · 1" in page
     filtered = html.unescape(client.get("/prospects?contact=non").text)
     assert "Mail envoyé le" not in filtered.split("Pas encore contacté · 1")[1]
 

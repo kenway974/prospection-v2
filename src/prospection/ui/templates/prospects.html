@@ -22,17 +22,18 @@
   <label for="q">Chercher (nom, ville, métier)</label>
   <input id="q" name="q" type="search" value="{{ query }}" maxlength="100" autocomplete="off">
   {% if status %}<input type="hidden" name="statut" value="{{ status }}">{% endif %}
+  {% if contact %}<input type="hidden" name="contact" value="{{ contact }}">{% endif %}
   <label for="tri">Trier par</label>
   <select id="tri" name="tri">{% for key, label in sorts.items() %}<option value="{{ key }}"{% if sort == key %} selected{% endif %}>{{ label }}</option>{% endfor %}</select>
   <button type="submit" class="button-secondary">Afficher</button>
 </form>
 {% if total %}
 <ul class="chips" aria-label="Filtrer par statut">
-  <li><a class="chip" href="/prospects?{{ dict(here, q=query, tri=sort) | urlencode }}"{% if not status %} aria-current="true"{% endif %}>Tous · {{ total }}</a></li>
-  {% for s in statuses %}{% if counts.get(s) %}<li><a class="chip" href="/prospects?{{ dict(here, statut=s, q=query, tri=sort) | urlencode }}"{% if status == s %} aria-current="true"{% endif %}>{{ s | capitalize }} · {{ counts[s] }}</a></li>{% endif %}{% endfor %}
+  <li><a class="chip" href="/prospects?{{ dict(here, q=query, tri=sort, contact=contact) | urlencode }}"{% if not status %} aria-current="true"{% endif %}>Tous · {{ total }}</a></li>
+  {% for s in statuses %}{% if counts.get(s) %}<li><a class="chip" href="/prospects?{{ dict(here, statut=s, q=query, tri=sort, contact=contact) | urlencode }}"{% if status == s %} aria-current="true"{% endif %}>{{ s | capitalize }} · {{ counts[s] }}</a></li>{% endif %}{% endfor %}
 </ul>
 <ul class="chips" aria-label="Filtrer par mail d'audit">
-  {% for key, label in (("envoye", "Mail envoyé"), ("non", "Pas encore contacté")) %}<li><a class="chip" href="/prospects?{{ dict(here, statut=status or '', q=query, tri=sort, contact='' if contact == key else key) | urlencode }}"{% if contact == key %} aria-current="true"{% endif %}>{{ label }} · {{ contact_counts.get(key, 0) }}</a></li>{% endfor %}
+  {% for key, label in (("envoye", "Déjà contacté"), ("non", "Pas encore contacté")) %}<li><a class="chip" href="/prospects?{{ dict(here, statut=status or '', q=query, tri=sort, contact='' if contact == key else key) | urlencode }}"{% if contact == key %} aria-current="true"{% endif %}>{{ label }} · {{ contact_counts.get(key, 0) }}</a></li>{% endfor %}
 </ul>
 {% endif %}
 {% if rows %}
@@ -48,8 +49,8 @@
 <button type="submit" form="selection" formaction="/prospects/selection/audit" class="button-secondary">Refaire l'audit des prospects cochés</button>
 <button type="submit" form="selection" class="button-danger">Supprimer les prospects cochés</button>
 {% for name, group_rows in groups %}{% set n = group_rows | length %}<section class="campaign-group">
-<details class="campaign"{% if query %} open{% endif %}><summary class="group-title"><span>{{ name }} · {{ n }}</span>
-<label class="cocher-campagne-ligne" hidden><input type="checkbox" class="cocher-campagne"> Tout cocher<span class="visually-hidden"> : cocher {{ "le prospect" if n == 1 else "les " ~ n ~ " prospects" }} de cette campagne</span></label></summary>
+<label class="cocher-campagne-ligne" hidden><input type="checkbox" class="cocher-campagne"> Tout cocher<span class="visually-hidden"> : cocher {{ "le prospect" if n == 1 else "les " ~ n ~ " prospects" }} de la campagne {{ name }}</span></label>
+<details class="campaign"{% if query %} open{% endif %}><summary class="group-title"><span>{{ name }} · {{ n }}</span></summary>
 <ul class="group">{% for r in group_rows %}{% set s = summaries.get(r.id) %}<li class="row select-row"><label class="check"><input type="checkbox" name="id" value="{{ r.id }}" form="selection"><span class="visually-hidden">Cocher {{ r.data.name }}</span></label><a class="link-row" href="/prospects/{{ r.id }}"><span>{{ r.data.name }}<br><span class="secondary">{{ r.data.address }}</span>{% set c = contacted.get(r.id) %}{% if c %}<br><span class="badge badge-{{ c[0] }}">{{ c[1] }}</span>{% endif %}{% if s %}<br><span class="secondary">{{ s.reason }}{% if s.flagged %} · à vérifier{% endif %}</span>{% endif %}{% if s and s.audit %}<br><span class="secondary">{{ s.audit }}</span>{% endif %}</span><span class="secondary">{% if s %}<strong class="score">{{ s.score }}</strong><span class="visually-hidden"> sur 100, score d'opportunité</span><br>{% endif %}{{ r.status }}</span></a></li>{% endfor %}</ul>
 </details></section>
 {% endfor %}

@@ -3,7 +3,7 @@
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-MAILED = frozenset({"envoye", "refuse", "file"})  # le mail d'audit est parti ou va partir
+MAILED = frozenset({"envoye", "refuse", "file", "sms"})  # déjà contacté (mail ou SMS)
 _WORDS = {"envoye": "Mail envoyé le", "refuse": "Mail refusé le", "sms": "SMS envoyé le"}
 
 

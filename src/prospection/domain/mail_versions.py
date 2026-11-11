@@ -5,7 +5,7 @@ import re
 from dataclasses import dataclass
 
 from prospection.domain.audit_mail import STRUCTURES
-from prospection.domain.audit_mail_rules import load_mail_rules
+from prospection.domain.audit_mail_rules import hook_templates, load_mail_rules
 
 _CODE = re.compile(r"o(\d{1,3})-a(-1|\d{1,3})-s(\d)")
 
@@ -28,7 +28,7 @@ class SendDetails:
 def encode_versions(v: MailVersions) -> str:
     """Code court des versions, gardé dans le formulaire de l'écran du mail."""
     rules = load_mail_rules()
-    hooks = [h.texte for h in rules.accroches]
+    hooks = hook_templates(rules)
     hook = hooks.index(v.hook) if v.hook in hooks else -1
     subjects = [*rules.objets, *rules.objets_sans_site]
     return f"o{subjects.index(v.subject)}-a{hook}-s{STRUCTURES.index(v.structure)}"
@@ -42,7 +42,8 @@ def decode_versions(code: str) -> MailVersions | None:
         return None
     subject, hook, structure = (int(x) for x in found.groups())
     subjects = [*rules.objets, *rules.objets_sans_site]
-    if subject >= len(subjects) or hook >= len(rules.accroches) or structure >= len(STRUCTURES):
+    hooks = hook_templates(rules)
+    if subject >= len(subjects) or hook >= len(hooks) or structure >= len(STRUCTURES):
         return None
-    hook_text = rules.accroches[hook].texte if hook >= 0 else None
+    hook_text = hooks[hook] if hook >= 0 else None
     return MailVersions(subjects[subject], hook_text, STRUCTURES[structure])

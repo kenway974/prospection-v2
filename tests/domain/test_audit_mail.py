@@ -11,7 +11,7 @@ ALL = ("no_social", "no_https", "no_description", "no_mobile", "no_legal_notice"
 
 def test_C145_three_points_at_most_strongest_first() -> None:
     points = choose_points(ALL, ("boulangerie",))
-    assert [p.code for p in points] == ["no_https", "no_mobile", "slow"]
+    assert [p.code for p in points] == ["no_legal_notice", "no_https", "no_mobile"]  # C172
 
 
 def test_C145_same_group_never_twice_and_unknown_codes_ignored() -> None:
@@ -38,9 +38,8 @@ def test_C145_draft_is_short_with_portfolio_and_call() -> None:
     draft = draft_mail(choose_points(ALL, ()), "Boulangerie Martin", "martin.fr", SENDER)
     assert draft.subject == "Boulangerie Martin : audit express de votre site, 3 points à corriger"
     assert draft.body.startswith("Bonjour,\n\nJe suis Kenny Pignolet")
-    assert "**1. Un site marqué « Non sécurisé »**\n- **Constat :** Votre site n'est pas" in (
-        draft.body
-    )
+    assert "**1. Pas de mentions légales**\n- **Constat :** " in draft.body  # C172 : légal d'abord
+    assert "**2. Un site marqué « Non sécurisé »**" in draft.body
     assert "\n- **Impact :** " in draft.body
     assert "\n- **Solution :** " in draft.body and "\n\n**3. " in draft.body
     assert len(draft.body) < 1300  # C155 : concis

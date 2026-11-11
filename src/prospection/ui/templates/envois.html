@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Envois · Prospection{% endblock %}
+{% block content %}
+<a href="/prospects" class="back">Prospects</a>
+<h1 class="large-title">Envois du mail d'audit</h1>
+{% if s.paused %}<div class="group form"><p class="notice" role="alert">{{ s.paused }}</p>
+<form method="post" action="/prospects/envois/reprendre"><button type="submit">Reprendre la file</button></form></div>{% endif %}
+<p class="secondary">{{ s.sent_today }} envoyé{{ "s" if s.sent_today > 1 }} aujourd'hui sur {{ s.limit }} au plus (<a href="/reglages/mail">régler</a>). Un mail toutes les 1 à 2 minutes, du lundi au vendredi (hors jours fériés) de 9 h à 19 h.</p>
+{% if not s.lines %}<p>Aucun envoi pour l'instant : cochez des prospects dans la liste, puis « Envoyer le mail d'audit ».</p>{% endif %}
+<ul class="group">{% for l in s.lines %}<li class="row"><span>{{ l.name }}<br><span class="secondary">{{ l.label }}{% if l.reason %} · {{ l.reason }}{% endif %} · {{ l.at.strftime("%d/%m %H:%M") }}</span></span>
+{% if l.status == "attente" %}<form method="post" action="/prospects/envois/{{ l.queue_id }}/annuler"><button type="submit" class="button-secondary">Annuler<span class="visually-hidden"> l'envoi à {{ l.name }}</span></button></form>{% endif %}</li>{% endfor %}</ul>
+{% if s.sms %}<h2 class="group-title">SMS</h2>
+<ul class="group">{% for name, label, kind, reason in s.sms %}<li class="row"><span>{{ name }}<br><span class="secondary">{{ label }}{% if kind %} · {{ kind }}{% endif %}{% if reason %} · {{ reason }}{% endif %}</span></span></li>{% endfor %}</ul>{% endif %}
+{% endblock %}

@@ -37,7 +37,17 @@ def _decode(data: dict[str, Any]) -> SiteReport:
         if contacts else None,
         bool(data.get("parked", False)),
         decode_speed(data["speed"]) if data.get("speed") else None,
+        _unconfirmed(data),
+
     )  # fmt: skip
+
+
+def _unconfirmed(data: dict[str, Any]) -> bool:
+    """Rapport d'avant C173 : le site de la fiche Google n'a jamais été vérifié, il est donc
+    à vérifier (refaire l'audit) plutôt que supposé être celui de l'entreprise."""
+    if "unconfirmed" in data:
+        return bool(data["unconfirmed"])
+    return data.get("origin") == "fiche Google" and bool(data.get("audit"))
 
 
 def _audit(data: dict[str, Any]) -> Audit:

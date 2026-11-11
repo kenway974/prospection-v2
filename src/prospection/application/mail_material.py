@@ -62,7 +62,8 @@ def mail_material(
     form = site.audit.form_detail if site and site.audit else None
     profile = lead_profile(prospect.keywords, place.address, audited, place.rating,
                            place.review_count, score, facts.created, form, now.date())  # fmt: skip
+    points = choose_points(codes, prospect.keywords)
+    first = points[0].code if points else None  # C171 : accroche tirée du premier point
     return MailMaterial(
-        choose_points(codes, prospect.keywords), domain or "",
-        matching_hooks(facts, prospect.keywords), audited, profile,
-    )  # fmt: skip
+        points, domain or "", matching_hooks(facts, prospect.keywords, first), audited, profile
+    )

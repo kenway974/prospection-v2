@@ -9,6 +9,8 @@
 #
 # points.<code> : le code vient de l'audit (no_https, no_form…). « titre » : court, en gras ;
 # « poids » : importance de base ;
+# « rang » (C172) : legal, clients (référencement compris), suivi ou autre ; le mail prend les
+# points dans cet ordre de rangs, puis du plus lourd au plus léger dans un même rang ;
 # « groupe » : deux points du même groupe ne sont jamais cités ensemble (le plus fort reste).
 # secteurs.<nom> : « mots » du métier (sans accents, début de mot) ; « bonus » ajouté au poids ;
 # « impacts » remplace l'effet business pour ce métier.
@@ -43,6 +45,7 @@ points:
   no_https:
     titre: "Un site marqué « Non sécurisé »"
     poids: 15
+    rang: clients
     groupe: https
     probleme: "Votre site n'est pas en HTTPS."
     impact: "Les navigateurs l'affichent « Non sécurisé » : entre 60 et 80 % des visiteurs font demi-tour."
@@ -50,6 +53,7 @@ points:
   https_broken:
     titre: "Un avertissement de sécurité dès l'ouverture"
     poids: 15
+    rang: clients
     groupe: https
     probleme: "Votre certificat HTTPS est absent ou invalide."
     impact: "Un avertissement de sécurité s'affiche : la plupart des visiteurs repartent."
@@ -57,12 +61,14 @@ points:
   no_mobile:
     titre: "Un site difficile à lire sur téléphone"
     poids: 15
+    rang: clients
     probleme: "Votre site n'est pas adapté aux téléphones."
     impact: "Entre 55 et 70 % des visites se font sur mobile : beaucoup partent chez un concurrent."
     action: "Une mise en page qui s'adapte à l'écran."
   slow_mobile:
     titre: "Un site trop lent sur mobile"
     poids: 12
+    rang: clients
     groupe: vitesse
     probleme: "Votre site est lent sur téléphone (mesure de Google)."
     impact: "Entre 50 et 60 % des visiteurs mobiles partent au-delà de 3 secondes."
@@ -70,6 +76,7 @@ points:
   slow:
     titre: "Un site lent à s'afficher"
     poids: 10
+    rang: clients
     groupe: vitesse
     probleme: "Votre site met du temps à s'afficher."
     impact: "Au-delà de 3 secondes, entre 40 et 60 % des visiteurs abandonnent."
@@ -77,6 +84,7 @@ points:
   no_form:
     titre: "Aucun moyen simple de vous écrire"
     poids: 15
+    rang: clients
     groupe: formulaire
     probleme: "Aucun formulaire de contact sur votre site."
     impact: "Entre 30 et 50 % des clients préfèrent écrire, souvent le soir : ces demandes partent ailleurs."
@@ -84,6 +92,7 @@ points:
   form_contact_only:
     titre: "Un formulaire caché sur la page Contact"
     poids: 7
+    rang: clients
     groupe: formulaire
     probleme: "Votre formulaire n'est que sur la page Contact."
     impact: "Un visiteur pressé ne le voit pas depuis l'accueil."
@@ -91,6 +100,7 @@ points:
   quote_incomplete:
     titre: "Une demande de devis qui oublie l'essentiel"
     poids: 6
+    rang: clients
     groupe: formulaire
     probleme: "Votre formulaire ne pose pas les questions utiles pour chiffrer une première estimation."
     impact: "Vous rappelez le client pour avoir les infos : le temps de le joindre, un autre a déjà répondu."
@@ -98,6 +108,7 @@ points:
   form_basic:
     titre: "Un formulaire qui ne pose aucune question"
     poids: 6
+    rang: clients
     groupe: formulaire
     probleme: "Votre formulaire demande seulement nom, email et message."
     impact: "Vous devez rappeler chaque client pour comprendre son besoin."
@@ -105,6 +116,7 @@ points:
   form_buried:
     titre: "Un formulaire tout en bas de la page Contact"
     poids: 8
+    rang: clients
     groupe: formulaire
     probleme: "Votre formulaire est tout en bas de la page Contact."
     impact: "Il faut le chercher : beaucoup de visiteurs abandonnent avant."
@@ -112,12 +124,14 @@ points:
   no_cta_top:
     titre: "Pas de bouton « Devis » en haut du site"
     poids: 7
+    rang: clients
     probleme: "Aucun bouton « Devis » ou « Rendez-vous » n'est visible en haut de l'accueil."
     impact: "Le visiteur doit chercher comment vous contacter : une partie abandonne."
     action: "Un bouton bien visible dès l'arrivée."
   form_too_long:
     titre: "Un formulaire trop long"
     poids: 5
+    rang: clients
     groupe: formulaire
     probleme: "Votre formulaire demande trop de champs obligatoires."
     impact: "Chaque champ en plus fait abandonner une partie des visiteurs."
@@ -125,18 +139,21 @@ points:
   form_no_consent:
     titre: "Un formulaire sans mention RGPD"
     poids: 7
+    rang: legal
     probleme: "Votre formulaire ne dit pas ce que deviennent les données envoyées."
     impact: "Le RGPD l'impose : la CNIL peut sanctionner."
     action: "Une phrase et un lien vers votre politique de confidentialité."
   phone_not_clickable:
     titre: "Un numéro qu'on ne peut pas appeler d'un geste"
     poids: 6
+    rang: clients
     probleme: "Votre numéro n'est pas cliquable sur téléphone."
     impact: "Obligé de le recopier, une partie des clients abandonne."
     action: "Le rendre cliquable : quelques minutes."
   no_booking:
     titre: "Pas de réservation en ligne"
     poids: 10
+    rang: clients
     probleme: "Pas de réservation en ligne."
     impact: "Entre 40 et 60 % des réservations se font hors des heures d'ouverture."
     action: "Un module de réservation relié à votre agenda."
@@ -145,6 +162,7 @@ points:
   sim_borne:
     titre: "Aucun calcul de l'aide pour la borne"
     poids: 9
+    rang: clients
     groupe: simulateur
     probleme: "Vous parlez de l'aide pour la borne de recharge, mais le client ne peut pas estimer la sienne."
     impact: "Le client voit le prix plein, pas son coût réel : il compare ailleurs."
@@ -152,6 +170,7 @@ points:
   sim_adapt:
     titre: "Aucun calcul de MaPrimeAdapt'"
     poids: 9
+    rang: clients
     groupe: simulateur
     probleme: "Vous parlez de MaPrimeAdapt', mais le client ne peut pas estimer son aide."
     impact: "Une personne âgée ou ses enfants hésitent sans savoir ce qui restera à payer."
@@ -159,6 +178,7 @@ points:
   sim_renov:
     titre: "Aucun calcul des aides à la rénovation"
     poids: 9
+    rang: clients
     groupe: simulateur
     probleme: "Vous citez les aides (MaPrimeRénov', primes énergie), mais le client ne peut pas estimer les siennes."
     impact: "Sans montant, le projet semble trop cher : le client attend ou va chez celui qui chiffre."
@@ -166,6 +186,7 @@ points:
   sim_sap:
     titre: "Le crédit d'impôt n'est pas chiffré"
     poids: 9
+    rang: clients
     groupe: simulateur
     probleme: "Vous proposez des services à la personne, mais votre site ne calcule pas le prix après crédit d'impôt."
     impact: "Le client voit le prix plein et oublie qu'il peut en récupérer jusqu'à la moitié."
@@ -173,6 +194,7 @@ points:
   sim_creche:
     titre: "Le coût réel n'est pas chiffré"
     poids: 9
+    rang: clients
     groupe: simulateur
     probleme: "Vous parlez des aides (CAF, crédit d'impôt), mais les parents ne peuvent pas estimer leur coût réel."
     impact: "Les parents voient un tarif élevé et choisissent sans savoir ce qu'ils paieraient vraiment."
@@ -180,6 +202,7 @@ points:
   sim_permis:
     titre: "Le financement du permis n'est pas chiffré"
     poids: 9
+    rang: clients
     groupe: simulateur
     probleme: "Vous parlez du financement du permis, mais l'élève ne peut pas estimer le sien."
     impact: "L'élève voit le prix total et repousse son inscription."
@@ -187,6 +210,7 @@ points:
   sim_formation:
     titre: "La prise en charge n'est pas chiffrée"
     poids: 9
+    rang: clients
     groupe: simulateur
     probleme: "Vous parlez de financement (CPF, OPCO…), mais le stagiaire ne peut pas estimer le sien."
     impact: "Sans reste à charge connu, beaucoup ne vont pas plus loin."
@@ -194,6 +218,7 @@ points:
   sim_sante:
     titre: "Le reste à charge n'est pas estimé"
     poids: 9
+    rang: clients
     groupe: simulateur
     probleme: "Vous parlez du 100 % santé, mais le patient ne peut pas estimer ce qu'il paiera."
     impact: "Le patient craint le prix et repousse son rendez-vous."
@@ -201,6 +226,7 @@ points:
   sim_borne_cout:
     titre: "Aucun calcul du coût de la borne"
     poids: 9
+    rang: clients
     groupe: simulateur
     probleme: "Votre site ne permet pas d'estimer le coût d'une borne ni les économies de recharge."
     impact: "Le client ne voit pas ce que la borne lui fait gagner face à l'essence ou aux bornes publiques."
@@ -208,6 +234,7 @@ points:
   sim_permis_cout:
     titre: "Le coût du permis n'est pas chiffré"
     poids: 9
+    rang: clients
     groupe: simulateur
     probleme: "Votre site ne permet pas d'estimer le coût total du permis."
     impact: "L'élève compare les écoles sur le prix affiché, sans les heures en plus."
@@ -215,6 +242,7 @@ points:
   sim_solaire:
     titre: "Aucun calcul des économies solaires"
     poids: 9
+    rang: clients
     groupe: simulateur
     probleme: "Votre site ne permet pas d'estimer la production ni les économies."
     impact: "Le client ne voit pas en combien d'années l'installation est rentable."
@@ -222,6 +250,7 @@ points:
   sim_emprunt:
     titre: "Aucun calcul de capacité d'emprunt"
     poids: 9
+    rang: clients
     groupe: simulateur
     probleme: "Votre site ne permet pas de calculer sa capacité d'emprunt."
     impact: "Les acheteurs font ce calcul ailleurs, et laissent leurs coordonnées là-bas."
@@ -229,6 +258,7 @@ points:
   sim_notaire:
     titre: "Aucun calcul des frais de notaire"
     poids: 9
+    rang: clients
     groupe: simulateur
     probleme: "Votre site ne permet pas de calculer les frais de notaire."
     impact: "C'est la première question des acheteurs : ils la posent à un autre site."
@@ -236,6 +266,7 @@ points:
   sim_patrimoine:
     titre: "Aucun simulateur d'impôt ni d'épargne"
     poids: 9
+    rang: clients
     groupe: simulateur
     probleme: "Votre site ne permet pas d'estimer impôts ou épargne."
     impact: "Le visiteur ne voit pas ce qu'il gagnerait à vous consulter."
@@ -243,6 +274,7 @@ points:
   sim_charges:
     titre: "Aucun simulateur de charges"
     poids: 9
+    rang: clients
     groupe: simulateur
     probleme: "Votre site ne permet pas d'estimer charges ou rémunération."
     impact: "Les créateurs d'entreprise font ce calcul ailleurs, puis y choisissent leur comptable."
@@ -250,6 +282,7 @@ points:
   sim_estimation:
     titre: "Aucune estimation en ligne"
     poids: 9
+    rang: clients
     groupe: simulateur
     probleme: "Votre site ne propose pas d'estimer un bien."
     impact: "Les vendeurs estiment sur un portail et signent avec l'agence qui les rappelle."
@@ -257,6 +290,7 @@ points:
   sim_chauffage:
     titre: "Aucun calcul des économies de chauffage"
     poids: 9
+    rang: clients
     groupe: simulateur
     probleme: "Votre site ne permet pas d'estimer les économies sur la facture."
     impact: "Le client voit le prix des travaux, pas ce qu'ils lui font gagner chaque année."
@@ -264,18 +298,21 @@ points:
   noindex:
     titre: "Un site invisible sur Google"
     poids: 15
+    rang: clients
     probleme: "Votre site est caché aux moteurs de recherche."
     impact: "Il n'apparaît pas sur Google."
     action: "Retirer ce réglage, souvent oublié."
   low_authority:
     titre: "Un site que Google connaît à peine"
     poids: 8
+    rang: clients
     probleme: "Google connaît encore peu votre site."
     impact: "Vos concurrents sortent avant vous dans les recherches."
     action: "Des pages sur vos services et votre ville."
   no_title:
     titre: "Pas de titre dans les résultats Google"
     poids: 8
+    rang: clients
     groupe: google
     probleme: "Votre site n'a pas de titre pour Google."
     impact: "Google affiche un texte au hasard : moins de clics."
@@ -283,6 +320,7 @@ points:
   no_description:
     titre: "Une présentation au hasard dans Google"
     poids: 4
+    rang: clients
     groupe: google
     probleme: "Pas de description pour Google."
     impact: "Un extrait au hasard au lieu d'un texte qui donne envie."
@@ -290,18 +328,21 @@ points:
   thin_content:
     titre: "Trop peu de texte pour être trouvé"
     poids: 6
+    rang: clients
     probleme: "Votre site contient très peu de texte."
     impact: "Google comprend mal ce que vous faites : vous sortez peu."
     action: "Une page par service, avec votre ville."
   outdated:
     titre: "Un site qui semble abandonné"
     poids: 7
+    rang: autre
     probleme: "Votre site semble ne plus être mis à jour."
     impact: "Un site qui paraît abandonné fait douter les clients."
     action: "Un rafraîchissement du contenu et du design."
   legacy_ga:
     titre: "Des statistiques arrêtées depuis 2023"
     poids: 6
+    rang: suivi
     groupe: suivi
     probleme: "Vos statistiques utilisent l'ancien Google Analytics, arrêté en 2023."
     impact: "Vous ne savez plus combien de clients vous trouvent en ligne."
@@ -309,6 +350,7 @@ points:
   no_tracking:
     titre: "Aucune statistique de visite"
     poids: 4
+    rang: suivi
     groupe: suivi
     probleme: "Aucun outil de statistiques sur votre site."
     impact: "Impossible de savoir s'il vous rapporte des clients."
@@ -316,6 +358,7 @@ points:
   old_wordpress:
     titre: "Un WordPress qui n'est plus à jour"
     poids: 9
+    rang: autre
     groupe: maintenance
     probleme: "Votre WordPress n'est plus à jour."
     impact: "Des failles connues : risque de piratage."
@@ -323,6 +366,7 @@ points:
   old_php:
     titre: "Un serveur sans correctifs de sécurité"
     poids: 9
+    rang: autre
     groupe: maintenance
     probleme: "Votre serveur utilise une version de PHP sans correctifs de sécurité."
     impact: "Le site devient une cible facile pour les pirates."
@@ -330,60 +374,70 @@ points:
   mixed_content:
     titre: "Des éléments chargés sans sécurité"
     poids: 6
+    rang: clients
     probleme: "Des éléments de votre site sont chargés sans sécurité."
     impact: "Le cadenas peut disparaître et faire fuir des visiteurs."
     action: "Corriger l'adresse de ces fichiers."
   js_only:
     titre: "Un site que Google lit mal"
     poids: 8
+    rang: clients
     probleme: "Votre site s'affiche entièrement par JavaScript."
     impact: "Google le lit mal, et les assistants IA n'y voient rien."
     action: "Générer les pages côté serveur."
   no_site:
     titre: "Pas de site internet"
     poids: 16
+    rang: clients
     probleme: "Vous n'avez pas de site internet."
     impact: "La plupart des clients comparent en ligne avant d'appeler : sans site, ils choisissent un concurrent."
     action: "Un site simple, avec vos services, vos avis et un formulaire de devis."
   gmb_few_reviews:
     titre: "Peu d'avis Google"
     poids: 9
+    rang: clients
     probleme: "Votre fiche Google a peu d'avis."
     impact: "Les clients font davantage confiance aux entreprises qui ont beaucoup d'avis."
     action: "Demander un avis à chaque client satisfait, avec un lien direct."
   gmb_low_rating:
     titre: "Une note Google à remonter"
     poids: 8
+    rang: clients
     probleme: "Votre note Google est en dessous de 4/5."
     impact: "Beaucoup de clients écartent les entreprises sous 4 étoiles."
     action: "Répondre aux avis et solliciter vos clients satisfaits."
   gmb_no_hours:
     titre: "Des horaires absents de Google"
     poids: 6
+    rang: clients
     probleme: "Vos horaires n'apparaissent pas sur votre fiche Google."
     impact: "Dans le doute, le client appelle un concurrent qui affiche les siens."
     action: "Renseigner les horaires sur la fiche, quelques minutes."
   gmb_few_photos:
     titre: "Peu de photos sur Google"
     poids: 5
+    rang: clients
     probleme: "Votre fiche Google a peu de photos."
     impact: "Les fiches avec photos reçoivent nettement plus de demandes."
     action: "Ajouter des photos de vos réalisations et de votre équipe."
   no_legal_notice:
     titre: "Pas de mentions légales"
     poids: 9
+    rang: legal
     probleme: "Pas de mentions légales sur votre site."
     impact: "Obligatoires : jusqu'à 75 000 € d'amende (375 000 € pour une société)."
     action: "Une page de mentions légales, vite rédigée."
   no_privacy_policy:
     titre: "Pas de politique de confidentialité"
     poids: 9
+    rang: legal
     probleme: "Pas de politique de confidentialité."
     impact: "Votre site recueille des données : le RGPD l'impose, la CNIL peut sanctionner."
     action: "Une page claire, liée au formulaire."
   no_cookie_consent:
     titre: "Des cookies déposés sans accord"
     poids: 9
+    rang: legal
     probleme: "Des traceurs sont déposés sans l'accord des visiteurs."
     impact: "La CNIL sanctionne les cookies sans consentement."
     action: "Un bandeau de consentement conforme."
@@ -436,3 +490,67 @@ accroches:
     texte: "Plus de {avis} avis Google : vous avez une vraie réputation à faire valoir en ligne."
   - quand: {age_min_ans: 20, avec_site: true}
     texte: "{ans} ans d'activité : une expérience que votre site doit montrer."
+
+# Accroches tirées de l'audit (C171) : première phrase du mail, liée au premier point cité.
+# Phrase choc, 10 mots au plus (l'app refuse de démarrer sinon), sans dénigrer le travail
+# déjà fait. Plusieurs phrases par point : elles tournent (la moins utilisée d'abord) et la
+# page Stats dit laquelle fait répondre. Écrites normalement : l'app les met en majuscules
+# tant que « accroche_majuscules » est vrai. Sans phrase pour le premier point, les
+# accroches ci-dessus (avis, ancienneté, labels) restent.
+accroche_majuscules: true
+accroches_audit:
+  no_legal_notice:
+    - "Mentions légales introuvables sur votre site : jusqu'à 75 000 € d'amende."
+    - "Sans mentions légales visibles, votre site risque une lourde amende."
+  no_privacy_policy:
+    - "Vous collectez des données sans politique de confidentialité."
+  no_cookie_consent:
+    - "Vos cookies se déposent sans accord : la CNIL sanctionne."
+  form_no_consent:
+    - "Votre formulaire collecte des données sans accord RGPD."
+  no_form:
+    - "Le soir, vos clients ne peuvent pas vous écrire."
+  form_contact_only:
+    - "Formulaire caché : vos clients pressés ne le trouvent pas."
+  form_basic:
+    - "Votre formulaire ne dit pas ce que veut le client."
+  quote_incomplete:
+    - "Votre demande de devis oublie les questions qui font chiffrer."
+  form_buried:
+    - "Votre formulaire est tout en bas : peu le voient."
+  no_cta_top:
+    - "Aucun bouton « Devis » visible en arrivant sur votre site."
+  no_https:
+    - "Vos visiteurs voient « Non sécurisé » en arrivant."
+  https_broken:
+    - "Une alerte de sécurité accueille vos visiteurs : ils repartent."
+  no_mobile:
+    - "Sur téléphone, votre site est difficile à lire."
+  slow_mobile:
+    - "Sur mobile, vos visiteurs partent avant l'affichage."
+  slow:
+    - "Votre site est lent : chaque seconde coûte des clients."
+  no_booking:
+    - "Vos clients ne peuvent pas réserver le soir, en ligne."
+  phone_not_clickable:
+    - "Sur mobile, votre numéro ne s'appelle pas d'un geste."
+  thin_content:
+    - "Google comprend mal votre métier : vous sortez peu."
+  noindex:
+    - "Votre site est invisible sur Google : réglage à corriger."
+  no_title:
+    - "Votre site n'a pas de titre pour Google."
+  no_description:
+    - "Google n'affiche aucune description de votre activité."
+  low_authority:
+    - "Google fait peu confiance à votre site."
+  js_only:
+    - "Google lit mal votre site affiché par JavaScript."
+  no_tracking:
+    - "Combien de clients vous amène votre site ? Mystère."
+  legacy_ga:
+    - "Votre outil de statistiques ne mesure plus rien depuis 2023."
+  sim_sap:
+    - "Vos clients ne voient pas leur prix après crédit d'impôt."
+  no_site:
+    - "Sans site, vos clients trouvent d'abord vos concurrents."

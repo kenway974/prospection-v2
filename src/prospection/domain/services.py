@@ -9,12 +9,14 @@ class Service(enum.Enum):
     INSEE = "insee"
     OPENPAGERANK = "openpagerank"
     INPI = "inpi"
+    BREVO = "brevo"
 
     @property
     def label(self) -> str:
         return {
             "google": "Google Maps", "notion": "Notion", "insee": "Sirène (INSEE)",
             "openpagerank": "Open PageRank", "inpi": "INPI (registre national)",
+            "brevo": "Brevo (SMS)",
         }[self.value]  # fmt: skip
 
     @property
@@ -26,4 +28,6 @@ class Service(enum.Enum):
             "inpi": "Facultatif : objet social et activité détaillée des entreprises. Compte "
             "gratuit sur data.inpi.fr ; saisissez « email:motdepasse » (mot de passe sans "
             "espace ni accent).",
+            "brevo": "Facultative : SMS envoyés avec le mail d'audit, facturés par Brevo. Clé "
+            "API sur app.brevo.com (Paramètres → SMTP et API).",
         }.get(self.value)

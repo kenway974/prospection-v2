@@ -13,7 +13,11 @@ from prospection.application.prospect_view import emails_of
 from prospection.domain.mail_message import email_fingerprint
 from prospection.storage.audit_mails import bounce
 from prospection.storage.call_tracking import add_note
+from prospection.storage.mail_outcome import prospect_sms_kinds
 from prospection.storage.prospect_list import load_prospect
+from prospection.storage.sms_queue_store import enqueue_sms
+
+FOLLOW_UP = "relance_bloque"  # C178
 
 HOOK = (
     "Accroche pour l'appel : « J'ai voulu vous écrire et mon mail a été refusé : votre adresse "
@@ -32,3 +36,6 @@ def mark_bounced(engine: Engine, prospect_id: int, now: datetime, pepper: bytes)
         address = next((e for e in emails if email_fingerprint(e, pepper) == email_hash), None)
         who = f"de {address}" if address else "du destinataire"
         add_note(conn, prospect_id, f"Mail d'audit refusé par le serveur {who}. {HOOK}", now)
+        kinds = prospect_sms_kinds(conn, prospect_id)
+        if "mail" in kinds and FOLLOW_UP not in kinds:  # C178 : le SMS disait « voir le mail »
+            enqueue_sms(conn, [(prospect_id, False)], now, kind=FOLLOW_UP)

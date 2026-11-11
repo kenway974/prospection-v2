@@ -29,6 +29,8 @@ mail_settings = Table(
     Column("gmail_address", Text), Column("gmail_token", LargeBinary),
     Column("gmail_connected_at", DateTime(timezone=True)),
     Column("replies_blocked", Boolean, nullable=False, server_default="false"),  # C163
+    Column("daily_limit", SmallInteger, nullable=False, server_default="30"),  # C169
+    Column("queue_paused", Text),  # C170 : pourquoi la file d'envoi est arrêtée
     CheckConstraint("id = 1", name="mail_settings_single_row"),
 )  # fmt: skip
 _ROW = mail_settings.c.id == 1

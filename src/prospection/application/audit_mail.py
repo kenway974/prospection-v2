@@ -19,6 +19,14 @@ from prospection.application.audit_mail_context import (
     draft_for,
     load_context,
 )
+from prospection.application.mail_delivery import (
+    DOWN,
+    REFUSED,
+    REVOKED,
+    SETUP,
+    UNCERTAIN,
+    deliver,
+)
 from prospection.domain.audit_mail import Draft
 from prospection.domain.mail_message import (
     InvalidMail,
@@ -30,26 +38,17 @@ from prospection.domain.mail_message import (
 from prospection.domain.mail_versions import MailVersions, SendDetails
 from prospection.sources.gmail import (
     GmailOAuth,
-    GmailRefused,
-    GmailRevoked,
-    GmailUnavailable,
     GmailUncertain,
-    access_token,
-    send_raw,
 )
 from prospection.storage.audit_mails import cancel_send, record_send
 from prospection.storage.call_tracking import add_note, plan_action
 from prospection.storage.mail_send_log import set_thread
 from prospection.storage.secret_box import SecretBox
 
-__all__ = ["MailBlocked", "MailScreen", "mail_screen", "send_audit_mail"]
-REVOKED = "Connexion Gmail expirée : reliez Gmail à nouveau dans Réglages → Mail d'audit."
-DOWN = "Gmail ne répond pas : réessayez dans un instant (votre texte est gardé)."
-REFUSED = "Gmail a refusé ce mail : vérifiez l'adresse du destinataire."
-UNCERTAIN = (
-    "Envoi incertain (réponse de Gmail perdue) : regardez dans « Messages envoyés » de Gmail. "
-    "Le prospect est marqué « envoyé » pour ne jamais lui écrire deux fois."
-)
+__all__ = [
+    "DOWN", "REFUSED", "REVOKED", "SETUP", "UNCERTAIN", "MailBlocked", "MailScreen",
+    "mail_screen", "send_audit_mail",
+]  # fmt: skip
 
 
 @dataclass(frozen=True)
@@ -73,18 +72,6 @@ def mail_screen(
     footer = unsubscribe_footer(f"{base or ''}/desinscription/…")
     return MailScreen(prospect_id, ctx.company, ctx.blocked, ctx.sent_on, ctx.recipients,
                       draft_for(ctx, None), footer, ctx.gmail_address, ctx.versions)  # fmt: skip
-
-
-def _deliver(client: httpx.Client, ctx: MailContext, oauth: GmailOAuth, raw: bytes) -> str | None:
-    """Envoie ; rend la conversation Gmail du mail (réponses repérées ensuite, C163)."""
-    try:
-        return send_raw(client, access_token(client, oauth, ctx.refresh_token or ""), raw)
-    except GmailRevoked:
-        raise MailBlocked(REVOKED) from None
-    except GmailUnavailable:
-        raise MailBlocked(DOWN) from None
-    except GmailRefused:
-        raise MailBlocked(REFUSED) from None
 
 
 def send_audit_mail(
@@ -114,7 +101,7 @@ def send_audit_mail(
     raw = build_message(ctx.sender.name, ctx.gmail_address or "", address, clean_subject,
                         clean_body, f"{base}/desinscription/{token}")  # fmt: skip
     try:
-        thread = _deliver(client, ctx, oauth, raw)
+        thread = deliver(client, ctx.refresh_token or "", oauth, raw)
     except GmailUncertain:  # peut-être parti : gardé envoyé, jamais deux fois
         note = f"Mail d'audit peut-être envoyé à {address} (à vérifier dans Gmail)"
         _after(engine, prospect_id, f"{note} : « {clean_subject} »", ctx.reminder_days, now,

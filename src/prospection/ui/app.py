@@ -5,7 +5,9 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import Engine
 
 from prospection.config import Settings
+from prospection.domain.audit_mail_rules import load_mail_rules
 from prospection.domain.call_sheet import load_rules
+from prospection.domain.sms_text import load_sms_rules
 from prospection.storage.secret_box import SecretBox
 from prospection.ui import (
     routes_auth,
@@ -20,6 +22,7 @@ from prospection.ui import (
     routes_followup,
     routes_health,
     routes_mail,
+    routes_mail_queue,
     routes_mail_settings,
     routes_pages,
     routes_privacy,
@@ -29,6 +32,7 @@ from prospection.ui import (
     routes_search,
     routes_selection,
     routes_settings,
+    routes_sms_settings,
     routes_stats,
     routes_unsubscribe,
 )
@@ -44,6 +48,8 @@ from prospection.ui.security import (
 
 def create_app(settings: Settings, engine: Engine) -> FastAPI:
     load_rules()  # C110 : une règle « Pour l'appel » invalide empêche le démarrage
+    load_mail_rules()  # C145, C171 : règles du mail d'audit
+    load_sms_rules()  # C179 : un texte de SMS trop long empêche le démarrage
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
     app.state.settings = settings
     app.state.engine = engine
@@ -51,10 +57,10 @@ def create_app(settings: Settings, engine: Engine) -> FastAPI:
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
     modules = (
         routes_health, routes_auth, routes_pages, routes_settings, routes_crm, routes_budget,
-        routes_exclusions, routes_search, routes_campaign, routes_prospects, routes_selection,
-        routes_calls, routes_export, routes_field, routes_followup, routes_dashboard,
-        routes_privacy, routes_push, routes_mail_settings, routes_mail, routes_unsubscribe,
-        routes_public_info, routes_stats,
+        routes_exclusions, routes_search, routes_campaign, routes_mail_queue, routes_prospects,
+        routes_selection, routes_calls, routes_export, routes_field, routes_followup,
+        routes_dashboard, routes_privacy, routes_push, routes_mail_settings, routes_mail,
+        routes_unsubscribe, routes_public_info, routes_stats, routes_sms_settings,
     )  # fmt: skip
     for module in modules:
         app.include_router(module.router)

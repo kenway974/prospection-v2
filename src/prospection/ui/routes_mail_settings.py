@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlalchemy import Engine
 
+from prospection.application.mail_queue_view import current_limit
 from prospection.application.mail_settings import (
     change_mail_settings,
     connected_address,
@@ -52,7 +53,7 @@ def _page(
                        "jours": str(saved.reminder_days)}  # fmt: skip
     context = {"tab": "settings", "values": shown, "errors": errors or {},
                "address": connected_address(engine), "gmail_error": gmail_error,
-               "reconnect": replies_need_reconnect(engine),
+               "reconnect": replies_need_reconnect(engine), "limit": current_limit(engine),
                "can_connect": bool(settings.gmail_oauth() and settings.public_base())}  # fmt: skip
     return templates.TemplateResponse(request, "reglages_mail.html", context, status_code=code)
 

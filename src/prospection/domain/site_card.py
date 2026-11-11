@@ -23,6 +23,9 @@ def _national(number: str) -> str:
     return phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.NATIONAL)
 
 
+UNCONFIRMED = "il ne parle pas de cette entreprise (plateforme, réseau ou hébergeur ?)"
+
+
 def site_lines(report: SiteReport | None) -> list[tuple[str, str]]:
     """Lignes du bloc ; jamais rien d'inventé."""
     if report is None:
@@ -34,6 +37,8 @@ def site_lines(report: SiteReport | None) -> list[tuple[str, str]]:
             return [("Site", "Site probable, à confirmer (homonyme possible).")]
         return [("Site", "Aucun site trouvé.")]
     audit, lines = report.audit, [("Origine", ORIGINS.get(report.origin, report.origin))]
+    if report.unconfirmed:  # C173
+        lines.append(("Site à vérifier", UNCONFIRMED))
     lines += [("Score", f"{audit.score}/100"), ("Technologie", audit.technology or "inconnue"),
               ("Problèmes", " ; ".join(audit.problems) or "aucun")]  # fmt: skip
     if audit.form_place:

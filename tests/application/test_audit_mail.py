@@ -1,5 +1,6 @@
 """C145 à C147 : écran du mail d'audit, envoi depuis Gmail, note et rappel après l'envoi."""
 
+import re
 from datetime import date
 
 import pytest
@@ -122,3 +123,12 @@ def test_C146_same_address_never_written_twice(mail_db: Engine) -> None:
     ready(mail_db)
     send(mail_db, add_audited(mail_db))
     assert screen(mail_db, add_audited(mail_db)).recipients == []
+
+
+def test_C171_draft_opens_with_the_hook_of_its_first_point(mail_db: Engine) -> None:
+    pid = add_audited(mail_db)
+    ready(mail_db)
+    shown = screen(mail_db, pid)
+    assert shown.draft is not None
+    first = shown.draft.body.split("\n\n")[1]
+    assert first == first.upper() and len(re.findall(r"\w+(?:'\w+)*", first)) <= 10, first

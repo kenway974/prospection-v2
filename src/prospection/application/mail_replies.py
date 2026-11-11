@@ -20,7 +20,7 @@ from prospection.sources.gmail import (
 )
 from prospection.sources.gmail_threads import GmailScopeMissing, thread_messages
 from prospection.storage.call_tracking import add_note
-from prospection.storage.mail_send_log import mark_checked, replies_to_check
+from prospection.storage.mail_send_log import mark_checked, replies_to_check, thread_of
 from prospection.storage.mail_settings import block_replies, load_gmail, replies_blocked
 from prospection.storage.secret_box import SecretBox, UnreadableSecret
 
@@ -102,3 +102,19 @@ def check_replies(
     except (GmailRevoked, GmailUnavailable, GmailRefused):
         return 0
     return done
+
+
+def check_thread_of(
+    engine: Engine, box: SecretBox, client: httpx.Client, oauth: GmailOAuth | None,
+    prospect_id: int, now: datetime,
+) -> None:  # fmt: skip
+    """Relit tout de suite la conversation du mail de ce prospect (avant son SMS, C177)."""
+    account = _token(engine, box) if oauth else None
+    with engine.connect() as conn:
+        found = thread_of(conn, prospect_id) if account else None
+    if found is None or oauth is None or account is None:
+        return
+    with suppress(GmailScopeMissing, GmailRevoked, GmailUnavailable, GmailRefused):
+        token = access_token(client, oauth, account[0])
+        messages = thread_messages(client, token, found[1])
+        _judge(engine, box, found[0], prospect_id, messages, account[1], now)

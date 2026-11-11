@@ -9,6 +9,7 @@ from sqlalchemy import Engine
 from prospection.crm.notion import check_notion_token
 from prospection.domain.key_check import KeyCheck
 from prospection.domain.services import Service
+from prospection.sources.brevo import check_brevo_key
 from prospection.sources.google_places import check_google_key
 from prospection.sources.insee import check_insee_key
 from prospection.sources.open_pagerank import check_openpagerank_key
@@ -22,6 +23,7 @@ CHECKERS: dict[Service, Callable[[httpx.Client, str], KeyCheck]] = {
     Service.INSEE: check_insee_key,
     Service.OPENPAGERANK: check_openpagerank_key,
     Service.INPI: check_inpi_key,
+    Service.BREVO: check_brevo_key,  # C181
 }
 
 

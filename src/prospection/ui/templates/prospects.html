@@ -39,8 +39,8 @@
 </form>
 <form id="selection" method="post" action="/prospects/selection"><input type="hidden" name="origine" value="{{ here.origine }}"><input type="hidden" name="campagne" value="{{ here.campagne }}"></form>
 <label class="choice" id="tout-cocher-ligne" hidden><input type="checkbox" id="tout-cocher"> Tout cocher</label>
-<a href="/prospects/envois" class="secondary">Envois du mail d'audit</a>
-<button type="submit" form="selection" formaction="/prospects/selection/mail">Envoyer le mail d'audit aux prospects cochés</button>
+<a href="/prospects/envois" class="button-secondary">Envois du mail d'audit</a>
+<button type="submit" form="selection" formaction="/prospects/selection/mail" class="button-primary">Envoyer le mail d'audit aux prospects cochés</button>
 <button type="submit" form="selection" class="button-danger">Supprimer les prospects cochés</button>
 {% for name, group_rows in groups %}<h2 class="group-title">{{ name }} · {{ group_rows | length }}</h2>
 <ul class="group">{% for r in group_rows %}{% set s = summaries.get(r.id) %}<li class="row select-row"><label class="check"><input type="checkbox" name="id" value="{{ r.id }}" form="selection"><span class="visually-hidden">Cocher {{ r.data.name }}</span></label><a class="link-row" href="/prospects/{{ r.id }}"><span>{{ r.data.name }}<br><span class="secondary">{{ r.data.address }}</span>{% if s %}<br><span class="secondary">{{ s.reason }}{% if s.flagged %} · à vérifier{% endif %}</span>{% endif %}{% if s and s.audit %}<br><span class="secondary">{{ s.audit }}</span>{% endif %}</span><span class="secondary">{% if s %}<strong class="score">{{ s.score }}</strong><span class="visually-hidden"> sur 100, score d'opportunité</span><br>{% endif %}{{ r.status }}</span></a></li>{% endfor %}</ul>

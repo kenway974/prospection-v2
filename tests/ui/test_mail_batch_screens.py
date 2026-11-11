@@ -33,3 +33,13 @@ def test_C168_button_next_to_delete_then_confirmation_then_queue(
         assert pending_ids(conn) == [ok]
     assert recorder.requests == []  # rien ne part depuis l'interface
     assert "1 mail d'audit en file" in html.unescape(client.get(done.headers["location"]).text)
+
+
+def test_C168_buttons_have_the_app_style(
+    web: tuple[TestClient, Recorder],  # noqa: F811
+    mail_db: Engine,
+) -> None:
+    """Retour du 11/11 : boutons bruts du navigateur sur la page Prospects."""
+    add_audited(mail_db)
+    page = web[0].get("/prospects").text
+    assert 'formaction="/prospects/selection/mail" class="button-primary"' in page

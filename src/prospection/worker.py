@@ -30,6 +30,7 @@ from prospection.sources.mail_domain import mail_server
 from prospection.storage.secret_box import SecretBox
 
 logger = logging.getLogger("prospection.worker")
+SCHEMA_WAIT = 5.0  # secondes entre deux vérifications de la base au démarrage
 
 
 class Worker:
@@ -103,6 +104,7 @@ def main() -> None:  # pragma: no cover (point d'entrée, testé en bout en bout
     from prospection.monitoring import start_monitoring
     from prospection.sources.safe_network import make_web_client
     from prospection.storage.db import make_engine
+    from prospection.storage.migrate import schema_ready
     from prospection.worker_jobs import mail_queue_job, site_checker, sms_job
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -115,6 +117,8 @@ def main() -> None:  # pragma: no cover (point d'entrée, testé en bout en bout
     box = SecretBox(settings.encryption_key.get_secret_value())
     web = make_web_client(settings.test_services_url)  # sites des prospects : garde SSRF
     engine = make_engine(settings.database_url)
+    while not schema_ready(engine) and not stop.wait(SCHEMA_WAIT):
+        logger.info("Base pas encore à jour (migrations du service web) : attente")
     with make_client(settings.test_services_url) as client, web:
         lookup = mail_lookup_for(settings.test_services_url)
         key = settings.encryption_key.get_secret_value()

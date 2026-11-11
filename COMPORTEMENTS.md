@@ -237,3 +237,7 @@ Ajouter ou retirer un comportement = modifier ce fichier (avec l'accord du propr
 - C179 Les textes des SMS sont dans un fichier modifiable ; chacun, une fois rempli, tient en un seul SMS (160 caractères, mention STOP comprise), sinon l'app refuse de démarrer en disant quoi raccourcir *(demandé le 10/11/2026)*
 - C180 Chaque jour, les numéros bloqués chez Brevo (STOP) rejoignent la liste de refus de l'app *(demandé le 10/11/2026)*
 - C181 Brevo a un faux dans les tests ; la vérification sur le vrai Brevo tourne à part, avec les autres API (C99) *(demandé le 10/11/2026)*
+- C182 Dès qu'une campagne est finie (au moment où « Appeler les prospects trouvés » apparaît), le mail d'audit de chaque prospect retenu est mis en file automatiquement, avec son SMS ; mêmes garde-fous que l'envoi groupé (rythme, plafond, heures, écartés avec leur raison) ; le journal de la campagne le dit *(demandé le 11/11/2026)*
+- C183 Sur la page Prospects, chaque campagne est un groupe repliable, replié par défaut ; un bouton dans son en-tête coche tous les prospects de cette campagne *(demandé le 11/11/2026)*
+- C184 Sur la page Prospects, on distingue d'un coup d'œil les prospects déjà contactés (badge « Mail envoyé le … », « En file d'envoi », « Mail refusé ») ; un filtre montre « Mail envoyé » ou « Pas encore contacté » *(demandé le 11/11/2026)*
+- C185 « Refaire l'audit des prospects cochés » sur la page Prospects, à côté de l'envoi groupé *(proposé le 11/11/2026)*

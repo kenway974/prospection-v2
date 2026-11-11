@@ -16,6 +16,7 @@ from sqlalchemy import Engine
 
 from prospection.application.backup import backup_job
 from prospection.application.campaign_end import after_campaign
+from prospection.application.campaign_mail import queue_campaign_mails
 from prospection.application.campaign_queue import claim_next, release_until
 from prospection.application.campaign_step import run_step
 from prospection.application.periodic import regular_jobs
@@ -74,6 +75,7 @@ class Worker:
         if outcome.done:
             logger.info("Campagne %s terminée", campaign_id)
             after_campaign(self.engine, campaign_id, self.now())  # C78, C98
+            queue_campaign_mails(self.engine, self.box, campaign_id, self.now())  # C182
         else:
             release_until(self.engine, campaign_id, outcome.retry_at or self.now(), self.worker_id)
         return True

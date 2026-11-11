@@ -12,7 +12,7 @@ from prospection.application.audit_mail_context import GMAIL, SETTINGS
 from prospection.application.mail_recipients import NO_VALID, usable_recipients
 from prospection.application.prospect_selection import MAX_SELECTION
 from prospection.application.site_network import network_of
-from prospection.application.sms_eligibility import sms_target
+from prospection.application.sms_eligibility import UNCHECKED_REGISTRY, sms_target
 from prospection.domain.mail_settings import sender_of
 from prospection.domain.services import Service
 from prospection.domain.sms_settings import SmsSettings
@@ -105,11 +105,20 @@ def batch_preview(engine: Engine, box: SecretBox, prospect_ids: Sequence[int]) -
 def queue_batch(engine: Engine, box: SecretBox, prospect_ids: Sequence[int], now: datetime) -> int:
     """Met en file les mails et les SMS qui peuvent partir ; rend le nombre de prospects."""
     preview = batch_preview(engine, box, prospect_ids)
+    mails, texts = enqueue_preview(engine, preview, now)
+    return len(set(mails) | set(texts))
+
+
+def enqueue_preview(engine: Engine, preview: BatchPreview, now: datetime,
+                    registry_later: bool = False) -> tuple[list[int], list[int]]:  # fmt: skip
+    """Mails et SMS mis en file. `registry_later` : en fin de campagne, le registre n'est pas
+    encore consulté ; le SMS est mis en file et revérifié à l'envoi (C182)."""
     if preview.blocked:
-        return 0
+        return [], []
+    sms_ok = (None, UNCHECKED_REGISTRY) if registry_later else (None,)
     mails = [r.prospect_id for r in preview.rows if r.reason is None]
-    texts = [(r.prospect_id, r.reason is None) for r in preview.rows if r.sms_reason is None]
+    texts = [(r.prospect_id, r.reason is None) for r in preview.rows if r.sms_reason in sms_ok]
     with engine.begin() as conn:
         enqueue(conn, mails, now)
         enqueue_sms(conn, texts, now)
-    return len(set(mails) | {p for p, _ in texts})
+    return mails, [p for p, _ in texts]

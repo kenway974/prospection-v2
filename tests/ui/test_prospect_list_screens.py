@@ -122,7 +122,7 @@ def test_C133_list_shows_one_block_per_campaign(client: TestClient, campaign_db:
     _campaign(campaign_db, "Cuisinistes Paris", "Cuisines Durand")
     page = text(client.get("/prospects"))
     paris, lyon = (
-        page.index('<h2 class="group-title">Cuisinistes Paris · 1</h2>'),
-        page.index('<h2 class="group-title">Cuisinistes Lyon · 1</h2>'),
+        page.index("<span>Cuisinistes Paris · 1</span>"),  # C183 : titre du groupe repliable
+        page.index("<span>Cuisinistes Lyon · 1</span>"),
     )
     assert paris < page.index("Cuisines Durand") < lyon < page.index("Cuisines Martin")

@@ -78,6 +78,16 @@ if (checkAll) {
   });
 }
 
+// Campagnes repliables (C183) : cocher tous les prospects d'une campagne, même repliée.
+document.querySelectorAll(".cocher-campagne").forEach(function (groupBox) {
+  groupBox.closest(".cocher-campagne-ligne").hidden = false;
+  groupBox.addEventListener("change", function () {
+    groupBox.closest(".campaign-group").querySelectorAll('input[name="id"]').forEach(function (box) {
+      box.checked = groupBox.checked;
+    });
+  });
+});
+
 // Ville (C134) : la commune choisie reste seule (« Changer de commune » rouvre la liste) ;
 // une nouvelle frappe vide la liste aussitôt, pour ne jamais lancer sur une commune périmée.
 var communes = document.getElementById("communes");

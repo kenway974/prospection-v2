@@ -28,12 +28,13 @@ def _choices(statut: str, tri: str) -> tuple[str | None, str]:
 @router.get("", response_class=HTMLResponse)
 def prospects_page(
     request: Request, statut: str = "", q: str = "", tri: str = "", origine: str = "",
-    campagne: str = "", supprime: int = 0, en_file: int = 0,
+    campagne: str = "", supprime: int = 0, en_file: int = 0, contact: str = "", audit: int = 0,
     engine: Engine = Depends(get_engine), now: datetime = Depends(get_now),  # noqa: B008
     settings: Settings = Depends(get_settings),  # noqa: B008
 ) -> Response:  # fmt: skip
     (status, sort), query, scope = _choices(statut, tri), q[:100], list_scope(origine, campagne)
-    listing = prospect_list(engine, status, query, sort, now, settings.timezone, scope)
+    contact = contact if contact in ("envoye", "non") else ""
+    listing = prospect_list(engine, status, query, sort, now, settings.timezone, scope, contact)
     context = {
         "tab": "prospects", "rows": listing.rows, "counts": listing.counts,
         "total": sum(listing.counts.values()), "statuses": STATUSES, "status": status,
@@ -41,7 +42,9 @@ def prospects_page(
         "sources": listing.sources, "source_labels": SOURCES, "campaigns": listing.campaigns,
         "scope": listing.scope, "here": scope_params(listing.scope),
         "deleted": max(supprime, 0), "any_prospect": listing.any_prospect,
-        "groups": listing.groups, "queued": max(en_file, 0),
+        "groups": listing.groups, "queued": max(en_file, 0), "contact": contact,
+        "contacted": listing.contacted, "contact_counts": listing.contact_counts,
+        "reaudits": max(audit, 0),
     }  # fmt: skip
     return templates.TemplateResponse(request, "prospects.html", context)
 
@@ -50,13 +53,14 @@ def prospects_page(
 def session_start(
     statut: str = Form("", max_length=30), q: str = Form("", max_length=200),
     tri: str = Form("", max_length=20), origine: str = Form("", max_length=20),
-    campagne: str = Form("", max_length=20),
+    campagne: str = Form("", max_length=20), contact: str = Form("", max_length=10),
     engine: Engine = Depends(get_engine), now: datetime = Depends(get_now),  # noqa: B008
     settings: Settings = Depends(get_settings),  # noqa: B008
 ) -> Response:  # fmt: skip
     """Démarre une session sur la liste affichée ; sa file ne bouge plus ensuite (C109)."""
     (status, sort), query, scope = _choices(statut, tri), q[:100], list_scope(origine, campagne)
-    first = start_session(engine, status, query, sort, now, settings.timezone, scope)
+    contact = contact if contact in ("envoye", "non") else ""
+    first = start_session(engine, status, query, sort, now, settings.timezone, scope, contact)
     if first is None:
         where = list_query(status, query, sort, scope)
         return RedirectResponse(f"/prospects?{where}", status_code=303)

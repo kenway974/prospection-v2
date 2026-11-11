@@ -8,9 +8,11 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import Connection, Engine
 
 from prospection.application.prospect_view import SCORE, Summary, all_domains, summarize
+from prospection.domain.contact_label import MAILED, contact_label
 from prospection.domain.prospect_source import ALL, Scope
 from prospection.domain.text import without_controls
 from prospection.storage import prospect_list as store
+from prospection.storage.contact_marks import contact_marks
 from prospection.storage.mail_domains import mail_servers
 from prospection.storage.prospect_list import ProspectRow
 from prospection.storage.prospect_scope import campaign_choices
@@ -26,6 +28,8 @@ class ProspectList:
     scope: Scope = ALL  # celle appliquée : une campagne d'une autre origine est ignorée
     any_prospect: bool = False  # au moins un prospect, recherche et filtres mis à part
     groups: list[tuple[str, list[ProspectRow]]] = field(default_factory=list)  # par campagne
+    contacted: dict[int, tuple[str, str]] = field(default_factory=dict)  # C184 : état, libellé
+    contact_counts: dict[str, int] = field(default_factory=dict)  # « envoye », « non »
 
 
 def clean_query(query: str) -> str:
@@ -68,9 +72,10 @@ def _today(now: datetime | None, timezone: str) -> date:
 
 def prospect_list(
     engine: Engine, status: str | None, query: str, sort: str, now: datetime | None = None,
-    timezone: str = "Europe/Paris", scope: Scope = ALL,
+    timezone: str = "Europe/Paris", scope: Scope = ALL, contact: str = "",
 ) -> ProspectList:  # fmt: skip
-    """`scope` : une origine (Terrain à part, C127), éventuellement une campagne (C128)."""
+    """`scope` : une origine (Terrain à part, C127), éventuellement une campagne (C128) ;
+    `contact` : « envoye » ou « non » (C184)."""
     query = clean_query(query)
     with engine.connect() as conn:
         campaigns = campaign_choices(conn, scope.source) if scope.source else []
@@ -79,9 +84,21 @@ def prospect_list(
         counts = store.status_counts(conn, query, scope)
         sources = store.source_counts(conn, query)
         any_prospect = bool(sources) or bool(store.source_counts(conn, ""))
+        marks = contact_marks(conn, [r.id for r in rows])
+    contacted = {
+        pid: (kind, contact_label(kind, at, timezone)) for pid, (kind, at) in marks.items()
+    }
+    mailed = {pid for pid, (kind, _) in contacted.items() if kind in MAILED}
+    contact_counts = {"envoye": len(mailed), "non": len(rows) - len(mailed)}
+    rows = [r for r in rows if _shown(r.id in mailed, contact)]
     groups = _grouped(rows, campaigns)
     rows = [r for _, group in groups for r in group]
-    return ProspectList(rows, counts, summaries, sources, campaigns, scope, any_prospect, groups)
+    return ProspectList(rows, counts, summaries, sources, campaigns, scope, any_prospect, groups,
+                        contacted, contact_counts)  # fmt: skip
+
+
+def _shown(mailed: bool, contact: str) -> bool:
+    return contact not in ("envoye", "non") or mailed == (contact == "envoye")
 
 
 def _checked(scope: Scope, campaigns: list[tuple[int, str, int]]) -> Scope:
@@ -93,7 +110,7 @@ def _checked(scope: Scope, campaigns: list[tuple[int, str, int]]) -> Scope:
 
 def start_session(
     engine: Engine, status: str | None, query: str, sort: str, now: datetime,
-    timezone: str = "Europe/Paris", scope: Scope = ALL,
+    timezone: str = "Europe/Paris", scope: Scope = ALL, contact: str = "",
 ) -> int | None:  # fmt: skip
     """Fige la file affichée (même ordre que la liste) et renvoie le premier prospect à
     appeler (C109, C133)."""
@@ -102,6 +119,9 @@ def start_session(
         campaigns = campaign_choices(conn, scope.source) if scope.source else []
         scope = _checked(scope, campaigns)
         rows, _ = _listed(conn, status, query, sort, _today(now, timezone), scope)
+        marks = contact_marks(conn, [r.id for r in rows]) if contact else {}
+        mailed = {pid for pid, (kind, _) in marks.items() if kind in MAILED}
+        rows = [r for r in rows if _shown(r.id in mailed, contact)]  # même liste qu'affichée
         queue = [r.id for _, group in _grouped(rows, campaigns) for r in group]
         store.start_session(conn, queue, now)
     return queue[0] if queue else None

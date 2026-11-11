@@ -12,6 +12,7 @@ from sqlalchemy import Engine
 from prospection.application.mail_batch import batch_preview, queue_batch
 from prospection.application.mail_queue_view import current_limit
 from prospection.application.prospect_selection import MAX_SELECTION, delete_selection, selected
+from prospection.application.site_reaudit import request_reaudits
 from prospection.storage.secret_box import SecretBox
 from prospection.ui.call_views import list_scope, scope_params
 from prospection.ui.deps import get_box, get_engine, get_now, templates
@@ -23,11 +24,12 @@ IDS = Form([])
 ORIGIN, CAMPAIGN = Form("", max_length=20), Form("", max_length=20)
 
 
-def _back(origine: str, campagne: str, deleted: int = 0, queued: int = 0) -> str:
+def _back(origine: str, campagne: str, deleted: int = 0, queued: int = 0, audits: int = 0) -> str:
     """Retour au même onglet et à la même campagne que la liste d'où l'on vient."""
     here = scope_params(list_scope(origine, campagne))
     params = {"supprime": str(deleted)} if deleted else {}
     params |= {"en_file": str(queued)} if queued else {}
+    params |= {"audit": str(audits)} if audits else {}
     params |= {k: v for k, v in here.items() if v and (k, v) != ("origine", "appel")}
     return "/prospects" + (f"?{urlencode(params)}" if params else "")
 
@@ -79,3 +81,13 @@ def mail_queue(
     """C168 : en file pour la tâche de fond ; rien ne part d'ici."""
     count = queue_batch(engine, box, id, now)
     return RedirectResponse(_back(origine, campagne, queued=count), status_code=303)
+
+
+@router.post("/audit")
+def reaudit_selection(
+    id: list[int] = IDS, origine: str = ORIGIN, campagne: str = CAMPAIGN,
+    engine: Engine = ENGINE, now: datetime = NOW,
+) -> Response:  # fmt: skip
+    """C185 : nouvel audit des prospects cochés, fait par la tâche de fond."""
+    count = request_reaudits(engine, id, now)
+    return RedirectResponse(_back(origine, campagne, audits=count), status_code=303)

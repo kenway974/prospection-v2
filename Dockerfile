@@ -1,4 +1,4 @@
-FROM python:3.13-slim
+FROM python:3.15-slim
 # pg_dump et pg_restore pour la sauvegarde quotidienne (C91) ; un client récent lit aussi
 # les serveurs plus anciens.
 RUN apt-get update && apt-get install -y --no-install-recommends postgresql-client \

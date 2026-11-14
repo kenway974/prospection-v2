@@ -1,6 +1,7 @@
 """Mail d'audit envoyé à une sélection (C168), avec son SMS (C177) : ce qui partira, ce qui
 est écarté et pourquoi, puis mise en file pour la tâche de fond (rien ne part d'ici)."""
 
+from collections import Counter
 from collections.abc import Sequence
 from dataclasses import dataclass, replace
 from datetime import datetime
@@ -54,6 +55,12 @@ class BatchRow:
 class BatchPreview:
     blocked: str | None  # empêche tout l'envoi (réglages, Gmail), dit quoi faire
     rows: list[BatchRow]
+
+    @property
+    def summary(self) -> list[tuple[str, int]]:
+        """C186 : raisons des prospects écartés (ni mail ni SMS), la plus fréquente d'abord."""
+        reasons = Counter(r.reason for r in self.rows if not r.leaves and r.reason)
+        return reasons.most_common()
 
 
 def _platform(conn: Connection, url: str | None, name: str) -> bool:

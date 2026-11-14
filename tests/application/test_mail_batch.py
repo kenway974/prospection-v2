@@ -58,3 +58,12 @@ def test_C168_only_the_mailable_ones_are_queued_once(mail_db: Engine) -> None:
     assert queue_batch(mail_db, BOX, [ok], NOW) == 0  # déjà en file
     with mail_db.connect() as conn:
         assert pending_ids(conn) == [ok]
+
+
+def test_C186_skipped_reasons_summed_up_most_frequent_first(mail_db: Engine) -> None:
+    ready(mail_db)
+    ids = [add_audited(mail_db, site=None) for _ in range(2)]
+    ids.append(add_audited(mail_db, dataclasses.replace(SITE, unconfirmed=True), "x@martin.fr"))
+    ids.append(add_audited(mail_db, contacts_email="ok@martin.fr"))
+    summary = batch_preview(mail_db, BOX, ids).summary
+    assert summary == [("pas encore d'audit", 2), ("site à vérifier (plateforme ?)", 1)]

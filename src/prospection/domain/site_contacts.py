@@ -12,6 +12,7 @@ from urllib.parse import unquote, urlsplit
 import phonenumbers
 
 from prospection.domain.email_check import is_email
+from prospection.domain.email_owner import own_address
 from prospection.domain.html_page import Page
 from prospection.domain.place import web_link
 
@@ -56,8 +57,9 @@ def _unique(items: list[str]) -> tuple[str, ...]:
     return tuple(dict.fromkeys(items))[:MAX_FOUND]
 
 
-# C187 : « contact [at] domaine [dot] fr », « contact(at)domaine.fr », « contact @ domaine.fr »
-_AT = re.compile(r"\s*[\[(]\s*(?:at|arobase|@)\s*[\])]\s*|\s+@\s+", re.IGNORECASE)
+# C187 : « contact [at] domaine [dot] fr », « contact(at)domaine.fr » (jamais « mot @ site.fr »,
+# trop courant dans un texte ordinaire : « Réalisé par Studio @ agence.fr »)
+_AT = re.compile(r"\s*[\[(]\s*(?:at|arobase|@)\s*[\])]\s*", re.IGNORECASE)
 _DOT = re.compile(r"\s*[\[(]\s*(?:dot|point)\s*[\])]\s*", re.IGNORECASE)
 
 
@@ -72,19 +74,28 @@ def _in_text(text: str) -> list[str]:
     found: list[str] = []
     at = text.find("@")
     while at != -1 and len(found) < MAX_AT:
-        local, domain = _LOCAL.search(text[max(0, at - 64) : at]), _DOMAIN.match(text, at + 1)
-        if local and domain:
+        start = max(0, at - 64)
+        local, domain = _LOCAL.search(text[start:at]), _DOMAIN.match(text, at + 1)
+        cut = (
+            local is not None
+            and start + local.start() > 0
+            and text[start + local.start() - 1].isalpha()
+        )
+        if local and domain and not cut:  # jamais une adresse coupée dans un mot (« équipe@ »)
             found.append(f"{local.group()}@{domain.group()}")
         at = text.find("@", at + 1)
     return found
 
 
-def _emails(page: Page) -> tuple[str, ...]:
+def _emails(page: Page, site: str) -> tuple[str, ...]:
     mailtos = [
         unquote(link[7:].split("?")[0]) for link in page.links if link.lower().startswith("mailto:")
     ]
-    plain = _in_text(_undisguised(page.text))
-    found = [e for e in (m.lower() for m in [*mailtos, *plain]) if is_email(e)]
+    plain = _in_text(page.text)
+    hidden = [
+        e for e in _in_text(_undisguised(page.text)) if e not in plain and own_address(e, site)
+    ]
+    found = [e for e in (m.lower() for m in [*mailtos, *plain, *hidden]) if is_email(e)]
     return _unique(
         [e for e in found if not any(i in e for i in _IGNORED) and not e.endswith(_IMAGE)]
     )
@@ -112,9 +123,11 @@ def _company_page(link: str) -> bool:
     )  # fmt: skip
 
 
-def find_contacts(page: Page, country: str) -> Contacts:
+def find_contacts(page: Page, country: str, site: str = "") -> Contacts:
+    """`site` : adresse du site lu ; une adresse déguisée n'est gardée que sur son domaine ou
+    chez une messagerie grand public (C187)."""
     social = [link for link in page.links if _company_page(link) and web_link(link)]
-    return Contacts(_emails(page), _phones(page, country or "FR"), _unique(social))
+    return Contacts(_emails(page, site), _phones(page, country or "FR"), _unique(social))
 
 
 def merge_contacts(found: list[Contacts]) -> Contacts:

@@ -67,3 +67,15 @@ def test_C186_skipped_reasons_summed_up_most_frequent_first(mail_db: Engine) -> 
     ids.append(add_audited(mail_db, contacts_email="ok@martin.fr"))
     summary = batch_preview(mail_db, BOX, ids).summary
     assert summary == [("pas encore d'audit", 2), ("site à vérifier (plateforme ?)", 1)]
+
+
+def test_C186_sms_only_prospect_is_not_counted_as_skipped(mail_db: Engine) -> None:
+    from prospection.domain.site_contacts import Contacts
+    from tests.application.test_sms_batch import sms_ready
+
+    sms_ready(mail_db)
+    no_email = dataclasses.replace(SITE, contacts=Contacts((), (), ()))
+    sms_only = add_audited(mail_db, no_email)
+    preview = batch_preview(mail_db, BOX, [sms_only, add_audited(mail_db, site=None)])
+    assert [r.leaves for r in preview.rows if r.prospect_id == sms_only] == [True]
+    assert preview.summary == [("pas encore d'audit", 1)]

@@ -29,6 +29,9 @@ consent_trackers: ["googletagmanager.com", "google-analytics.com", "gtag(", "fbq
 consent_tools: ["tarteaucitron", "axept.io", "axeptio", "cookiebot", "didomi", "onetrust", "cookielaw.org", "complianz", "cookieyes", "cookie-law-info", "iubenda", "quantcast", "sirdata", "borlabs", "usercentrics", "orejime", "klaro", "cookie-notice", "moove_gdpr", "gdpr-cookie-compliance", "consentmanager", "osano", "termly", "cookiefirst", "cookie-script.com", "gtag('consent'", "gtag(\"consent\"", "gtag( 'consent'"]
 # Mots d'un lien vers les mentions légales, puis vers la politique de confidentialité (C140).
 legal_words: ["mentions-legales", "mentions_legales", "mentionslegales", "mentions légales", "mention légale", "mentions legales", "informations légales", "legal-notice", "impressum"]
+# Messageries grand public : une adresse déguisée ou lue dans les mentions légales n'est gardée
+# que sur le domaine du site ou chez l'une d'elles (C187, C188 : jamais l'hébergeur ni l'agence).
+webmail_domains: ["gmail.com", "orange.fr", "wanadoo.fr", "free.fr", "sfr.fr", "neuf.fr", "laposte.net", "hotmail.fr", "hotmail.com", "outlook.fr", "outlook.com", "live.fr", "yahoo.fr", "yahoo.com", "icloud.com", "me.com", "aol.com", "gmx.fr", "bbox.fr", "numericable.fr"]
 privacy_words: ["confidentialit", "donnees-personnelles", "données personnelles", "privacy", "rgpd", "gdpr", "protection-des-donnees", "protection des données", "vie privée", "vie-privee"]
 # Réservation en ligne : services connus (C142) et métiers où elle compte (mots du métier, sans accents).
 booking_services: ["planity", "calendly", "doctolib", "treatwell", "zenchef", "thefork", "lafourchette", "resengo", "booksy", "simplybook", "setmore", "rdv360", "maiia", "keldoc", "guestonline", "sevenrooms", "fresha", "salonkee", "mindbody", "acuityscheduling", "youcanbook.me", "clicrdv", "timify", "kiute", "bookingkit", "regiondo", "gymlib", "deciplus", "resamania"]

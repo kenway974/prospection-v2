@@ -23,21 +23,20 @@ from prospection.domain.site_report import Origin, SiteReport
 from prospection.domain.site_seo import local_seo
 from prospection.sources.web_reader import UNREACHABLE, ReadResult, read_page
 
-CONTACT_SECONDS = 8.0  # budget commun des pages Contact d'un site (C138)
+CONTACT_SECONDS = 8.0  # budget commun des pages en plus d'un site : Contact, emails (C138, C188)
 BROWSER_SECONDS = 20.0  # un vrai navigateur exécute le JavaScript : plus lent (C166)
 MIN_READ_SECONDS = 1.0
 PLACEHOLDER = "Page « en construction » de l'hébergeur : aucun vrai site en ligne"
 
 
-def _contact_pages(read: Reader, home: Page, url: str, budget: float) -> tuple[Page, ...]:
+def _contact_pages(read: Reader, home: Page, url: str, deadline: float) -> tuple[Page, ...]:
     """Pages Contact du même site, lues seulement si l'accueil n'a pas de formulaire (C138)."""
     if has_form(home):
         return ()
     pages: list[Page] = []
-    start = monotonic()
     for link in contact_links(home, url):
-        left = budget - (monotonic() - start)
-        if left < MIN_READ_SECONDS:  # un seul budget pour toutes les pages Contact
+        left = deadline - monotonic()
+        if left < MIN_READ_SECONDS:  # un seul budget pour toutes les pages en plus du site
             break
         result = read(link, left)
         if result.page is None:
@@ -73,11 +72,11 @@ def _report(
         return SiteReport(origin, problem=PLACEHOLDER, parked=True)
     rendered = _rendered(page, read.url, browser)
     reader: Reader = browser if rendered is not None and browser is not None else _plain(client)
-    budget = BROWSER_SECONDS if reader is browser else CONTACT_SECONDS
+    deadline = monotonic() + (BROWSER_SECONDS if reader is browser else CONTACT_SECONDS)
     page = rendered or page
-    others = _contact_pages(reader, page, read.url, budget)
+    others = _contact_pages(reader, page, read.url, deadline)
     country = place.country or "FR"
-    contacts = site_contacts(reader, page, others, read.url, country)  # C188
+    contacts = site_contacts(reader, page, others, read.url, country, deadline)  # C188
     blind = rendered is None and is_js_app(page)  # coquille non lue : on ne juge pas (C152)
     unsure = origin == "fiche Google" and not blind  # un site retrouvé est déjà confirmé
     return SiteReport(

@@ -8,6 +8,7 @@ formulaires en JavaScript), l'app dit « non vérifié », jamais « aucun ».
 from collections.abc import Sequence
 from urllib.parse import urljoin, urlsplit
 
+from prospection.domain.email_owner import same_site
 from prospection.domain.html_page import Page
 from prospection.domain.site_signals import signals
 
@@ -52,6 +53,9 @@ def form_place(home: Page, others: Sequence[Page], technology: str | None) -> st
     return UNKNOWN if unsure or technology in signals().form_builders else NONE
 
 
+_FILES = (".pdf", ".doc", ".docx", ".odt", ".zip", ".jpg", ".jpeg", ".png", ".gif", ".webp")
+
+
 def _rank(href: str, label: str, words: Sequence[str]) -> int | None:
     """Rang du premier mot trouvé dans le chemin ou le texte du lien."""
     seen = (urlsplit(href).path + " " + label).lower()
@@ -61,11 +65,13 @@ def _rank(href: str, label: str, words: Sequence[str]) -> int | None:
 def site_links(page: Page, url: str, words: Sequence[str], limit: int) -> list[str]:
     """Pages du même site dont le lien (adresse ou texte) contient un de ces mots, les plus
     utiles d'abord (ordre des mots)."""
-    host, found = urlsplit(url).hostname, list[tuple[int, int, str]]()
+    found = list[tuple[int, int, str]]()
     for href, label in page.anchors:
         target = urljoin(url, href).split("#")[0]
         parts = urlsplit(target)
-        if parts.scheme not in ("http", "https") or parts.hostname != host:
+        if parts.scheme not in ("http", "https") or not same_site(target, url):
+            continue
+        if parts.path.lower().endswith(_FILES):  # un PDF n'est pas lu : la page HTML l'est
             continue
         if target.rstrip("/") == url.split("#")[0].rstrip("/"):
             continue

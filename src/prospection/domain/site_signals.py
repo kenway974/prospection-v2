@@ -23,6 +23,7 @@ class Signals(BaseModel):
     consent_tools: list[str]
     legal_words: list[str]
     privacy_words: list[str]
+    webmail_domains: list[str]
     booking_services: list[str]
     booking_words: list[str]
     booking_trades: list[str]

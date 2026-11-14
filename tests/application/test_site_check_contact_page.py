@@ -33,7 +33,7 @@ def test_C138_contact_page_read_when_home_has_no_form() -> None:
 
 
 def test_C138_no_extra_reading_when_home_has_a_form() -> None:
-    home = HOME.replace("<h1>", '<form><input type="tel"></form><h1>')
+    home = HOME.replace("<h1>", '<form><input type="tel"></form><p>a@azenergie.fr</p><h1>')  # C188
     client, recorder = fake_client(lambda r: raw(home.encode()))
     report = check(client, PLACE)
     assert report.audit is not None and report.audit.form_place == HOME_TOP

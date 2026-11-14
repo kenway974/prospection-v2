@@ -43,3 +43,15 @@ def test_C168_buttons_have_the_app_style(
     add_audited(mail_db)
     page = web[0].get("/prospects").text
     assert 'formaction="/prospects/selection/mail" class="button-primary"' in page
+
+
+def test_C186_summary_on_top_of_the_confirmation(
+    web: tuple[TestClient, Recorder],  # noqa: F811
+    mail_db: Engine,
+) -> None:
+    ready(mail_db)
+    ids = [add_audited(mail_db, site=None) for _ in range(2)]
+    page = html.unescape(web[0].post("/prospects/selection/mail", data={"id": ids},
+                                     headers=ORIGIN).text)  # fmt: skip
+    assert "Écartés : 2 pas encore d'audit" in page
+    assert page.index("Écartés : 2") < page.index("Envoi sans relecture")

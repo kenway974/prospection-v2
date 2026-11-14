@@ -3,7 +3,8 @@ jugé comme un site classique (formulaire, texte, page Contact)."""
 
 import dataclasses
 
-from prospection.application.site_check import Reader, check_site
+from prospection.application.site_check import check_site
+from prospection.application.site_emails import Reader
 from prospection.sources.web_reader import ReadResult, WebPage
 from tests.application.test_site_check import AZ
 from tests.application.test_site_check_contact_page import pages

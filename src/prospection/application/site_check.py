@@ -4,17 +4,17 @@ Lecture gratuite mais lente : appelée seulement pour les établissements qui pa
 critères gratuits (C39). Les domaines devinés sont lus en parallèle (4 au plus).
 """
 
-from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from time import monotonic
 
 import httpx
 
+from prospection.application.site_emails import Reader, site_contacts
 from prospection.application.site_network import Shared, network_of
 from prospection.domain.html_page import Page, parse_page
 from prospection.domain.place import Place, web_link
 from prospection.domain.site_audit import audit, is_placeholder
-from prospection.domain.site_contacts import find_contacts, merge_contacts
+from prospection.domain.site_contacts import find_contacts
 from prospection.domain.site_form import contact_links, has_form
 from prospection.domain.site_guess import STRONG, address_city, candidate_domains, confirmation
 from prospection.domain.site_js import is_js_app
@@ -27,7 +27,6 @@ CONTACT_SECONDS = 8.0  # budget commun des pages Contact d'un site (C138)
 BROWSER_SECONDS = 20.0  # un vrai navigateur exécute le JavaScript : plus lent (C166)
 MIN_READ_SECONDS = 1.0
 PLACEHOLDER = "Page « en construction » de l'hébergeur : aucun vrai site en ligne"
-Reader = Callable[[str, float], ReadResult]  # adresse, secondes au plus → page lue (C166)
 
 
 def _contact_pages(read: Reader, home: Page, url: str, budget: float) -> tuple[Page, ...]:
@@ -73,12 +72,12 @@ def _report(
     if is_placeholder(page):  # domaine acheté, aucun site en ligne : un prospect sans site
         return SiteReport(origin, problem=PLACEHOLDER, parked=True)
     rendered = _rendered(page, read.url, browser)
-    if rendered is not None and browser is not None:
-        page, others = rendered, _contact_pages(browser, rendered, read.url, BROWSER_SECONDS)
-    else:
-        others = _contact_pages(_plain(client), page, read.url, CONTACT_SECONDS)
+    reader: Reader = browser if rendered is not None and browser is not None else _plain(client)
+    budget = BROWSER_SECONDS if reader is browser else CONTACT_SECONDS
+    page = rendered or page
+    others = _contact_pages(reader, page, read.url, budget)
     country = place.country or "FR"
-    contacts = merge_contacts([find_contacts(p, country) for p in (page, *others)])
+    contacts = site_contacts(reader, page, others, read.url, country)  # C188
     blind = rendered is None and is_js_app(page)  # coquille non lue : on ne juge pas (C152)
     unsure = origin == "fiche Google" and not blind  # un site retrouvé est déjà confirmé
     return SiteReport(

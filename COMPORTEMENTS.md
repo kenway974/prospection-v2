@@ -241,3 +241,6 @@ Ajouter ou retirer un comportement = modifier ce fichier (avec l'accord du propr
 - C183 Sur la page Prospects, chaque campagne est un groupe repliable, replié par défaut ; un bouton dans son en-tête coche tous les prospects de cette campagne *(demandé le 11/11/2026)*
 - C184 Sur la page Prospects, on distingue d'un coup d'œil les prospects déjà contactés (badge « Mail envoyé le … », « En file d'envoi », « Mail refusé ») ; un filtre montre « Mail envoyé » ou « Pas encore contacté » *(demandé le 11/11/2026)*
 - C185 « Refaire l'audit des prospects cochés » sur la page Prospects, à côté de l'envoi groupé *(proposé le 11/11/2026)*
+- C186 L'écran de confirmation de l'envoi groupé résume en haut pourquoi des prospects sont écartés (par exemple « 15 sans email valide · 6 déjà en file ») *(demandé le 14/11/2026)*
+- C187 Une adresse email déguisée est reconnue (« contact [at] domaine [dot] fr », « contact(at)domaine.fr », « contact @ domaine.fr ») *(demandé le 14/11/2026)*
+- C188 Sans email sur l'accueil, la lecture du site va chercher une adresse sur la page Contact (même si l'accueil a un formulaire) et sur la page « Mentions légales », dans un temps limité *(demandé le 14/11/2026)*

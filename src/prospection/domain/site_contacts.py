@@ -56,6 +56,16 @@ def _unique(items: list[str]) -> tuple[str, ...]:
     return tuple(dict.fromkeys(items))[:MAX_FOUND]
 
 
+# C187 : « contact [at] domaine [dot] fr », « contact(at)domaine.fr », « contact @ domaine.fr »
+_AT = re.compile(r"\s*[\[(]\s*(?:at|arobase|@)\s*[\])]\s*|\s+@\s+", re.IGNORECASE)
+_DOT = re.compile(r"\s*[\[(]\s*(?:dot|point)\s*[\])]\s*", re.IGNORECASE)
+
+
+def _undisguised(text: str) -> str:
+    """Adresses déguisées remises en clair ; un texte sans déguisement reste le même."""
+    return _DOT.sub(".", _AT.sub("@", text))
+
+
 def _in_text(text: str) -> list[str]:
     """Adresses lues autour de chaque « @ », dans une fenêtre bornée : coût linéaire, même
     sur une très longue suite de lettres (une recherche directe serait quadratique)."""
@@ -73,7 +83,8 @@ def _emails(page: Page) -> tuple[str, ...]:
     mailtos = [
         unquote(link[7:].split("?")[0]) for link in page.links if link.lower().startswith("mailto:")
     ]
-    found = [e for e in (m.lower() for m in [*mailtos, *_in_text(page.text)]) if is_email(e)]
+    plain = _in_text(_undisguised(page.text))
+    found = [e for e in (m.lower() for m in [*mailtos, *plain]) if is_email(e)]
     return _unique(
         [e for e in found if not any(i in e for i in _IGNORED) and not e.endswith(_IMAGE)]
     )

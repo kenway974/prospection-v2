@@ -41,6 +41,28 @@ WHOLE_QUEUE = (SETTINGS, GMAIL, NO_BASE, REVOKED, SETUP)  # rien ne part avant r
 BROKEN = "erreur imprévue (voir le journal)"
 logger = logging.getLogger(__name__)
 STOPPED = "File arrêtée après 3 refus de Gmail de suite ({raison}). Vérifiez, puis reprenez."
+# C'est la tâche de fond qui envoie : ses propres variables Railway doivent être réglées.
+WORKER_GMAIL = ("La tâche de fond n'a pas les identifiants Gmail : ajoutez GMAIL_CLIENT_ID et "
+                "GMAIL_CLIENT_SECRET (les mêmes que le service web) aux variables du service "
+                "worker sur Railway. La file reprend seule ensuite.")  # fmt: skip
+WORKER_BASE = ("La tâche de fond ne connaît pas l'adresse de l'app : ajoutez PUBLIC_URL "
+               "(adresse https:// du service web) aux variables du service worker sur Railway. "
+               "La file reprend seule ensuite.")  # fmt: skip
+WORKER_SETUP = (WORKER_GMAIL, WORKER_BASE)
+
+
+def _worker_ready(engine: Engine, oauth: GmailOAuth | None, base: str | None) -> bool:
+    """Réglages propres à la tâche de fond : sinon la file s'arrête en disant quoi ajouter ;
+    une fois réglés, elle reprend seule (retour du 14/11)."""
+    missing = WORKER_GMAIL if oauth is None else WORKER_BASE if not base else None
+    with engine.begin() as conn:
+        current = paused(conn)
+        mine = current is None or current in WORKER_SETUP  # jamais un arrêt pour une autre raison
+        if missing and mine and current != missing and queue.next_waiting(conn) is not None:
+            set_paused(conn, missing)
+        elif not missing and current in WORKER_SETUP:
+            set_paused(conn, None)
+    return missing is None
 
 
 def _due(engine: Engine, now: datetime, tz: str) -> tuple[int, int] | None:
@@ -59,6 +81,8 @@ def send_next(
 ) -> bool:  # fmt: skip
     """Traite le prochain prospect de la file ; vrai si une ligne a été traitée. Un seul
     envoyeur à la fois ; une erreur imprévue clôt la ligne au lieu de la rejouer en boucle."""
+    if not _worker_ready(engine, oauth, base):
+        return False
     due = _due(engine, now, tz)
     if due is None:
         return False
